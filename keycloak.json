@@ -1,0 +1,12 @@
+{
+  "realm": "qeng",
+  "auth-server-url": "https://knode5.qeng.ir:8443/",
+  "ssl-required": "external",
+  "resource": "projects-service",
+  "verify-token-audience": false,
+  "credentials": {
+    "secret": "nomucM3UdEGPx6nsHDz3plRDoqZAaOn1"
+  },
+  "use-resource-role-mappings": true,
+  "confidential-port": 0
+}
