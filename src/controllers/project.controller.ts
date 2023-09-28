@@ -1,11 +1,13 @@
-import {inject} from '@loopback/core';
+import {inject, intercept} from '@loopback/core';
 import {ProjectService} from '../services';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {ProjectSummaryDTO} from '../dto';
+import {EnumRoles, protect} from '../lib-keycloak/src';
 
 const BASE_ADDR = '/projects';
 const tags = ['projects'];
 
+@intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
 export class ProjectController {
   constructor(
     @inject(ProjectService.BINDING_KEY) private projectService: ProjectService,
