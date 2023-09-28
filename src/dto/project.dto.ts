@@ -39,9 +39,11 @@ export class ProjectSummaryDTO extends Model {
   @property({type: 'string'})
   owner_cert_id: string;
   @property({type: 'number'})
-  total_area: number;
+  total_units: number | null;
   @property({type: 'number'})
-  total_floor: number;
+  total_area: number | null;
+  @property({type: 'number'})
+  total_floor: number | null;
   @property({type: 'number'})
   total_parking: number | null;
   @property({type: 'number'})
@@ -65,6 +67,7 @@ export class ProjectSummaryDTO extends Model {
       owner_father: firstData.owner_father,
       owner_cert_id: firstData.owner_shsh,
       owner_mobile: firstData.owner_mobile,
+      total_units: firstData.total_units,
       total_area: firstData.total_area,
       total_floor: firstData.total_floor,
       total_anbari: firstData.total_anbari,

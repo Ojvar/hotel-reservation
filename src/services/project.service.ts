@@ -19,8 +19,9 @@ export interface ProjectSummaryItem extends ProjectSummaryEngineer {
   owner_father: string;
   owner_mobile: string;
   owner_shsh: string;
-  total_area: number;
-  total_floor: number;
+  total_units: number | null;
+  total_area: number | null;
+  total_floor: number | null;
   total_parking: number | null;
   total_anbari: number | null;
   project_type: string;
@@ -53,7 +54,8 @@ from
                   Owner_Father as owner_father,
                   OwnerMobile as owner_mobile,
                   Owner_shsh as owner_shsh,
-                  TotalArea as totoal_area,
+                  TotalUnits as total_units,
+                  TotalArea as total_area,
                   TotalFloor as total_floor,
                   TotalParking as total_parking,
                   TotalAnbari as total_anbari,
