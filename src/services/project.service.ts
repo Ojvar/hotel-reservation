@@ -24,6 +24,7 @@ export interface ProjectSummaryItem extends ProjectSummaryEngineer {
   total_floor: number | null;
   total_parking: number | null;
   total_anbari: number | null;
+  usage_sanati: number | null;
   project_type: string;
 }
 
@@ -59,7 +60,8 @@ from
                   TotalFloor as total_floor,
                   TotalParking as total_parking,
                   TotalAnbari as total_anbari,
-                  ProjectType as project_type
+                  ProjectType as project_type,
+                  Useage_Sanati as usage_sanati
           from    PlanControl_Projects
           where   CaseNo = '${caseNo}'
        ) as pcp

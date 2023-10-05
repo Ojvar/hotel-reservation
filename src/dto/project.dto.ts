@@ -50,6 +50,8 @@ export class ProjectSummaryDTO extends Model {
   total_anbari: number | null;
   @property({type: 'string'})
   project_type: string;
+  @property({type: 'number'})
+  usage_sanati: number | null;
 
   @property.array(ProjectSummaryEngineerDTO, {})
   engineers: ProjectSummaryEngineersDTO;
@@ -73,6 +75,7 @@ export class ProjectSummaryDTO extends Model {
       total_anbari: firstData.total_anbari,
       total_parking: firstData.total_parking,
       project_type: firstData.project_type,
+      usage_sanati: firstData.usage_sanati,
       engineers: data.recordset.map(
         item =>
           new ProjectSummaryEngineerDTO({
