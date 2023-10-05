@@ -7,7 +7,7 @@ import {EnumRoles, protect} from '../lib-keycloak/src';
 const BASE_ADDR = '/projects';
 const tags = ['projects'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATOR))
+@intercept(protect(EnumRoles.MANUAL_RECEPTION_SERVIE_OPERATOR))
 export class ProjectController {
   constructor(
     @inject(ProjectService.BINDING_KEY) private projectService: ProjectService,
