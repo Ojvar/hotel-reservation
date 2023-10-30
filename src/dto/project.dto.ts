@@ -89,4 +89,37 @@ export class ProjectSummaryDTO extends Model {
       ),
     });
   }
+
+  static fromDataArray(data: IResult<ProjectSummaryItem>): ProjectsSummaryDTO {
+    return data.recordset.map(
+      row =>
+        new ProjectSummaryDTO({
+          id: row.id,
+          case_no: row.case_no,
+          owner_name: row.owner_name,
+          owner_father: row.owner_father,
+          owner_cert_id: row.owner_shsh,
+          owner_mobile: row.owner_mobile,
+          total_units: row.total_units,
+          total_area: row.total_area,
+          total_floor: row.total_floor,
+          total_anbari: row.total_anbari,
+          total_parking: row.total_parking,
+          project_type: row.project_type,
+          usage_sanati: row.usage_sanati,
+          engineers: data.recordset.map(
+            item =>
+              new ProjectSummaryEngineerDTO({
+                eng_type: item.engineer_type,
+                personal_id: item.personel_id,
+                first_name: item.engineer_name,
+                last_name: item.engineer_family,
+                gender: item.gender,
+                shbillet: item.shbillet,
+              }),
+          ),
+        }),
+    );
+  }
 }
+export type ProjectsSummaryDTO = ProjectSummaryDTO[];
