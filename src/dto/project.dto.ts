@@ -1,7 +1,42 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {Model, model, property} from '@loopback/repository';
+import {AnyObject, Model, model, property} from '@loopback/repository';
 import {IResult} from 'mssql';
 import {ProjectSummaryItem} from '../services';
+
+@model()
+export class WorkRefReadyDTO extends Model {
+  @property({tyep: 'number'})
+  id: number;
+  @property({tyep: 'string'})
+  owner_name: string;
+  @property({tyep: 'string'})
+  city: string;
+  @property({tyep: 'number'})
+  city_id: number;
+  @property({tyep: 'string'})
+  case_no: string;
+  @property({tyep: 'date'})
+  case_date: Date;
+  @property({tyep: 'number'})
+  sahmie_metraj: number;
+  @property({tyep: 'number'})
+  ttl: number;
+  @property({tyep: 'string'})
+  extra: string;
+
+  constructor(data?: Partial<WorkRefReadyDTO>) {
+    super(data);
+  }
+
+  static fromModel(data: AnyObject): WorkRefReadyDTO {
+    return new WorkRefReadyDTO(data);
+  }
+
+  static fromDataArray(data: IResult<WorkRefReadyDTO>): WorkRefReadyListDTO {
+    return data.recordset.map(row => new WorkRefReadyDTO(row));
+  }
+}
+export type WorkRefReadyListDTO = WorkRefReadyDTO[];
 
 @model()
 export class ProjectSummaryEngineerDTO extends Model {

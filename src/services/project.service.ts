@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {MsSqlService} from './ms-sql.service';
-import {ProjectsSummaryDTO, ProjectSummaryDTO} from '../dto';
+import {
+  ProjectsSummaryDTO,
+  ProjectSummaryDTO,
+  WorkRefReadyDTO,
+  WorkRefReadyListDTO,
+} from '../dto';
 import {HttpErrors} from '@loopback/rest';
 import {Filter} from '@loopback/repository';
 
@@ -104,6 +109,23 @@ OFFSET ${Math.max(skip, 0)} ROWS
 FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
 `;
 
+  private workRefListQuery = (minTtl = 0) => `
+	SELECT
+			p.[id] as id,
+			p.[Owner_Name] as owner_name,
+			c.[city] as city,
+			c.[city_id] as city_id,
+			p.[CaseNo] as case_no,
+			p.[CaseDate] as case_date,
+			p.[SahmieMetraj] as sahmie_metrage,
+			p.[ttl] as ttl
+	FROM
+			[wref].[viw_projects_list] AS p
+		INNER JOIN [nezam].[dbo].[cities] AS c ON p.city_id = c.city_id
+	WHERE
+			(p.ttl > ${minTtl})
+`;
+
   async getProjectSummaryByCaseNo(caseNo: string): Promise<ProjectSummaryDTO> {
     const result = await this.sqlService.runQueryWithResult<ProjectSummaryItem>(
       this.projectSummaryQueryByCaseNo(caseNo),
@@ -121,5 +143,12 @@ FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
       this.projectsSummaryQuery(filter?.skip, filter?.limit),
     );
     return ProjectSummaryDTO.fromDataArray(result);
+  }
+
+  async readyForWorkRefList(): Promise<WorkRefReadyListDTO> {
+    const result = await this.sqlService.runQueryWithResult<WorkRefReadyDTO>(
+      this.workRefListQuery(0),
+    );
+    return WorkRefReadyDTO.fromDataArray(result);
   }
 }

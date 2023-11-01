@@ -1,7 +1,12 @@
 import {inject, intercept} from '@loopback/core';
 import {ProjectService} from '../services';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
-import {ProjectsSummaryDTO, ProjectSummaryDTO} from '../dto';
+import {
+  ProjectsSummaryDTO,
+  ProjectSummaryDTO,
+  WorkRefReadyDTO,
+  WorkRefReadyListDTO,
+} from '../dto';
 import {EnumRoles, protect} from '../lib-keycloak/src';
 import {Filter} from '@loopback/repository';
 
@@ -39,7 +44,12 @@ export class ProjectController {
     responses: {
       200: {
         content: {
-          'application/json': {schema: getModelSchemaRef(ProjectSummaryDTO)},
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(ProjectSummaryDTO),
+            },
+          },
         },
       },
     },
@@ -48,5 +58,26 @@ export class ProjectController {
     @param.filter(ProjectSummaryDTO) filter?: Filter<ProjectSummaryDTO>,
   ): Promise<ProjectsSummaryDTO> {
     return this.projectService.getProjectSummary(filter);
+  }
+
+  @get(`${BASE_ADDR}/workref-ready-list`, {
+    tags,
+    summary: 'Get work-ref ready projects list',
+    description: 'Get work-ref ready projects list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(WorkRefReadyDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getWorkrefReadyList(): Promise<WorkRefReadyListDTO> {
+    return this.projectService.readyForWorkRefList();
   }
 }
