@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {MsSqlService} from './ms-sql.service';
+import {Filter} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 import {
-  ProjectsSummaryDTO,
   ProjectSummaryDTO,
+  ProjectsSummaryDTO,
   WorkRefReadyDTO,
   WorkRefReadyListDTO,
 } from '../dto';
-import {HttpErrors} from '@loopback/rest';
-import {Filter} from '@loopback/repository';
+import {MsSqlService} from './ms-sql.service';
 
 export interface ProjectSummaryEngineer {
   engineer_type: string;
@@ -52,7 +52,7 @@ SELECT  pcp.*,
         p.family as engineer_family,
         p.sexuality as gender,
         p.shbillet as shbillet
-FROM    
+FROM
        (
           select  id,
                   CaseNo as case_no,
@@ -113,6 +113,21 @@ FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
 	SELECT
 			p.[id] as id,
 			p.[Owner_Name] as owner_name,
+      p.[Address_Street] as Address_Street,
+      p.[TotalArea] as TotalArea,
+      p.[TotalFloor] as TotalFloor,
+      p.[Useage_Maskooni] as Useage_Maskooni,
+p.[Useage_Edari] as Useage_Edari,
+p.[Useage_Tejari] as Useage_Tejari,
+p.[Useage_Sanati] as Useage_Sanati,
+p.[Useage_Damdari] as Useage_Damdari,
+p.[Useage_Golkhane] as Useage_Golkhane,
+p.[Useage_Morghdari] as Useage_Morghdari,
+p.[Useage_TasisatShahri] as Useage_TasisatShahri,
+p.[Useage_Behdashti] as Useage_Behdashti,
+p.[Useage_Amoozeshi] as Useage_Amoozeshi,
+p.[Useage_Khadamati] as Useage_Khadamati,
+p.[Useage_Other] as Useage_Other,
 			c.[city] as city,
 			c.[city_id] as city_id,
 			p.[CaseNo] as case_no,
