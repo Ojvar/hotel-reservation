@@ -1,4 +1,18 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+export type FieldItemType = {
+  title: string;
+  nezarat: string | undefined;
+  tarahi: string | undefined;
+  ejra: string | undefined;
+};
+export type FieldType = Record<string, FieldItemType>;
+export type LevelItemType = {
+  id: string;
+  title: string;
+};
+export type LevelType = Record<string, LevelItemType>;
+export type JsonDataType = Record<string, FieldType | LevelType>;
+
 export class EngineerDTO {
   id: number;
   code: string;

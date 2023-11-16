@@ -1,8 +1,14 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {AnyObject} from '@loopback/repository';
 import Data from '../static/data.json';
 import {MsSqlService} from './ms-sql.service';
-import {EngineerDTO} from '../dto/engineer.dto';
+import {
+  EngineerDTO,
+  FieldItemType,
+  FieldType,
+  LevelType,
+} from '../dto/engineer.dto';
 import {HttpErrors} from '@loopback/rest';
 
 @injectable({scope: BindingScope.APPLICATION})
@@ -24,7 +30,7 @@ export class EngineerService {
 `;
 
   async parseUser(nId: string): Promise<Record<string, AnyObject>> {
-    const level = Data.level as AnyObject;
+    const level = Data.level as LevelType;
     const nullLevel = level['4'];
 
     const user: AnyObject | undefined = await this.getUserData(nId);
@@ -32,13 +38,14 @@ export class EngineerService {
       throw new HttpErrors.NotFound('Invalid user data');
     }
 
+    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
     const [_province, reshteh, ..._other] = user.code.split('_');
     const fields = reshteh
       .replace(/\)|\(/gi, '')
       .split(this.FIELD_SEPARATOR)
-      .map((x: any) => (Data.fields as AnyObject)[x]);
+      .map((x: string) => (Data.fields as FieldType)[x]);
 
-    const licenses = fields.map((field: any, i: number) => {
+    const licenses = fields.map((field: FieldItemType, i: number) => {
       const n = i > 0 ? (i + 1).toString() : '';
       const res = {
         level: i + 1,
@@ -51,9 +58,9 @@ export class EngineerService {
       };
       res.field = {
         ...res.field,
-        nezarat: !!res.work_n.title ? res.work_n.id : undefined,
-        ejra: !!res.work_e.title ? res.work_e.id : undefined,
-        tarahi: !!res.work_t.title ? res.work_t.id : undefined,
+        nezarat: res.work_n.title ? res.work_n.id : undefined,
+        ejra: res.work_e.title ? res.work_e.id : undefined,
+        tarahi: res.work_t.title ? res.work_t.id : undefined,
       };
       return res;
     });
