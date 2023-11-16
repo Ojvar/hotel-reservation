@@ -8,51 +8,239 @@ export class WorkRefReadyDTO extends Model {
   @property({tyep: 'number'})
   id: number;
   @property({tyep: 'string'})
-  owner_name: string;
+  ownerName: string;
+  @property({tyep: 'string'})
+  ownerShsh: string;
+  @property({tyep: 'string'})
+  ownerMobile: string;
   @property({tyep: 'string'})
   city: string;
   @property({tyep: 'number'})
-  city_id: number;
+  cityId: number;
   @property({tyep: 'string'})
-  case_no: string;
+  caseNo: string;
   @property({tyep: 'date'})
-  case_date: Date;
+  caseDate: Date;
   @property({tyep: 'number'})
-  sahmie_metraj: number;
+  sahmieMetraj: number;
   @property({tyep: 'number'})
   ttl: number;
   @property({tyep: 'string'})
   extra: string;
   @property({tyep: 'string'})
-  Address_Street: string;
+  addressStreet: string;
   @property({tyep: 'string'})
-  TotalArea: string;
+  totalArea: string;
   @property({tyep: 'string'})
-  TotalFloor: string;
+  totalFloor: string;
   @property({tyep: 'boolean'})
-  Useage_Maskooni: boolean;
+  useageMaskooni: boolean;
   @property({tyep: 'boolean'})
-  Useage_Edari: boolean;
+  useageEdari: boolean;
   @property({tyep: 'boolean'})
-  Useage_Tejari: boolean;
+  useageTejari: boolean;
   @property({tyep: 'boolean'})
-  Useage_Sanati: boolean;
+  useageSanati: boolean;
   @property({tyep: 'boolean'})
-  Useage_Damdari: boolean;
+  useageDamdari: boolean;
   @property({tyep: 'boolean'})
-  Useage_Golkhane: boolean;
+  useageGolkhane: boolean;
   @property({tyep: 'boolean'})
-  Useage_Morghdari: boolean;
+  useageMorghdari: boolean;
   @property({tyep: 'boolean'})
-  Useage_TasisatShahri: boolean;
+  useageTasisatShahri: boolean;
   @property({tyep: 'boolean'})
-  Useage_Behdashti: boolean;
+  useageBehdashti: boolean;
   @property({tyep: 'boolean'})
-  Useage_Amoozeshi: boolean;
+  useageAmoozeshi: boolean;
   @property({tyep: 'boolean'})
-  Useage_Khadamati: boolean;
+  useageKhadamati: boolean;
   @property({tyep: 'boolean'})
-  Useage_Other: boolean;
+  useageOther: boolean;
+  @property({tyep: 'number'})
+  officeId: number;
+  @property({tyep: 'number'})
+  buildingDensity: number;
+  @property({tyep: 'number'})
+  betooniFelezi: number;
+  @property({tyep: 'string'})
+  nosaziCode: string;
+  @property({tyep: 'string'})
+  gharardadId: string;
+  @property({tyep: 'string'})
+  jooshGharardadId: string;
+  @property({tyep: 'string'})
+  milgerdGharardadId: string;
+  @property({tyep: 'string'})
+  geoGharardadId: string;
+  @property({tyep: 'string'})
+  barghGharardadId: string;
+  @property({tyep: 'string'})
+  polyGharardadId: string;
+  @property({tyep: 'boolean'})
+  hasLift: boolean;
+  @property({tyep: 'boolean'})
+  hasUnderground: boolean;
+  @property({tyep: 'boolean'})
+  inOldArea: boolean;
+  @property({tyep: 'boolean'})
+  hasPolystiren: boolean;
+  @property({tyep: 'number'})
+  tejariUnits: number;
+  @property({tyep: 'number'})
+  maskooniUnits: number;
+  @property({tyep: 'number'})
+  areaAfterRetreat: number;
+  @property({tyep: 'string'})
+  malekNezarat: string;
+  @property({tyep: 'string'})
+  malekNaghshe: string;
+  @property({tyep: 'number'})
+  mojriId: number;
+  @property({tyep: 'number'})
+  mojriType: number;
+  @property({tyep: 'string'})
+  municipalDesc: string;
+  @property({tyep: 'string'})
+  navaghesNazariyeProject: string;
+  @property({tyep: 'number'})
+  unitLow100: number;
+  @property({tyep: 'number'})
+  unitHigh100: number;
+  @property({tyep: 'number'})
+  unitHigh200: number;
+  @property({tyep: 'boolean'})
+  dualNazer: boolean;
+  @property({tyep: 'string'})
+  tarkhisName: string;
+  @property({tyep: 'string'})
+  ownerAddress: string;
+  @property({tyep: 'number'})
+  areaBeforeRetreat: number;
+  @property({tyep: 'number'})
+  fromNorth: number;
+  @property({tyep: 'number'})
+  fromEast: number;
+  @property({tyep: 'number'})
+  fromSouth: number;
+  @property({tyep: 'number'})
+  fromWest: number;
+  @property({tyep: 'boolean'})
+  facadeBrick: boolean;
+  @property({tyep: 'boolean'})
+  facadeStone: boolean;
+  @property({tyep: 'boolean'})
+  facadeConcrete: boolean;
+  @property({tyep: 'boolean'})
+  facadeGlass: boolean;
+  @property({tyep: 'boolean'})
+  facadeAluminium: boolean;
+  @property({tyep: 'boolean'})
+  facadeOther: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatTar: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatIsogam: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatMosaic: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatAsphalt: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatSteel: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatPottery: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatGalvanized: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatConcrete: boolean;
+  @property({tyep: 'boolean'})
+  roofCoatOther: boolean;
+  @property({tyep: 'boolean'})
+  floorAccessStair: boolean;
+  @property({tyep: 'boolean'})
+  floorAccessEscalator: boolean;
+  @property({tyep: 'boolean'})
+  floorAccessEsc: boolean;
+  @property({tyep: 'boolean'})
+  winSteel: boolean;
+  @property({tyep: 'boolean'})
+  winAluminium: boolean;
+  @property({tyep: 'boolean'})
+  winPvc: boolean;
+  @property({tyep: 'boolean'})
+  winWood: boolean;
+  @property({tyep: 'boolean'})
+  winOther: boolean;
+  @property({tyep: 'boolean'})
+  fundationMonfared: boolean;
+  @property({tyep: 'boolean'})
+  fundationNavari: boolean;
+  @property({tyep: 'boolean'})
+  fundationGostarde: boolean;
+  @property({tyep: 'boolean'})
+  fundationDeep: boolean;
+  @property({tyep: 'boolean'})
+  fundationSemiDeep: boolean;
+  @property({tyep: 'boolean'})
+  fundationParticular: boolean;
+  @property({tyep: 'boolean'})
+  roofTirche: boolean;
+  @property({tyep: 'boolean'})
+  roofSlab: boolean;
+  @property({tyep: 'boolean'})
+  roofMorakab: boolean;
+  @property({tyep: 'boolean'})
+  roofReadyMade: boolean;
+  @property({tyep: 'boolean'})
+  roofChromite: boolean;
+  @property({tyep: 'boolean'})
+  roofComposite: boolean;
+  @property({tyep: 'boolean'})
+  roofSteelDeck: boolean;
+  @property({tyep: 'string'})
+  roofOther: string;
+  @property({tyep: 'boolean'})
+  heatingCentral: boolean;
+  @property({tyep: 'boolean'})
+  heatingPackage: boolean;
+  @property({tyep: 'boolean'})
+  heatingChimney: boolean;
+  @property({tyep: 'boolean'})
+  heatingFireplace: boolean;
+  @property({tyep: 'boolean'})
+  heatingOthere: boolean;
+  @property({tyep: 'boolean'})
+  coolingCentral: boolean;
+  @property({tyep: 'boolean'})
+  coolingPackage: boolean;
+  @property({tyep: 'boolean'})
+  coolingWCooler: boolean;
+  @property({tyep: 'boolean'})
+  coolingAc: boolean;
+  @property({tyep: 'boolean'})
+  coolingOther: boolean;
+  @property({tyep: 'boolean'})
+  sewageSeptic: boolean;
+  @property({tyep: 'boolean'})
+  sewageSewer: boolean;
+  @property({tyep: 'boolean'})
+  sewageChahjazbi: boolean;
+  @property({tyep: 'boolean'})
+  sewageOther: boolean;
+  @property({tyep: 'boolean'})
+  othersCentralAnthena: boolean;
+  @property({tyep: 'boolean'})
+  othersFireAlarm: boolean;
+  @property({tyep: 'number'})
+  buildingImportance: number;
+  @property({tyep: 'number'})
+  totalParking: number;
+  @property({tyep: 'number'})
+  totalAnbari: number;
+  @property({tyep: 'number'})
+  projectType: number;
+  @property({tyep: 'number'})
+  area: number;
 
   constructor(data?: Partial<WorkRefReadyDTO>) {
     super(data);
