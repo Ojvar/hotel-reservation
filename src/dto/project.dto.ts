@@ -23,6 +23,36 @@ export class WorkRefReadyDTO extends Model {
   ttl: number;
   @property({tyep: 'string'})
   extra: string;
+  @property({tyep: 'string'})
+  Address_Street: string;
+  @property({tyep: 'string'})
+  TotalArea: string;
+  @property({tyep: 'string'})
+  TotalFloor: string;
+  @property({tyep: 'boolean'})
+  Useage_Maskooni: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Edari: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Tejari: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Sanati: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Damdari: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Golkhane: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Morghdari: boolean;
+  @property({tyep: 'boolean'})
+  Useage_TasisatShahri: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Behdashti: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Amoozeshi: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Khadamati: boolean;
+  @property({tyep: 'boolean'})
+  Useage_Other: boolean;
 
   constructor(data?: Partial<WorkRefReadyDTO>) {
     super(data);
