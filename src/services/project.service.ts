@@ -70,7 +70,7 @@ FROM
           from    PlanControl_Projects
           where   CaseNo = '${caseNo}'
        ) as pcp
-     left join PlanControl_ProjectEngineers as ppe   on ppe.Project_Id = pcp.id
+     left join PlanControl_ProjectEngineers as ppe   on (ppe.Project_Id = pcp.id and ppe.[State] <> -1)
      left join personnel as p                        on p.id = ppe.Personel_Id
 `;
 
