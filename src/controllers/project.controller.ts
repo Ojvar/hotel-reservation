@@ -2,6 +2,7 @@ import {inject, intercept} from '@loopback/core';
 import {ProjectService} from '../services';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
+  ProjectDetailsDTO,
   ProjectsSummaryDTO,
   ProjectSummaryDTO,
   WorkRefReadyDTO,
@@ -19,10 +20,28 @@ export class ProjectController {
     @inject(ProjectService.BINDING_KEY) private projectService: ProjectService,
   ) {}
 
+  @get(`${BASE_ADDR}/{case_no}/details`, {
+    tags,
+    summary: "Get project's details by case-no",
+    description: "Get project's details by case-no",
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(ProjectDetailsDTO)},
+        },
+      },
+    },
+  })
+  async getProjectDetailsByCaseNo(
+    @param.path.string('case_no') caseNo: string,
+  ): Promise<ProjectDetailsDTO> {
+    return this.projectService.getProjectDetailsByCaseNo(caseNo);
+  }
+
   @get(`${BASE_ADDR}/{case_no}`, {
     tags,
-    summary: 'Get projects list by case-no',
-    description: 'Get projects list by case-no',
+    summary: 'Get project summary by case-no',
+    description: 'Get project summary by case-no',
     responses: {
       200: {
         content: {

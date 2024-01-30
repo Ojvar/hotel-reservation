@@ -3,8 +3,9 @@ import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {Filter} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {
-  ProjectSummaryDTO,
+  ProjectDetailsDTO,
   ProjectsSummaryDTO,
+  ProjectSummaryDTO,
   WorkRefReadyDTO,
   WorkRefReadyListDTO,
 } from '../dto';
@@ -18,6 +19,7 @@ export interface ProjectSummaryEngineer {
   gender: string;
   shbillet: string;
 }
+
 export interface ProjectSummaryItem extends ProjectSummaryEngineer {
   id: string;
   case_no: string;
@@ -34,6 +36,247 @@ export interface ProjectSummaryItem extends ProjectSummaryEngineer {
   project_type: string;
 }
 
+export interface PlanControlProject {
+  id: bigint;
+  TrackCode: bigint | null;
+  OfficeId: number | null;
+  MainRecordZip: string | null;
+  SecondryRecordZip: string | null;
+  RecodZipPart: string | null;
+  RecodZipSection: string | null;
+  Address_State: number | null;
+  city_id: number | null;
+  Address_Municipal: number | null;
+  Address_Zone: number | null;
+  Address_Neighborhood: string | null;
+  Address_Street: string | null;
+  Address_Alley: string | null;
+  Address_Zip: string | null;
+  Address_PostalCode: bigint | null;
+  Owner_Name: string | null;
+  Owner_Father: string | null;
+  Owner_shsh: string | null;
+  Owner_RegisterPlace: string | null;
+  Lawyer_Name: string | null;
+  Lawyer_Father: string | null;
+  Lawyer_shsh: string | null;
+  Lawyer_RegisterPlace: string | null;
+  OwnershipType: number | null;
+  OwnershipTypeName: string | null;
+  CaseNo: string | null;
+  CaseDate: Date | null;
+  MapCreateFormNo: string | null;
+  MapCreateDate: Date | null;
+  BuildingDensity: number | null;
+  Useage_Maskooni: boolean | null;
+  Useage_Edari: boolean | null;
+  Useage_Tejari: boolean | null;
+  Useage_Sanati: boolean | null;
+  Useage_Damdari: boolean | null;
+  Useage_Golkhane: boolean | null;
+  Useage_Morghdari: boolean | null;
+  Useage_TasisatShahri: boolean | null;
+  Useage_Behdashti: boolean | null;
+  Useage_Amoozeshi: boolean | null;
+  Useage_Khadamati: boolean | null;
+  Useage_Other: boolean | null;
+  Useage_Other_Id: number | null;
+  Useage_OtherTypeName: string | null;
+  Area: number | null;
+  ConstructionPlace: number | null;
+  AllowedFloorConstruction: number | null;
+  AllowedFloorConstructionType: number | null;
+  DimentionRegisterdNorth: string | null;
+  DimentionRegisterdEast: string | null;
+  DimentionRegisterdSoth: string | null;
+  DimentionRegisterdWest: string | null;
+  DimentionRegusterdPekh: string | null;
+  DimentionCurrNorth: string | null;
+  DimentionCurrEast: string | null;
+  DimentionCurrSouth: string | null;
+  DimentionCurrWest: string | null;
+  DimentionCurrPekh: string | null;
+  DimentionRemainNorth: string | null;
+  DimentionRemainEast: string | null;
+  DimentionRemainSouth: string | null;
+  DimentionRemainWest: string | null;
+  DimentionRemainPekh: string | null;
+  GozarEslahiNorth: string | null;
+  GozarEslahiEast: string | null;
+  GozarEslahiSouth: string | null;
+  GozarEslahiWest: string | null;
+  GozarEslahiRemainNorth: string | null;
+  GozarEslahiRemainEast: string | null;
+  GozarEslahiRemainSouth: string | null;
+  GozarEslahiRemainWest: string | null;
+  HarimGozar: number | null;
+  BarVaKafDesc: string | null;
+  BuildingLicenseNo: string | null;
+  BuildingLicenseType: number | null;
+  BuildingLicenseFileNo: string | null;
+  BuildingLicenseDate: Date | null;
+  RequestNo: string | null;
+  RequestDate: Date | null;
+  RequestPelakSabti: string | null;
+  RequestBakhsh: string | null;
+  ExtendStartDate: Date | null;
+  ExtendDuration: number | null;
+  TotalArea: number | null;
+  TotalFloor: number | null;
+  TotalUnits: number | null;
+  EstehkamDegree: number | null;
+  EstehkamMetraj: number | null;
+  EstehkamDate: Date | null;
+  BetooniFelezi: number | null;
+  NosaziCode: string | null;
+  Gharardad_Id: number | null;
+  Joosh_Gharardad_Id: number | null;
+  Milgerd_Gharardad_Id: number | null;
+  Geo_Gharardad_Id: number | null;
+  Bargh_Gharardad_Id: number | null;
+  Poly_Gharardad_Id: number | null;
+  HasLift: boolean | null;
+  HasUnderground: boolean | null;
+  Owner_Phone: string | null;
+  OwnerMobile: string | null;
+  OwnerCompany: string | null;
+  HasPartner: boolean | null;
+  PartnerName: string | null;
+  InOldArea: boolean | null;
+  HasPolystiren: boolean | null;
+  TejariUnits: number | null;
+  MaskooniUnits: number | null;
+  AreaAfterRetreat: number | null;
+  Malek_Nezarat: string | null;
+  Malek_Naghshe: string | null;
+  useage_id1: number | null;
+  useage_id2: number | null;
+  useage_id3: number | null;
+  useage_id4: number | null;
+  useage_id5: number | null;
+  useage_id6: number | null;
+  useage_id7: number | null;
+  useage_id8: number | null;
+  floor_id1: number | null;
+  floor_id2: number | null;
+  floor_id3: number | null;
+  floor_id4: number | null;
+  floor_id5: number | null;
+  floor_id6: number | null;
+  floor_id7: number | null;
+  floor_id8: number | null;
+  floor_id10: number | null;
+  floor_id11: number | null;
+  ProjectConfirmed: boolean | null;
+  Project_Signed: boolean | null;
+  ProjectSendToOrg: boolean | null;
+  Mojri_Id: number | null;
+  Mojri_Type: number | null;
+  MunicipalDesc: string | null;
+  TotalAreaStr: string | null;
+  NavaghesNazariyeProject: string | null;
+  RegisterDateForSign: Date | null;
+  pc_Id: number | null;
+  UnitLow100: number | null;
+  UnitHigh200: number | null;
+  UnitHigh100: number | null;
+  dualNazer: number | null;
+  Desc: string | null;
+  RegisterNo: string | null;
+  RegisterDate: Date | null;
+  MunicipalHeader: string | null;
+  MunicipalFooter: string | null;
+  FinishNo: string | null;
+  FinishDate: Date | null;
+  FinishDesc: string | null;
+  State: number | null;
+  SahmieType: number | null;
+  SahmieMetraj: number | null;
+  SahmieDesc: string | null;
+  TarkhisDate: Date | null;
+  TarkhisName: string | null;
+  OwnerAddress: string | null;
+  AreaBeforeRetreat: number | null;
+  FromNorth: string | null;
+  FromEast: string | null;
+  FromSouth: string | null;
+  FromWest: string | null;
+  CaseQueueDate: Date | null;
+  ProxyNo: string | null;
+  ProxyDate: Date | null;
+  TechBookRecievedDate: Date | null;
+  TechBookSerialNumber: string | null;
+  TechBookIssueDate: Date | null;
+  TechBookOwnerName: string | null;
+  TechBookFloor: number | null;
+  TechBookArea: number | null;
+  TechBookUnit: number | null;
+  TechBookDeliverDate: Date | null;
+  FacadeBrick: boolean | null;
+  FacadeStone: boolean | null;
+  FacadeConcrete: boolean | null;
+  FacadeGlass: boolean | null;
+  FacadeAluminium: boolean | null;
+  FacadeOther: string | null;
+  RoofCoatTar: boolean | null;
+  RoofCoatIsogam: boolean | null;
+  RoofCoatMosaic: boolean | null;
+  RoofCoatAsphalt: boolean | null;
+  RoofCoatSteel: boolean | null;
+  RoofCoatPottery: boolean | null;
+  RoofCoatGalvanized: boolean | null;
+  RoofCoatConcrete: boolean | null;
+  RoofCoatOther: string | null;
+  FloorAccessStair: boolean | null;
+  FloorAccessEscalator: boolean | null;
+  FloorAccessEsc: boolean | null;
+  WinSteel: boolean | null;
+  WinAluminium: boolean | null;
+  WinPVC: boolean | null;
+  WinWood: boolean | null;
+  WinOther: string | null;
+  FundationMonfared: boolean | null;
+  FundationNavari: boolean | null;
+  FundationGostarde: boolean | null;
+  FundationDeep: boolean | null;
+  FundationSemiDeep: boolean | null;
+  FundationParticular: boolean | null;
+  RoofTirche: boolean | null;
+  RoofSlab: boolean | null;
+  RoofMorakab: boolean | null;
+  RoofReadyMade: boolean | null;
+  RoofChromite: boolean | null;
+  RoofComposite: boolean | null;
+  RoofSteelDeck: boolean | null;
+  RoofOther: string | null;
+  HeatingCentral: boolean | null;
+  HeatingPackage: boolean | null;
+  HeatingChimney: boolean | null;
+  HeatingFireplace: boolean | null;
+  HeatingOthere: string | null;
+  CoolingCentral: boolean | null;
+  CoolingPackage: boolean | null;
+  CoolingWCooler: boolean | null;
+  CoolingAC: boolean | null;
+  CoolingOther: string | null;
+  SewageSeptic: boolean | null;
+  SewageSewer: boolean | null;
+  SewageChahjazbi: boolean | null;
+  SewageOther: string | null;
+  OthersCentralAnthena: boolean | null;
+  OthersFireAlarm: boolean | null;
+  BuildingImportance: number | null;
+  TotalParking: number | null;
+  TotalAnbari: number | null;
+  ProjectType: number | null;
+  ttl: number;
+  extra: string | null;
+  expired_sms_at: Date | null;
+  created_at: Date;
+  total_stop: number | null;
+  is_complete_queue: boolean | null;
+}
+
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectService {
   static BINDING_KEY = BindingKey.create<ProjectService>(
@@ -43,6 +286,12 @@ export class ProjectService {
   constructor(
     @inject(MsSqlService.BINDING_KEY) private sqlService: MsSqlService,
   ) {}
+
+  private projectDetailsQueryByCaseNo = (caseNo: string): string => `
+SELECT  *
+FROM    PlanControl_Projects
+WHERE   CaseNo = '${caseNo}'
+`;
 
   private projectSummaryQueryByCaseNo = (caseNo: string): string => `
 SELECT  pcp.*,
@@ -235,6 +484,16 @@ FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
     WHERE
       (p.ttl > ${minTtl})
       `;
+
+  async getProjectDetailsByCaseNo(caseNo: string): Promise<ProjectDetailsDTO> {
+    const result = await this.sqlService.runQueryWithResult<PlanControlProject>(
+      this.projectDetailsQueryByCaseNo(caseNo),
+    );
+    if (!result.recordset[0]) {
+      throw new HttpErrors.UnprocessableEntity('Invalid case_no value');
+    }
+    return ProjectDetailsDTO.fromData(result);
+  }
 
   async getProjectSummaryByCaseNo(caseNo: string): Promise<ProjectSummaryDTO> {
     const result = await this.sqlService.runQueryWithResult<ProjectSummaryItem>(
