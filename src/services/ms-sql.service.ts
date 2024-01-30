@@ -5,7 +5,7 @@ import {
   injectable,
   lifeCycleObserver,
 } from '@loopback/core';
-import SQL, {config, ConnectionPool, IResult} from 'mssql';
+import sql, {config, ConnectionPool, IResult} from 'mssql';
 
 @lifeCycleObserver('services')
 @injectable({scope: BindingScope.APPLICATION})
@@ -20,7 +20,9 @@ export class MsSqlService {
   private sql: ConnectionPool;
 
   constructor(
-    @inject(MsSqlService.BINDING_KEY_CONFIG, {optional: true})
+    @inject(MsSqlService.BINDING_KEY_CONFIG, {
+      optional: true,
+    })
     private configs: string | config,
   ) {}
 
@@ -29,7 +31,7 @@ export class MsSqlService {
   }
 
   async start(): Promise<void> {
-    this.sql = await SQL.connect(this.configs);
+    this.sql = await sql.connect(this.configs);
   }
 
   async stop(): Promise<void> {
