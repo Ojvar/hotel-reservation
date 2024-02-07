@@ -25,10 +25,12 @@ WORKDIR /home/node/app
 COPY --from=stage_env_prepare "/home/node/app/public" /home/node/app/public/
 COPY --from=stage_env_prepare "/home/node/app/node_modules" /home/node/app/node_modules/
 COPY --from=stage_env_prepare "/home/node/app/dist" /home/node/app/dist
-COPY --from=stage_env_prepare "/home/node/app/package*.json" "/home/node/app/.env" "/home/node/app/keycloak.json" /home/node/app
+COPY --from=stage_env_prepare "/home/node/app/package*.json" "/home/node/app/keycloak.json" /home/node/app
 
-ENV HOST=0.0.0.0 PORT=80
+ENV NODE_ENV=production
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+ENV HOST=0.0.0.0
+ENV PORT=80
 EXPOSE ${PORT}
 CMD [ "node", "." ]
 

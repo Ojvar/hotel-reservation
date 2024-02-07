@@ -2,6 +2,8 @@
 !.yarn/releases
 !.yarn/plugins
 private/ssl/*
+!.end.example
+.env.*
 
 # Logs
 logs
