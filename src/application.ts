@@ -46,10 +46,8 @@ export class ProjectsServiceApplication extends BootMixin(
     this.static('/', path.join(__dirname, '../public'));
 
     // Customize @loopback/rest-explorer configuration here
-    if (!(options.rest?.apiExplorer?.disabled ?? false)) {
       this.configure(RestExplorerBindings.COMPONENT).to({path: '/explorer'});
       this.component(RestExplorerComponent);
-    }
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
