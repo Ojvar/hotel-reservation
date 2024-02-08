@@ -1,22 +1,11 @@
-import {ProjectsServiceApplication} from '../..';
-import {
-  Client,
-  createRestAppClient,
-  givenHttpServerConfig,
-} from '@loopback/testlab';
-import dotenv from 'dotenv';
+import {Client, createRestAppClient} from '@loopback/testlab';
+import {ProjectsServiceApplication, getApplicationConfig} from '../..';
 
 export async function setupApplication(): Promise<AppWithClient> {
-  dotenv.config();
-
-  const restConfig = givenHttpServerConfig({});
-  const app = new ProjectsServiceApplication({rest: restConfig});
-
+  const app = new ProjectsServiceApplication(getApplicationConfig('.env.test'));
   await app.boot();
   await app.start();
-
   const client = createRestAppClient(app);
-
   return {app, client};
 }
 
