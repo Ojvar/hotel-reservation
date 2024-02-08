@@ -12,7 +12,7 @@ import {EnumRoles, protect} from '../lib-keycloak/src';
 import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects';
-const tags = ['projects'];
+const tags = ['Projects'];
 
 @intercept(protect(EnumRoles.MANUAL_RECEPTION_SERVIE_OPERATOR))
 export class ProjectController {

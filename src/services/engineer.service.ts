@@ -3,12 +3,7 @@ import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {AnyObject} from '@loopback/repository';
 import Data from '../static/data.json';
 import {MsSqlService} from './ms-sql.service';
-import {
-  EngineerDTO,
-  FieldItemType,
-  FieldType,
-  LevelType,
-} from '../dto/engineer.dto';
+import {EngineerDTO, FieldItemType, FieldType, LevelType} from '../dto';
 import {HttpErrors} from '@loopback/rest';
 
 @injectable({scope: BindingScope.APPLICATION})

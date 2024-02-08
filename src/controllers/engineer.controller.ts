@@ -5,7 +5,7 @@ import {EnumRoles, protect} from '../lib-keycloak/src';
 import {AnyObject} from '@loopback/repository';
 
 const BASE_ADDR = '/engineers';
-const tags = ['engineers'];
+const tags = ['Engineers'];
 
 @intercept(protect(EnumRoles.MANUAL_RECEPTION_SERVIE_OPERATOR))
 export class EngineerController {
