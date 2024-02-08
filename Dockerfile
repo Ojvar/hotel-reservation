@@ -10,7 +10,7 @@ COPY --chown=node package*.json ./
 RUN npm install --loglevel verbose
 
 COPY --chown=node . .
-RUN npm run build
+RUN NODE_ENV=production npm run build
 
 ## DEPLOY STAGE
 FROM docker.qeng.ir/node:21-slim as stage_deploy

@@ -20,6 +20,7 @@ import {
 } from './lib-keycloak/src';
 import {SENTRY_INTERCEPTOR_CONFIG, SentryComponent} from './lib-sentry/src';
 import {MsSqlService} from './services';
+import {config as SqlConfig} from 'mssql';
 
 export {ApplicationConfig};
 
@@ -32,14 +33,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
     allowedList: string;
     rejectedList: string;
   };
-  sqlDB: {
-    sqlDbHost: string;
-    sqlDbUser: string;
-    sqlDbDomain: string;
-    sqlDbDatabase: string;
-    sqlDbPassword: string;
-    sqlDbPort: string;
-  };
+  sqlDbConfig: SqlConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -83,15 +77,13 @@ export class ProjectsServiceApplication extends BootMixin(
 
     // Keycloak
     const splitRegex = new RegExp(/[,;\t\ ]/, 'g');
-    const allowed_roles = (options.keycloak.allowedList ?? '')
-      .split(splitRegex)
-      .filter(x => !!x);
-    const rejected_roles = (options.keycloak.rejectedList ?? '')
-      .split(splitRegex)
-      .filter(x => !!x);
     this.bind(KEYCLOAK_LOCAL_ACL).to({
-      rejected_roles,
-      allowed_roles,
+      rejected_roles: options.keycloak.rejectedList
+        .split(splitRegex)
+        .filter(x => !!x),
+      allowed_roles: options.keycloak.allowedList
+        .split(splitRegex)
+        .filter(x => !!x),
     });
     this.bind(KeycloakDataSource.CONFIG_BINDING_KEY).to({
       baseURL: KeycloakJson['auth-server-url'],
@@ -106,18 +98,6 @@ export class ProjectsServiceApplication extends BootMixin(
     this.sequence(KeycloakSequence);
 
     // SqlDB
-    this.bind(MsSqlService.BINDING_KEY_CONFIG).to({
-      user: options.sqlDB.sqlDbUser,
-      domain: options.sqlDB.sqlDbDomain,
-      password: options.sqlDB.sqlDbPassword,
-      database: options.sqlDB.sqlDbDatabase,
-      server: options.sqlDB.sqlDbHost,
-      port: options.sqlDB.sqlDbPort ? +options.sqlDB.sqlDbPort : undefined,
-      pool: {max: 10, min: 0, idleTimeoutMillis: 30000},
-      options: {
-        encrypt: false, // for azure
-        trustServerCertificate: true, // change to true for local dev / self-signed certs
-      },
-    });
+    this.bind(MsSqlService.BINDING_KEY_CONFIG).to(options.sqlDbConfig);
   }
 }

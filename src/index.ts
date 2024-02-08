@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import fs, {readFileSync} from 'fs';
+import fs from 'fs';
 import path from 'path';
 import {
   ProjectsServiceApplication,
@@ -47,9 +47,7 @@ export function getApplicationConfig(
         'x-powered-by': !isProduction,
         env: process.env.NODE_ENV ?? 'production',
       },
-      apiExplorer: {
-        disabled: isProduction,
-      },
+      apiExplorer: {disabled: isProduction},
       port: +(process.env.PORT ?? 3000),
       host: process.env.HOST,
       basePath: process.env.BASE_PATH ?? '',
@@ -58,22 +56,14 @@ export function getApplicationConfig(
         : {
             protocol: 'https',
             key: process.env.SSL_KEY
-              ? readFileSync(path.resolve(process.env.SSL_KEY))
+              ? fs.readFileSync(path.resolve(process.env.SSL_KEY))
               : '',
             cert: process.env.SSL_CERT
-              ? readFileSync(path.resolve(process.env.SSL_CERT))
+              ? fs.readFileSync(path.resolve(process.env.SSL_CERT))
               : '',
           }),
-      // The `gracePeriodForClose` provides a graceful close for http/https
-      // servers with keep-alive clients. The default value is `Infinity`
-      // (don't force-close). If you want to immediately destroy all sockets
-      // upon stop, set its value to `0`.
-      // See https://www.npmjs.com/package/stoppable
-      gracePeriodForClose: 5000, // 5 seconds
-      openApiSpec: {
-        // useful when used with OpenAPI-to-GraphQL to locate your application
-        setServersFromRequest: true,
-      },
+      gracePeriodForClose: 5000,
+      openApiSpec: {setServersFromRequest: true},
     },
     sentry: {
       dsn: process.env.SENTRY_DSN,
@@ -83,13 +73,18 @@ export function getApplicationConfig(
       allowedList: process.env.KEYCLOAK_ALLOWED_LIST,
       rejectedList: process.env.KEYCLOAK_REJECTED_LIST,
     },
-    sqlDB: {
-      sqlDbHost: process.env.SQL_DB_HOST,
-      sqlDbUser: process.env.SQL_DB_USER,
-      sqlDbDomain: process.env.SQL_DB_DOMAIN,
-      sqlDbDatabase: process.env.SQL_DB_DATABASE,
-      sqlDbPassword: process.env.SQL_DB_PASSWORD,
-      sqlDbPort: process.env.SQL_DB_PORT,
+    sqlDbConfig: {
+      user: process.env.SQL_DB_USER,
+      domain: process.env.SQL_DB_DOMAIN,
+      password: process.env.SQL_DB_PASSWORD,
+      database: process.env.SQL_DB_DATABASE,
+      server: process.env.SQL_DB_HOST,
+      port: process.env.SQL_DB_PORT ? +process.env.SQL_DB_PORT : undefined,
+      pool: {max: 10, min: 0, idleTimeoutMillis: 30000},
+      options: {
+        encrypt: false, // for azure
+        trustServerCertificate: true, // change to true for local dev / self-signed certs
+      },
     },
   };
 }
