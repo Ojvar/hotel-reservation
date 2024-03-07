@@ -275,6 +275,7 @@ export interface PlanControlProject {
   created_at: Date;
   total_stop: number | null;
   is_complete_queue: boolean | null;
+  city?: string | null;
 }
 
 @injectable({scope: BindingScope.APPLICATION})
@@ -288,8 +289,10 @@ export class ProjectService {
   ) {}
 
   private projectDetailsQueryByCaseNo = (caseNo: string): string => `
-SELECT  *
-FROM    PlanControl_Projects
+SELECT  p.*, c.city
+FROM    PlanControl_Projects AS p
+LEFT JOIN cities AS c 
+                 ON (c.city_id = p.city_id)
 WHERE   CaseNo = '${caseNo}'
 `;
 
@@ -303,7 +306,7 @@ SELECT  pcp.*,
         p.shbillet as shbillet
 FROM
        (
-          select  id,
+          SELECT  id,
                   CaseNo as case_no,
                   Owner_Name as owner_name,
                   Owner_Father as owner_father,
@@ -316,11 +319,13 @@ FROM
                   TotalAnbari as total_anbari,
                   ProjectType as project_type,
                   Useage_Sanati as usage_sanati
-          from    PlanControl_Projects
-          where   CaseNo = '${caseNo}'
-       ) as pcp
-     left join PlanControl_ProjectEngineers as ppe   on (ppe.Project_Id = pcp.id and ppe.[State] <> -1)
-     left join personnel as p                        on p.id = ppe.Personel_Id
+          FROM    PlanControl_Projects
+          WHERE   CaseNo = '${caseNo}'
+       ) AS pcp
+     LEFT JOIN PlanControl_ProjectEngineers AS ppe 
+                ON (ppe.Project_Id = pcp.id AND ppe.[State] <> -1)
+     LEFT JOIN personnel AS p 
+                ON p.id = ppe.Personel_Id
 `;
 
   private projectsSummaryQuery = (
@@ -336,7 +341,7 @@ SELECT  pcp.*,
         p.shbillet as shbillet
 FROM
        (
-          select  id,
+          SELECT  id,
                   CaseNo as case_no,
                   Owner_Name as owner_name,
                   Owner_Father as owner_father,
@@ -349,10 +354,12 @@ FROM
                   TotalAnbari as total_anbari,
                   ProjectType as project_type,
                   Useage_Sanati as usage_sanati
-          from    PlanControl_Projects
-       ) as pcp
-    left join PlanControl_ProjectEngineers as ppe   on ppe.Project_Id = pcp.id
-    left join personnel as p                        on p.id = ppe.Personel_Id
+          FROM    PlanControl_Projects
+       ) AS pcp
+    LEFT JOIN PlanControl_ProjectEngineers AS ppe 
+         ON ppe.Project_Id = pcp.id
+    LEFT JOIN personnel AS p
+         ON p.id = ppe.Personel_Id
 ORDER BY ID DESC
 OFFSET ${Math.max(skip, 0)} ROWS
 FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
@@ -480,10 +487,10 @@ FETCH NEXT ${Math.min(limit, 100)} ROWS ONLY
 			p.[ttl] as ttl
     FROM
       [wref].[viw_projects_list] AS p
-      INNER JOIN [nezam].[dbo].[cities] AS c On p.city_id=c.city_id
+      INNER JOIN [nezam].[dbo].[cities] AS c 
+                 On p.city_id=c.city_id
     WHERE
-      (p.ttl > ${minTtl})
-      `;
+      (p.ttl > ${minTtl})`;
 
   async getProjectDetailsByCaseNo(caseNo: string): Promise<ProjectDetailsDTO> {
     const result = await this.sqlService.runQueryWithResult<PlanControlProject>(

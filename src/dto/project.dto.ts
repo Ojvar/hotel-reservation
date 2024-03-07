@@ -14,7 +14,7 @@ export class WorkRefReadyDTO extends Model {
   @property({tyep: 'string'})
   ownerMobile: string;
   @property({tyep: 'string'})
-  city: string;
+  city?: string | null;
   @property({tyep: 'number'})
   cityId: number;
   @property({tyep: 'string'})
@@ -295,6 +295,8 @@ export class ProjectDetailsDTO extends Model {
   RecodZipSection: string | null;
   @property({type: 'number', required: false})
   Address_State: number | null;
+  @property({tyep: 'string'})
+  city?: string | null;
   @property({type: 'number', required: false})
   city_id: number | null;
   @property({type: 'number', required: false})
