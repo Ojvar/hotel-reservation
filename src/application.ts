@@ -21,6 +21,19 @@ import {
 import {SENTRY_INTERCEPTOR_CONFIG, SentryComponent} from './lib-sentry/src';
 import {MsSqlService} from './services';
 import {config as SqlConfig} from 'mssql';
+import {
+  RedisClientOptions,
+  RedisComponent,
+  RedisService,
+} from './lib-redis/src';
+import {
+  ConsumersBooter,
+  QueueComponent,
+  RabbitmqBindings,
+  RabbitmqComponent,
+  RabbitmqComponentConfig,
+} from './loopback-rabbitmq/src';
+import {QengDataSource, QengDataSourceConfig} from './datasources';
 
 export {ApplicationConfig};
 
@@ -33,7 +46,10 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
     allowedList: string;
     rejectedList: string;
   };
+  qengDataSourceConfig: QengDataSourceConfig;
   sqlDbConfig: SqlConfig;
+  redisConfig: RedisClientOptions;
+  rabbitmqConfig: RabbitmqComponentConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -59,7 +75,6 @@ export class ProjectsServiceApplication extends BootMixin(
         nested: true,
       },
     };
-
     this.configApp(options);
   }
 
@@ -95,7 +110,20 @@ export class ProjectsServiceApplication extends BootMixin(
     this.component(KeycloakComponent);
     this.sequence(KeycloakSequence);
 
-    // SqlDB
+    // Datasources
     this.bind(MsSqlService.BINDING_KEY_CONFIG).to(options.sqlDbConfig);
+    this.bind(QengDataSource.CONFIG_BINDING_KEY).to(
+      options.qengDataSourceConfig,
+    );
+
+    // Redis
+    this.component(RedisComponent);
+    this.bind(RedisService.CONFIG_BINDING_KEY).to(options.redisConfig);
+
+    // RabbitMQ
+    this.bind(RabbitmqBindings.CONFIG).to(options.rabbitmqConfig);
+    this.component(RabbitmqComponent);
+    this.booters(ConsumersBooter);
+    this.component(QueueComponent);
   }
 }
