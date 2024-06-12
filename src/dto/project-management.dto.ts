@@ -10,3 +10,17 @@ export class ProjectRegistrationCodeDTO extends Model {
     super(data);
   }
 }
+
+@model()
+export class NewProjectDTO extends Model {
+  constructor(data?: Partial<NewProjectDTO>) {
+    super(data);
+  }
+}
+
+@model()
+export class NewProjectRequestDTO extends Model {
+  constructor(data?: Partial<NewProjectRequestDTO>) {
+    super(data);
+  }
+}
