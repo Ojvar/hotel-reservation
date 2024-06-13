@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {
-  NewProjectRequestDTO,
-  ProjectRegistrationCodeDTO,
-} from '../dto/project-management.dto';
+import {NewProjectRequestDTO, ProjectRegistrationCodeDTO} from '../dto';
 import {repository} from '@loopback/repository';
 import {ProfileRepository} from '../repositories';
 import {VeirificationCodeService} from './veirification-code.service';
@@ -59,7 +56,6 @@ export class ProjectManagementService {
     );
 
     // try to save data into
-
-    return;
+    return {userId, data};
   }
 }

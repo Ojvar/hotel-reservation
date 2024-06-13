@@ -17,10 +17,3 @@ export class NewProjectDTO extends Model {
     super(data);
   }
 }
-
-@model()
-export class NewProjectRequestDTO extends Model {
-  constructor(data?: Partial<NewProjectRequestDTO>) {
-    super(data);
-  }
-}
