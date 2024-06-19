@@ -9,35 +9,6 @@ import {
 } from './common';
 import {Attachment} from '../lib-models/src';
 
-export enum EnumProjectLocationType {
-  URBAN = 0,
-  RURAL = 1,
-}
-export const EnumProjectLocationTypeValues = Object.values(
-  EnumProjectLocationType,
-);
-
-export enum EnumBuildingSiteLocation {
-  NORTH = 0,
-  SOUTH = 1,
-  EAST = 2,
-  WEST = 3,
-}
-export const EnumBuildingSiteLocationValues = Object.values(
-  EnumBuildingSiteLocation,
-);
-
-export enum EnumRoofType {
-  Block_joist_ceiling = 0,
-  DAAL = 1,
-  MIXED = 2,
-  PRE_BUILD = 3,
-  COMPOSITE = 4,
-  CHROMITE = 5,
-  STEEL_DECK = 6,
-}
-export const EnumRoofTypeValues = Object.values(EnumRoofType);
-
 @model({})
 export class ProjectLawyer extends TimestampModelWithId {
   @property({type: 'string', required: true})
@@ -87,9 +58,12 @@ export class ProjectOwner extends TimestampModelWithId {
 }
 export type ProjectOwners = ProjectOwner[];
 
+@model({...REMOVE_ID_SETTING})
 export class ProjectOwnership extends Model {
   @property.array(ProjectOwner, {required: true})
   owners: ProjectOwners;
+  @property({type: 'boolean', required: true})
+  has_partners: boolean;
   @property({required: false})
   attachments: Attachment;
 
@@ -100,12 +74,8 @@ export class ProjectOwnership extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class ProjectBuildingSiteLocation extends Model {
-  @property({
-    type: 'number',
-    required: true,
-    jsonSchema: {enum: EnumBuildingSiteLocationValues},
-  })
-  location: EnumBuildingSiteLocation;
+  @property({type: 'string', required: true})
+  location: string;
   @property({type: 'number', required: true})
   land_occupancy: number;
 
@@ -161,6 +131,8 @@ export class ProjectLocationAddress extends Model {
   long?: number;
   @property({type: 'number', required: false})
   lat?: number;
+  @property({type: 'object', required: false})
+  geo_info?: object;
 
   // Location
   @property({type: 'string', required: true})
@@ -179,13 +151,9 @@ export class ProjectLocationAddress extends Model {
   @property({type: 'number', required: true})
   zip_code: number;
 
-  // Additional data
-  @property({
-    type: 'number',
-    required: true,
-    jsonSchema: {enum: EnumProjectLocationTypeValues},
-  })
-  type: EnumProjectLocationType;
+  // // Additional data
+  // @property({ type: 'string', required: true })
+  // type: string;
 
   constructor(data?: Partial<ProjectLocationAddress>) {
     super(data);
@@ -197,6 +165,10 @@ export class ProjectSpecification extends Model {
   // Keep all descriptions for all fields
   @property({type: 'object', items: 'string', required: true})
   descriptions: Record<string, string>;
+
+  // Meta data
+  @property({type: 'object'})
+  meta?: Record<string, string | number>;
 
   // Project data
   @property({type: 'number', required: true})
@@ -232,29 +204,29 @@ export class ProjectSpecification extends Model {
 
   // Building data
   @property({type: 'string', required: true})
-  building_priority: number;
+  building_priority: string;
   @property({type: 'string', required: true})
   building_type_id: string;
-  @property({type: 'string', required: true})
-  foundation_type_id: string;
-  @property({type: 'string', required: true})
-  root_type_id: string;
-  @property({type: 'string', required: true})
-  floor_access_system: string;
-  @property({type: 'string', required: true})
-  building_frontage: string;
-  @property({type: 'string', required: true})
-  roof_cover_type_id: string;
-  @property({type: 'string', required: true})
-  window_type_id: string;
-  @property({type: 'string', required: true})
-  cooling_system_type_id: string;
-  @property({type: 'string', required: true})
-  heating_system_type_id: string;
-  @property({type: 'string', required: true})
-  sewage_disposal_id: string;
-  @property({type: 'string', required: true})
-  earth_connection_type_id: string;
+  @property.array(String, {required: true})
+  foundation_types: string[];
+  @property.array(String, {required: true})
+  root_types: string[];
+  @property.array(String, {required: true})
+  floor_access_systems: string[];
+  @property.array(String, {required: true})
+  building_frontages: string[];
+  @property.array(String, {required: true})
+  roof_cover_types: string[];
+  @property.array(String, {required: true})
+  window_types: string[];
+  @property.array(String, {required: true})
+  cooling_system_types: string[];
+  @property.array(String, {required: true})
+  heating_system_types: string[];
+  @property.array(String, {required: true})
+  sewage_disposals: string[];
+  @property.array(String, {required: true})
+  earth_connection_types: string[];
 
   // Optional data
   @property({type: 'boolean', required: true})
@@ -271,8 +243,10 @@ export class ProjectSpecification extends Model {
   two_supervisors: boolean;
 
   // Quota
-  @property({type: 'string', required: true})
+  @property({type: 'string', required: false})
   quota_type_id: string;
+  @property({type: 'number', required: false})
+  quota_value: number;
 
   constructor(data?: Partial<ProjectSpecification>) {
     super(data);

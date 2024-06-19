@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {Model, model, property} from '@loopback/repository';
 import {
-  EnumBuildingSiteLocation,
-  EnumBuildingSiteLocationValues,
-  EnumProjectLocationType,
-  EnumProjectLocationTypeValues,
   Project,
   ProjectBuildingSiteLocation,
   ProjectLawyer,
@@ -22,6 +18,8 @@ export class NewProjectSpecificationDTO extends Model {
   // Keep all descriptions for all fields
   @property({type: 'object', items: 'string', required: true})
   descriptions: Record<string, string>;
+  @property({type: 'object'})
+  meta?: Record<string, string | number>;
 
   // Project data
   @property({type: 'number', required: true})
@@ -57,29 +55,29 @@ export class NewProjectSpecificationDTO extends Model {
 
   // Building data
   @property({type: 'string', required: true})
-  building_priority: number;
+  building_priority: string;
   @property({type: 'string', required: true})
   building_type_id: string;
-  @property({type: 'string', required: true})
-  foundation_type_id: string;
-  @property({type: 'string', required: true})
-  root_type_id: string;
-  @property({type: 'string', required: true})
-  floor_access_system: string;
-  @property({type: 'string', required: true})
-  building_frontage: string;
-  @property({type: 'string', required: true})
-  roof_cover_type_id: string;
-  @property({type: 'string', required: true})
-  window_type_id: string;
-  @property({type: 'string', required: true})
-  cooling_system_type_id: string;
-  @property({type: 'string', required: true})
-  heating_system_type_id: string;
-  @property({type: 'string', required: true})
-  sewage_disposal_id: string;
-  @property({type: 'string', required: true})
-  earth_connection_type_id: string;
+  @property.array(String, {required: true})
+  foundation_types: string[];
+  @property.array(String, {required: true})
+  root_types: string[];
+  @property.array(String, {required: true})
+  floor_access_systems: string[];
+  @property.array(String, {required: true})
+  building_frontages: string[];
+  @property.array(String, {required: true})
+  roof_cover_types: string[];
+  @property.array(String, {required: true})
+  window_types: string[];
+  @property.array(String, {required: true})
+  cooling_system_types: string[];
+  @property.array(String, {required: true})
+  heating_system_types: string[];
+  @property.array(String, {required: true})
+  sewage_disposals: string[];
+  @property.array(String, {required: true})
+  earth_connection_types: string[];
 
   // Optional data
   @property({type: 'boolean', required: true})
@@ -96,8 +94,10 @@ export class NewProjectSpecificationDTO extends Model {
   two_supervisors: boolean;
 
   // Quota
-  @property({type: 'string', required: true})
+  @property({type: 'string', required: false})
   quota_type_id: string;
+  @property({type: 'number', required: false})
+  quota_value: number;
 
   constructor(data?: Partial<NewProjectSpecificationDTO>) {
     super(data);
@@ -106,6 +106,7 @@ export class NewProjectSpecificationDTO extends Model {
   toModel(): ProjectSpecification {
     return new ProjectSpecification({
       descriptions: this.descriptions,
+      meta: this.meta ?? {},
       ground_area_before: this.ground_area_before,
       ground_area_after: this.ground_area_after,
       total_area: this.total_area,
@@ -122,22 +123,23 @@ export class NewProjectSpecificationDTO extends Model {
       distict_west: this.distict_west,
       building_priority: this.building_priority,
       building_type_id: this.building_type_id,
-      foundation_type_id: this.foundation_type_id,
-      root_type_id: this.root_type_id,
-      floor_access_system: this.floor_access_system,
-      building_frontage: this.building_frontage,
-      roof_cover_type_id: this.roof_cover_type_id,
-      window_type_id: this.window_type_id,
-      cooling_system_type_id: this.cooling_system_type_id,
-      heating_system_type_id: this.heating_system_type_id,
-      sewage_disposal_id: this.sewage_disposal_id,
-      earth_connection_type_id: this.earth_connection_type_id,
+      foundation_types: this.foundation_types,
+      root_types: this.root_types,
+      floor_access_systems: this.floor_access_systems,
+      building_frontages: this.building_frontages,
+      roof_cover_types: this.roof_cover_types,
+      window_types: this.window_types,
+      cooling_system_types: this.cooling_system_types,
+      heating_system_types: this.heating_system_types,
+      sewage_disposals: this.sewage_disposals,
+      earth_connection_types: this.earth_connection_types,
       polystyrene: this.polystyrene,
       underground: this.underground,
       dilapidated: this.dilapidated,
       two_supervisors: this.two_supervisors,
       incremental_project: this.incremental_project,
       quota_type_id: this.quota_type_id,
+      quota_value: this.quota_value,
     });
   }
 }
@@ -166,7 +168,7 @@ export class NewProjectLawyerDTO extends Model {
     });
   }
 }
-export type ProjectLawyers = ProjectLawyer[];
+export type NewProjectLawyersDTO = NewProjectLawyerDTO[];
 
 @model({})
 export class NewProjectOwnerDTO extends Model {
@@ -230,6 +232,8 @@ export class NewProjectLocationAddressDTO extends Model {
   long?: number;
   @property({type: 'number', required: false})
   lat?: number;
+  @property({type: 'object', required: false})
+  geo_info?: object;
 
   // Location details
   @property({type: 'string', required: true})
@@ -248,12 +252,8 @@ export class NewProjectLocationAddressDTO extends Model {
   zip_code: number;
 
   // Additional data
-  @property({
-    type: 'number',
-    required: true,
-    jsonSchema: {enum: EnumProjectLocationTypeValues},
-  })
-  type: EnumProjectLocationType;
+  // @property({ type: 'string', required: true })
+  // type: string;
 
   constructor(data?: Partial<NewProjectLocationAddressDTO>) {
     super(data);
@@ -271,12 +271,13 @@ export class NewProjectLocationAddressDTO extends Model {
       alley: this.alley,
       plaque: this.plaque,
       zip_code: this.zip_code,
-      type: this.type,
+      // type: this.type,
       property_registration_details:
         this.property_registration_details.toModel(),
       area: this.area,
       long: this.long,
       lat: this.lat,
+      geo_info: this.geo_info,
     });
   }
 }
@@ -314,12 +315,8 @@ export class NewProjectOwnershipTypeDTO extends Model {
 
 @model({})
 export class NewProjectBuildingSiteLocationDTO extends Model {
-  @property({
-    type: 'number',
-    required: true,
-    jsonSchema: {enum: EnumBuildingSiteLocationValues},
-  })
-  location: EnumBuildingSiteLocation;
+  @property({type: 'string', required: true})
+  location: string;
   @property({type: 'number', required: true})
   land_occupancy: number;
 
@@ -347,9 +344,12 @@ export class NewProjectRequestDTO extends Model {
   project_usage_description?: string;
   @property({required: true})
   building_site_location: NewProjectBuildingSiteLocationDTO;
-
   @property.array(NewProjectOwnerDTO, {required: true})
   owners: NewProjectOwnersDTO;
+  @property({type: 'boolean', required: true})
+  owners_has_partners: boolean;
+  @property({required: false})
+  lawyer?: NewProjectLawyerDTO;
   @property({required: true})
   specification: NewProjectSpecificationDTO;
 
@@ -363,6 +363,9 @@ export class NewProjectRequestDTO extends Model {
       this.building_site_location,
     );
     this.owners = this.owners.map(x => new NewProjectOwnerDTO(x));
+    this.lawyer = this.lawyer
+      ? new NewProjectLawyerDTO(this.lawyer)
+      : undefined;
     this.specification = new NewProjectSpecificationDTO(this.specification);
   }
 
@@ -376,7 +379,9 @@ export class NewProjectRequestDTO extends Model {
       building_site_lcoation: this.building_site_location.toModel(),
       ownership: new ProjectOwnership({
         owners: this.owners.map(x => x.toModel(userId)),
+        has_partners: this.owners_has_partners,
       }),
+      lawyers: this.lawyer ? [this.lawyer?.toModel()] : [],
       specification: this.specification.toModel(),
     });
   }
