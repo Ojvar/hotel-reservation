@@ -26,6 +26,22 @@ declare namespace NodeJS {
     SQL_DB_HOST: string;
     SQL_DB_PORT: string;
 
+    REDIS_URL: string;
+    REDIS_USERNAME: string;
+    REDIS_PASSWORD: string;
+    REDIS_NAME: string;
+    REDIS_DATABASE: string;
+    REDIS_SOCKET_HOST: string;
+    REDIS_SOCKET_PORT: string;
+    REDIS_EXPIER_TIME: string;
+
+    RABBITMQ_PROTOCOL: string;
+    RABBITMQ_HOST: string;
+    RABBITMQ_PORT: string;
+    RABBITMQ_USER: string;
+    RABBITMQ_PASS: string;
+    RABBITMQ_VHOST: string;
+
     KEYCLOAK_ALLOWED_LIST: string;
     KEYCLOAK_REJECTED_LIST: string;
   }

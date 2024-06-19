@@ -5,6 +5,8 @@ import {
   ProjectsServiceApplication,
   ProjectsServiceApplicationConfig,
 } from './application';
+import {RMQ_EXCHANGES} from './helpers';
+import {MessageHandlerErrorBehavior} from './loopback-rabbitmq/src';
 
 export * from './application';
 
@@ -85,6 +87,52 @@ export function getApplicationConfig(
         encrypt: false, // For azure
         trustServerCertificate: true, // Change to true for local dev / self-signed certs
       },
+    },
+    redisConfig: {
+      url: process.env.REDIS_URL,
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      name: process.env.REDIS_NAME,
+      database: +process.env.REDIS_DATABASE,
+      socket: {
+        port: +(process.env.REDIS_SOCKET_PORT ?? '6379'),
+        host: process.env.REDIS_SOCKET_HOST ?? 'localhost',
+      },
+    },
+    qengDataSourceConfig: {
+      user: process.env.QENG_DB_USER,
+      url: process.env.QENG_DB_URL,
+      host: process.env.QENG_DB_HOST,
+      port: +process.env.QENG_DB_PORT,
+      password: process.env.QENG_DB_PASSWORD,
+      database: process.env.QENG_DB_DATABASE,
+    },
+    rabbitmqConfig: {
+      options: {
+        protocol: process.env.RABBITMQ_PROTOCOL,
+        hostname: process.env.RABBITMQ_HOST,
+        port: +(process.env.RABBITMQ_PORT ?? '5672'),
+        username: process.env.RABBITMQ_USER,
+        password: process.env.RABBITMQ_PASS,
+        vhost: process.env.RABBITMQ_VHOST,
+      },
+      producer: {idleTimeoutMillis: 10000},
+      consumer: {retries: 0, interval: 1500},
+      defaultConsumerErrorBehavior: MessageHandlerErrorBehavior.ACK,
+      prefetchCount: 1,
+      exchanges: [
+        {
+          name: RMQ_EXCHANGES.MESSAGE.name,
+          type: RMQ_EXCHANGES.MESSAGE.type,
+          queues: [
+            {
+              queue: RMQ_EXCHANGES.MESSAGE.queues.SMS.name,
+              routingKey: RMQ_EXCHANGES.MESSAGE.queues.SMS.route_key,
+              queueOptions: {durable: true},
+            },
+          ],
+        },
+      ],
     },
   };
 }
