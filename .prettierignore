@@ -1,4 +1,4 @@
 dist
 *.json
 src/lib-*
-
+src/loopback-rabbitmq

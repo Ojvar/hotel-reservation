@@ -1,869 +1,388 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {AnyObject, Model, model, property} from '@loopback/repository';
-import {IResult} from 'mssql';
-import {PlanControlProject, ProjectSummaryItem} from '../services';
+import {Model, model, property} from '@loopback/repository';
+import {
+  Project,
+  ProjectBuildingSiteLocation,
+  ProjectLawyer,
+  ProjectLocationAddress,
+  ProjectOwner,
+  ProjectOwnership,
+  ProjectOwnershipType,
+  ProjectPropertyRegistrationDetails,
+  ProjectSpecification,
+} from '../models';
+import {ModifyStamp} from '../lib-models/src';
 
-@model()
-export class WorkRefReadyDTO extends Model {
-  @property({tyep: 'number'})
-  id: number;
-  @property({tyep: 'string'})
-  ownerName: string;
-  @property({tyep: 'string'})
-  ownerShsh: string;
-  @property({tyep: 'string'})
-  ownerMobile: string;
-  @property({tyep: 'string'})
-  city?: string | null;
-  @property({tyep: 'number'})
-  cityId: number;
-  @property({tyep: 'string'})
-  caseNo: string;
-  @property({tyep: 'date'})
-  caseDate: Date;
-  @property({tyep: 'number'})
-  sahmieMetraj: number;
-  @property({tyep: 'number'})
-  ttl: number;
-  @property({tyep: 'string'})
-  extra: string;
-  @property({tyep: 'string'})
-  addressStreet: string;
-  @property({tyep: 'string'})
-  totalArea: string;
-  @property({tyep: 'string'})
-  totalFloor: string;
-  @property({tyep: 'boolean'})
-  useageMaskooni: boolean;
-  @property({tyep: 'boolean'})
-  useageEdari: boolean;
-  @property({tyep: 'boolean'})
-  useageTejari: boolean;
-  @property({tyep: 'boolean'})
-  useageSanati: boolean;
-  @property({tyep: 'boolean'})
-  useageDamdari: boolean;
-  @property({tyep: 'boolean'})
-  useageGolkhane: boolean;
-  @property({tyep: 'boolean'})
-  useageMorghdari: boolean;
-  @property({tyep: 'boolean'})
-  useageTasisatShahri: boolean;
-  @property({tyep: 'boolean'})
-  useageBehdashti: boolean;
-  @property({tyep: 'boolean'})
-  useageAmoozeshi: boolean;
-  @property({tyep: 'boolean'})
-  useageKhadamati: boolean;
-  @property({tyep: 'boolean'})
-  useageOther: boolean;
-  @property({tyep: 'number'})
-  officeId: number;
-  @property({tyep: 'number'})
-  buildingDensity: number;
-  @property({tyep: 'number'})
-  betooniFelezi: number;
-  @property({tyep: 'string'})
-  nosaziCode: string;
-  @property({tyep: 'string'})
-  gharardadId: string;
-  @property({tyep: 'string'})
-  jooshGharardadId: string;
-  @property({tyep: 'string'})
-  milgerdGharardadId: string;
-  @property({tyep: 'string'})
-  geoGharardadId: string;
-  @property({tyep: 'string'})
-  barghGharardadId: string;
-  @property({tyep: 'string'})
-  polyGharardadId: string;
-  @property({tyep: 'boolean'})
-  hasLift: boolean;
-  @property({tyep: 'boolean'})
-  hasUnderground: boolean;
-  @property({tyep: 'boolean'})
-  inOldArea: boolean;
-  @property({tyep: 'boolean'})
-  hasPolystiren: boolean;
-  @property({tyep: 'number'})
-  tejariUnits: number;
-  @property({tyep: 'number'})
-  maskooniUnits: number;
-  @property({tyep: 'number'})
-  areaAfterRetreat: number;
-  @property({tyep: 'string'})
-  malekNezarat: string;
-  @property({tyep: 'string'})
-  malekNaghshe: string;
-  @property({tyep: 'number'})
-  mojriId: number;
-  @property({tyep: 'number'})
-  mojriType: number;
-  @property({tyep: 'string'})
-  municipalDesc: string;
-  @property({tyep: 'string'})
-  navaghesNazariyeProject: string;
-  @property({tyep: 'number'})
-  unitLow100: number;
-  @property({tyep: 'number'})
-  unitHigh100: number;
-  @property({tyep: 'number'})
-  unitHigh200: number;
-  @property({tyep: 'boolean'})
-  dualNazer: boolean;
-  @property({tyep: 'string'})
-  tarkhisName: string;
-  @property({tyep: 'string'})
-  ownerAddress: string;
-  @property({tyep: 'number'})
-  areaBeforeRetreat: number;
-  @property({tyep: 'number'})
-  fromNorth: number;
-  @property({tyep: 'number'})
-  fromEast: number;
-  @property({tyep: 'number'})
-  fromSouth: number;
-  @property({tyep: 'number'})
-  fromWest: number;
-  @property({tyep: 'boolean'})
-  facadeBrick: boolean;
-  @property({tyep: 'boolean'})
-  facadeStone: boolean;
-  @property({tyep: 'boolean'})
-  facadeConcrete: boolean;
-  @property({tyep: 'boolean'})
-  facadeGlass: boolean;
-  @property({tyep: 'boolean'})
-  facadeAluminium: boolean;
-  @property({tyep: 'boolean'})
-  facadeOther: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatTar: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatIsogam: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatMosaic: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatAsphalt: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatSteel: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatPottery: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatGalvanized: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatConcrete: boolean;
-  @property({tyep: 'boolean'})
-  roofCoatOther: boolean;
-  @property({tyep: 'boolean'})
-  floorAccessStair: boolean;
-  @property({tyep: 'boolean'})
-  floorAccessEscalator: boolean;
-  @property({tyep: 'boolean'})
-  floorAccessEsc: boolean;
-  @property({tyep: 'boolean'})
-  winSteel: boolean;
-  @property({tyep: 'boolean'})
-  winAluminium: boolean;
-  @property({tyep: 'boolean'})
-  winPvc: boolean;
-  @property({tyep: 'boolean'})
-  winWood: boolean;
-  @property({tyep: 'boolean'})
-  winOther: boolean;
-  @property({tyep: 'boolean'})
-  fundationMonfared: boolean;
-  @property({tyep: 'boolean'})
-  fundationNavari: boolean;
-  @property({tyep: 'boolean'})
-  fundationGostarde: boolean;
-  @property({tyep: 'boolean'})
-  fundationDeep: boolean;
-  @property({tyep: 'boolean'})
-  fundationSemiDeep: boolean;
-  @property({tyep: 'boolean'})
-  fundationParticular: boolean;
-  @property({tyep: 'boolean'})
-  roofTirche: boolean;
-  @property({tyep: 'boolean'})
-  roofSlab: boolean;
-  @property({tyep: 'boolean'})
-  roofMorakab: boolean;
-  @property({tyep: 'boolean'})
-  roofReadyMade: boolean;
-  @property({tyep: 'boolean'})
-  roofChromite: boolean;
-  @property({tyep: 'boolean'})
-  roofComposite: boolean;
-  @property({tyep: 'boolean'})
-  roofSteelDeck: boolean;
-  @property({tyep: 'string'})
-  roofOther: string;
-  @property({tyep: 'boolean'})
-  heatingCentral: boolean;
-  @property({tyep: 'boolean'})
-  heatingPackage: boolean;
-  @property({tyep: 'boolean'})
-  heatingChimney: boolean;
-  @property({tyep: 'boolean'})
-  heatingFireplace: boolean;
-  @property({tyep: 'boolean'})
-  heatingOthere: boolean;
-  @property({tyep: 'boolean'})
-  coolingCentral: boolean;
-  @property({tyep: 'boolean'})
-  coolingPackage: boolean;
-  @property({tyep: 'boolean'})
-  coolingWCooler: boolean;
-  @property({tyep: 'boolean'})
-  coolingAc: boolean;
-  @property({tyep: 'boolean'})
-  coolingOther: boolean;
-  @property({tyep: 'boolean'})
-  sewageSeptic: boolean;
-  @property({tyep: 'boolean'})
-  sewageSewer: boolean;
-  @property({tyep: 'boolean'})
-  sewageChahjazbi: boolean;
-  @property({tyep: 'boolean'})
-  sewageOther: boolean;
-  @property({tyep: 'boolean'})
-  othersCentralAnthena: boolean;
-  @property({tyep: 'boolean'})
-  othersFireAlarm: boolean;
-  @property({tyep: 'number'})
-  buildingImportance: number;
-  @property({tyep: 'number'})
-  totalParking: number;
-  @property({tyep: 'number'})
-  totalAnbari: number;
-  @property({tyep: 'number'})
-  projectType: number;
-  @property({tyep: 'number'})
-  area: number;
+@model({})
+export class NewProjectSpecificationDTO extends Model {
+  // Keep all descriptions for all fields
+  @property({type: 'object', items: 'string', required: true})
+  descriptions: Record<string, string>;
+  @property({type: 'object'})
+  meta?: Record<string, string | number>;
 
-  constructor(data?: Partial<WorkRefReadyDTO>) {
-    super(data);
-  }
-
-  static fromModel(data: AnyObject): WorkRefReadyDTO {
-    return new WorkRefReadyDTO(data);
-  }
-
-  static fromDataArray(data: IResult<WorkRefReadyDTO>): WorkRefReadyListDTO {
-    return data.recordset.map(row => new WorkRefReadyDTO(row));
-  }
-}
-export type WorkRefReadyListDTO = WorkRefReadyDTO[];
-
-@model()
-export class ProjectSummaryEngineerDTO extends Model {
-  @property({type: 'string'})
-  eng_type: string;
-  @property({type: 'string'})
-  personal_id: string;
-  @property({type: 'string'})
-  first_name: string;
-  @property({type: 'string'})
-  last_name: string;
-  @property({type: 'string'})
-  gender: string;
-  @property({type: 'string'})
-  shbillet: string;
-
-  constructor(data?: Partial<ProjectSummaryEngineerDTO>) {
-    super(data);
-  }
-}
-export type ProjectSummaryEngineersDTO = ProjectSummaryEngineerDTO[];
-
-@model()
-export class ProjectDetailsDTO extends Model {
-  @property({type: 'number', required: false})
-  id: bigint;
-  @property({type: 'number', required: false})
-  TrackCode: bigint | null;
-  @property({type: 'number', required: false})
-  OfficeId: number | null;
-  @property({type: 'string', required: false})
-  MainRecordZip: string | null;
-  @property({type: 'string', required: false})
-  SecondryRecordZip: string | null;
-  @property({type: 'string', required: false})
-  RecodZipPart: string | null;
-  @property({type: 'string', required: false})
-  RecodZipSection: string | null;
-  @property({type: 'number', required: false})
-  Address_State: number | null;
-  @property({tyep: 'string'})
-  city?: string | null;
-  @property({type: 'number', required: false})
-  city_id: number | null;
-  @property({type: 'number', required: false})
-  Address_Municipal: number | null;
-  @property({type: 'number', required: false})
-  Address_Zone: number | null;
-  @property({type: 'string', required: false})
-  Address_Neighborhood: string | null;
-  @property({type: 'string', required: false})
-  Address_Street: string | null;
-  @property({type: 'string', required: false})
-  Address_Alley: string | null;
-  @property({type: 'string', required: false})
-  Address_Zip: string | null;
-  @property({type: 'number', required: false})
-  Address_PostalCode: bigint | null;
-  @property({type: 'string', required: false})
-  Owner_Name: string | null;
-  @property({type: 'string', required: false})
-  Owner_Father: string | null;
-  @property({type: 'string', required: false})
-  Owner_shsh: string | null;
-  @property({type: 'string', required: false})
-  Owner_RegisterPlace: string | null;
-  @property({type: 'string', required: false})
-  Lawyer_Name: string | null;
-  @property({type: 'string', required: false})
-  Lawyer_Father: string | null;
-  @property({type: 'string', required: false})
-  Lawyer_shsh: string | null;
-  @property({type: 'string', required: false})
-  Lawyer_RegisterPlace: string | null;
-  @property({type: 'number', required: false})
-  OwnershipType: number | null;
-  @property({type: 'string', required: false})
-  OwnershipTypeName: string | null;
-  @property({type: 'string', required: false})
-  CaseNo: string | null;
-  @property({type: 'date', required: false})
-  CaseDate: Date | null;
-  @property({type: 'string', required: false})
-  MapCreateFormNo: string | null;
-  @property({type: 'date', required: false})
-  MapCreateDate: Date | null;
-  @property({type: 'number', required: false})
-  BuildingDensity: number | null;
-  @property({type: 'boolean', required: false})
-  Useage_Maskooni: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Edari: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Tejari: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Sanati: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Damdari: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Golkhane: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Morghdari: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_TasisatShahri: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Behdashti: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Amoozeshi: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Khadamati: boolean | null;
-  @property({type: 'boolean', required: false})
-  Useage_Other: boolean | null;
-  @property({type: 'number', required: false})
-  Useage_Other_Id: number | null;
-  @property({type: 'string', required: false})
-  Useage_OtherTypeName: string | null;
-  @property({type: 'number', required: false})
-  Area: number | null;
-  @property({type: 'number', required: false})
-  ConstructionPlace: number | null;
-  @property({type: 'number', required: false})
-  AllowedFloorConstruction: number | null;
-  @property({type: 'number', required: false})
-  AllowedFloorConstructionType: number | null;
-  @property({type: 'string', required: false})
-  DimentionRegisterdNorth: string | null;
-  @property({type: 'string', required: false})
-  DimentionRegisterdEast: string | null;
-  @property({type: 'string', required: false})
-  DimentionRegisterdSoth: string | null;
-  @property({type: 'string', required: false})
-  DimentionRegisterdWest: string | null;
-  @property({type: 'string', required: false})
-  DimentionRegusterdPekh: string | null;
-  @property({type: 'string', required: false})
-  DimentionCurrNorth: string | null;
-  @property({type: 'string', required: false})
-  DimentionCurrEast: string | null;
-  @property({type: 'string', required: false})
-  DimentionCurrSouth: string | null;
-  @property({type: 'string', required: false})
-  DimentionCurrWest: string | null;
-  @property({type: 'string', required: false})
-  DimentionCurrPekh: string | null;
-  @property({type: 'string', required: false})
-  DimentionRemainNorth: string | null;
-  @property({type: 'string', required: false})
-  DimentionRemainEast: string | null;
-  @property({type: 'string', required: false})
-  DimentionRemainSouth: string | null;
-  @property({type: 'string', required: false})
-  DimentionRemainWest: string | null;
-  @property({type: 'string', required: false})
-  DimentionRemainPekh: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiNorth: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiEast: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiSouth: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiWest: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiRemainNorth: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiRemainEast: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiRemainSouth: string | null;
-  @property({type: 'string', required: false})
-  GozarEslahiRemainWest: string | null;
-  @property({type: 'number', required: false})
-  HarimGozar: number | null;
-  @property({type: 'string', required: false})
-  BarVaKafDesc: string | null;
-  @property({type: 'string', required: false})
-  BuildingLicenseNo: string | null;
-  @property({type: 'number', required: false})
-  BuildingLicenseType: number | null;
-  @property({type: 'string', required: false})
-  BuildingLicenseFileNo: string | null;
-  @property({type: 'date', required: false})
-  BuildingLicenseDate: Date | null;
-  @property({type: 'string', required: false})
-  RequestNo: string | null;
-  @property({type: 'date', required: false})
-  RequestDate: Date | null;
-  @property({type: 'string', required: false})
-  RequestPelakSabti: string | null;
-  @property({type: 'string', required: false})
-  RequestBakhsh: string | null;
-  @property({type: 'date', required: false})
-  ExtendStartDate: Date | null;
-  @property({type: 'number', required: false})
-  ExtendDuration: number | null;
-  @property({type: 'number', required: false})
-  TotalArea: number | null;
-  @property({type: 'number', required: false})
-  TotalFloor: number | null;
-  @property({type: 'number', required: false})
-  TotalUnits: number | null;
-  @property({type: 'number', required: false})
-  EstehkamDegree: number | null;
-  @property({type: 'number', required: false})
-  EstehkamMetraj: number | null;
-  @property({type: 'date', required: false})
-  EstehkamDate: Date | null;
-  @property({type: 'number', required: false})
-  BetooniFelezi: number | null;
-  @property({type: 'string', required: false})
-  NosaziCode: string | null;
-  @property({type: 'number', required: false})
-  Gharardad_Id: number | null;
-  @property({type: 'number', required: false})
-  Joosh_Gharardad_Id: number | null;
-  @property({type: 'number', required: false})
-  Milgerd_Gharardad_Id: number | null;
-  @property({type: 'number', required: false})
-  Geo_Gharardad_Id: number | null;
-  @property({type: 'number', required: false})
-  Bargh_Gharardad_Id: number | null;
-  @property({type: 'number', required: false})
-  Poly_Gharardad_Id: number | null;
-  @property({type: 'boolean', required: false})
-  HasLift: boolean | null;
-  @property({type: 'boolean', required: false})
-  HasUnderground: boolean | null;
-  @property({type: 'string', required: false})
-  Owner_Phone: string | null;
-  @property({type: 'string', required: false})
-  OwnerMobile: string | null;
-  @property({type: 'string', required: false})
-  OwnerCompany: string | null;
-  @property({type: 'boolean', required: false})
-  HasPartner: boolean | null;
-  @property({type: 'string', required: false})
-  PartnerName: string | null;
-  @property({type: 'boolean', required: false})
-  InOldArea: boolean | null;
-  @property({type: 'boolean', required: false})
-  HasPolystiren: boolean | null;
-  @property({type: 'number', required: false})
-  TejariUnits: number | null;
-  @property({type: 'number', required: false})
-  MaskooniUnits: number | null;
-  @property({type: 'number', required: false})
-  AreaAfterRetreat: number | null;
-  @property({type: 'string', required: false})
-  Malek_Nezarat: string | null;
-  @property({type: 'string', required: false})
-  Malek_Naghshe: string | null;
-  @property({type: 'number', required: false})
-  useage_id1: number | null;
-  @property({type: 'number', required: false})
-  useage_id2: number | null;
-  @property({type: 'number', required: false})
-  useage_id3: number | null;
-  @property({type: 'number', required: false})
-  useage_id4: number | null;
-  @property({type: 'number', required: false})
-  useage_id5: number | null;
-  @property({type: 'number', required: false})
-  useage_id6: number | null;
-  @property({type: 'number', required: false})
-  useage_id7: number | null;
-  @property({type: 'number', required: false})
-  useage_id8: number | null;
-  @property({type: 'number', required: false})
-  floor_id1: number | null;
-  @property({type: 'number', required: false})
-  floor_id2: number | null;
-  @property({type: 'number', required: false})
-  floor_id3: number | null;
-  @property({type: 'number', required: false})
-  floor_id4: number | null;
-  @property({type: 'number', required: false})
-  floor_id5: number | null;
-  @property({type: 'number', required: false})
-  floor_id6: number | null;
-  @property({type: 'number', required: false})
-  floor_id7: number | null;
-  @property({type: 'number', required: false})
-  floor_id8: number | null;
-  @property({type: 'number', required: false})
-  floor_id10: number | null;
-  @property({type: 'number', required: false})
-  floor_id11: number | null;
-  @property({type: 'boolean', required: false})
-  ProjectConfirmed: boolean | null;
-  @property({type: 'boolean', required: false})
-  Project_Signed: boolean | null;
-  @property({type: 'boolean', required: false})
-  ProjectSendToOrg: boolean | null;
-  @property({type: 'number', required: false})
-  Mojri_Id: number | null;
-  @property({type: 'number', required: false})
-  Mojri_Type: number | null;
-  @property({type: 'string', required: false})
-  MunicipalDesc: string | null;
-  @property({type: 'string', required: false})
-  TotalAreaStr: string | null;
-  @property({type: 'string', required: false})
-  NavaghesNazariyeProject: string | null;
-  @property({type: 'date', required: false})
-  RegisterDateForSign: Date | null;
-  @property({type: 'number', required: false})
-  pc_Id: number | null;
-  @property({type: 'number', required: false})
-  UnitLow100: number | null;
-  @property({type: 'number', required: false})
-  UnitHigh200: number | null;
-  @property({type: 'number', required: false})
-  UnitHigh100: number | null;
-  @property({type: 'number', required: false})
-  dualNazer: number | null;
-  @property({type: 'string', required: false})
-  Desc: string | null;
-  @property({type: 'string', required: false})
-  RegisterNo: string | null;
-  @property({type: 'date', required: false})
-  RegisterDate: Date | null;
-  @property({type: 'string', required: false})
-  MunicipalHeader: string | null;
-  @property({type: 'string', required: false})
-  MunicipalFooter: string | null;
-  @property({type: 'string', required: false})
-  FinishNo: string | null;
-  @property({type: 'date', required: false})
-  FinishDate: Date | null;
-  @property({type: 'string', required: false})
-  FinishDesc: string | null;
-  @property({type: 'number', required: false})
-  State: number | null;
-  @property({type: 'number', required: false})
-  SahmieType: number | null;
-  @property({type: 'number', required: false})
-  SahmieMetraj: number | null;
-  @property({type: 'string', required: false})
-  SahmieDesc: string | null;
-  @property({type: 'date', required: false})
-  TarkhisDate: Date | null;
-  @property({type: 'string', required: false})
-  TarkhisName: string | null;
-  @property({type: 'string', required: false})
-  OwnerAddress: string | null;
-  @property({type: 'number', required: false})
-  AreaBeforeRetreat: number | null;
-  @property({type: 'string', required: false})
-  FromNorth: string | null;
-  @property({type: 'string', required: false})
-  FromEast: string | null;
-  @property({type: 'string', required: false})
-  FromSouth: string | null;
-  @property({type: 'string', required: false})
-  FromWest: string | null;
-  @property({type: 'date', required: false})
-  CaseQueueDate: Date | null;
-  @property({type: 'string', required: false})
-  ProxyNo: string | null;
-  @property({type: 'date', required: false})
-  ProxyDate: Date | null;
-  @property({type: 'date', required: false})
-  TechBookRecievedDate: Date | null;
-  @property({type: 'string', required: false})
-  TechBookSerialNumber: string | null;
-  @property({type: 'date', required: false})
-  TechBookIssueDate: Date | null;
-  @property({type: 'string', required: false})
-  TechBookOwnerName: string | null;
-  @property({type: 'number', required: false})
-  TechBookFloor: number | null;
-  @property({type: 'number', required: false})
-  TechBookArea: number | null;
-  @property({type: 'number', required: false})
-  TechBookUnit: number | null;
-  @property({type: 'date', required: false})
-  TechBookDeliverDate: Date | null;
-  @property({type: 'boolean', required: false})
-  FacadeBrick: boolean | null;
-  @property({type: 'boolean', required: false})
-  FacadeStone: boolean | null;
-  @property({type: 'boolean', required: false})
-  FacadeConcrete: boolean | null;
-  @property({type: 'boolean', required: false})
-  FacadeGlass: boolean | null;
-  @property({type: 'boolean', required: false})
-  FacadeAluminium: boolean | null;
-  @property({type: 'string', required: false})
-  FacadeOther: string | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatTar: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatIsogam: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatMosaic: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatAsphalt: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatSteel: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatPottery: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatGalvanized: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofCoatConcrete: boolean | null;
-  @property({type: 'string', required: false})
-  RoofCoatOther: string | null;
-  @property({type: 'boolean', required: false})
-  FloorAccessStair: boolean | null;
-  @property({type: 'boolean', required: false})
-  FloorAccessEscalator: boolean | null;
-  @property({type: 'boolean', required: false})
-  FloorAccessEsc: boolean | null;
-  @property({type: 'boolean', required: false})
-  WinSteel: boolean | null;
-  @property({type: 'boolean', required: false})
-  WinAluminium: boolean | null;
-  @property({type: 'boolean', required: false})
-  WinPVC: boolean | null;
-  @property({type: 'boolean', required: false})
-  WinWood: boolean | null;
-  @property({type: 'string', required: false})
-  WinOther: string | null;
-  @property({type: 'boolean', required: false})
-  FundationMonfared: boolean | null;
-  @property({type: 'boolean', required: false})
-  FundationNavari: boolean | null;
-  @property({type: 'boolean', required: false})
-  FundationGostarde: boolean | null;
-  @property({type: 'boolean', required: false})
-  FundationDeep: boolean | null;
-  @property({type: 'boolean', required: false})
-  FundationSemiDeep: boolean | null;
-  @property({type: 'boolean', required: false})
-  FundationParticular: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofTirche: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofSlab: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofMorakab: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofReadyMade: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofChromite: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofComposite: boolean | null;
-  @property({type: 'boolean', required: false})
-  RoofSteelDeck: boolean | null;
-  @property({type: 'string', required: false})
-  RoofOther: string | null;
-  @property({type: 'boolean', required: false})
-  HeatingCentral: boolean | null;
-  @property({type: 'boolean', required: false})
-  HeatingPackage: boolean | null;
-  @property({type: 'boolean', required: false})
-  HeatingChimney: boolean | null;
-  @property({type: 'boolean', required: false})
-  HeatingFireplace: boolean | null;
-  @property({type: 'string', required: false})
-  HeatingOthere: string | null;
-  @property({type: 'boolean', required: false})
-  CoolingCentral: boolean | null;
-  @property({type: 'boolean', required: false})
-  CoolingPackage: boolean | null;
-  @property({type: 'boolean', required: false})
-  CoolingWCooler: boolean | null;
-  @property({type: 'boolean', required: false})
-  CoolingAC: boolean | null;
-  @property({type: 'string', required: false})
-  CoolingOther: string | null;
-  @property({type: 'boolean', required: false})
-  SewageSeptic: boolean | null;
-  @property({type: 'boolean', required: false})
-  SewageSewer: boolean | null;
-  @property({type: 'boolean', required: false})
-  SewageChahjazbi: boolean | null;
-  @property({type: 'string', required: false})
-  SewageOther: string | null;
-  @property({type: 'boolean', required: false})
-  OthersCentralAnthena: boolean | null;
-  @property({type: 'boolean', required: false})
-  OthersFireAlarm: boolean | null;
-  @property({type: 'number', required: false})
-  BuildingImportance: number | null;
-  @property({type: 'number', required: false})
-  TotalParking: number | null;
-  @property({type: 'number', required: false})
-  TotalAnbari: number | null;
-  @property({type: 'number', required: false})
-  ProjectType: number | null;
+  // Project data
   @property({type: 'number', required: true})
-  ttl: number;
+  ground_area_before: number;
+  @property({type: 'number', required: true})
+  ground_area_after: number;
+  @property({type: 'number', required: true})
+  total_area: number;
+  @property({type: 'number', required: true})
+  elevator_stops: number;
+  @property({type: 'number', required: true})
+  total_floors: number;
+  @property({type: 'number', required: true})
+  commercial_units: number;
+  @property({type: 'number', required: true})
+  residental_units: number;
+  @property({type: 'number', required: true})
+  total_units: number;
+  @property({type: 'number', required: true})
+  parking_count: number;
+  @property({type: 'number', required: true})
+  house_storage_count: number;
+
+  // Districts data
+  @property({type: 'number', required: true})
+  distict_north: number;
+  @property({type: 'number', required: true})
+  distict_south: number;
+  @property({type: 'number', required: true})
+  distict_east: number;
+  @property({type: 'number', required: true})
+  distict_west: number;
+
+  // Building data
+  @property({type: 'string', required: true})
+  building_priority: string;
+  @property({type: 'string', required: true})
+  building_type_id: string;
+  @property.array(String, {required: true})
+  foundation_types: string[];
+  @property.array(String, {required: true})
+  root_types: string[];
+  @property.array(String, {required: true})
+  floor_access_systems: string[];
+  @property.array(String, {required: true})
+  building_frontages: string[];
+  @property.array(String, {required: true})
+  roof_cover_types: string[];
+  @property.array(String, {required: true})
+  window_types: string[];
+  @property.array(String, {required: true})
+  cooling_system_types: string[];
+  @property.array(String, {required: true})
+  heating_system_types: string[];
+  @property.array(String, {required: true})
+  sewage_disposals: string[];
+  @property.array(String, {required: true})
+  earth_connection_types: string[];
+
+  // Optional data
+  @property({type: 'boolean', required: true})
+  polystyrene: boolean;
+  @property({type: 'boolean', required: true})
+  underground: boolean;
+  @property({type: 'boolean', required: true})
+  dilapidated: boolean;
+  @property({type: 'string', required: true})
+  incremental_project: boolean;
+
+  /// TODO: SHOULD OPTIMIZE
+  @property({type: 'string', required: true})
+  two_supervisors: boolean;
+
+  // Quota
   @property({type: 'string', required: false})
-  extra: string | null;
-  @property({type: 'date', required: false})
-  expired_sms_at: Date | null;
-  @property({type: 'date', required: true})
-  created_at: Date;
+  quota_type_id: string;
   @property({type: 'number', required: false})
-  total_stop: number | null;
-  @property({type: 'boolean', required: false})
-  is_complete_queue: boolean | null;
+  quota_value: number;
 
-  constructor(data?: Partial<ProjectDetailsDTO>) {
+  constructor(data?: Partial<NewProjectSpecificationDTO>) {
     super(data);
   }
 
-  static fromData(data: IResult<PlanControlProject>): ProjectDetailsDTO {
-    const row = data.recordset[0];
-    return new ProjectDetailsDTO(row);
-  }
-}
-
-@model()
-export class ProjectSummaryDTO extends Model {
-  @property({type: 'string'})
-  id: string;
-  @property({type: 'string'})
-  case_no: string;
-  @property({type: 'string'})
-  owner_name: string;
-  @property({type: 'string'})
-  owner_father: string;
-  @property({type: 'string'})
-  owner_mobile: string;
-  @property({type: 'string'})
-  owner_cert_id: string;
-  @property({type: 'number'})
-  total_units: number | null;
-  @property({type: 'number'})
-  total_area: number | null;
-  @property({type: 'number'})
-  total_floor: number | null;
-  @property({type: 'number'})
-  total_parking: number | null;
-  @property({type: 'number'})
-  total_anbari: number | null;
-  @property({type: 'string'})
-  project_type: string;
-  @property({type: 'number'})
-  usage_sanati: number | null;
-
-  @property.array(ProjectSummaryEngineerDTO, {})
-  engineers: ProjectSummaryEngineersDTO;
-
-  constructor(data?: Partial<ProjectSummaryDTO>) {
-    super(data);
-  }
-
-  static fromData(data: IResult<ProjectSummaryItem>): ProjectSummaryDTO {
-    const firstData = data.recordset[0];
-    return new ProjectSummaryDTO({
-      id: firstData.id,
-      case_no: firstData.case_no,
-      owner_name: firstData.owner_name,
-      owner_father: firstData.owner_father,
-      owner_cert_id: firstData.owner_shsh,
-      owner_mobile: firstData.owner_mobile,
-      total_units: firstData.total_units,
-      total_area: firstData.total_area,
-      total_floor: firstData.total_floor,
-      total_anbari: firstData.total_anbari,
-      total_parking: firstData.total_parking,
-      project_type: firstData.project_type,
-      usage_sanati: firstData.usage_sanati,
-      engineers: data.recordset.map(
-        item =>
-          new ProjectSummaryEngineerDTO({
-            eng_type: item.engineer_type,
-            personal_id: item.personel_id,
-            first_name: item.engineer_name,
-            last_name: item.engineer_family,
-            gender: item.gender,
-            shbillet: item.shbillet,
-          }),
-      ),
+  toModel(): ProjectSpecification {
+    return new ProjectSpecification({
+      descriptions: this.descriptions,
+      meta: this.meta ?? {},
+      ground_area_before: this.ground_area_before,
+      ground_area_after: this.ground_area_after,
+      total_area: this.total_area,
+      elevator_stops: this.elevator_stops,
+      total_floors: this.total_floors,
+      commercial_units: this.commercial_units,
+      residental_units: this.residental_units,
+      total_units: this.total_units,
+      parking_count: this.parking_count,
+      house_storage_count: this.house_storage_count,
+      distict_north: this.distict_north,
+      distict_south: this.distict_south,
+      distict_east: this.distict_east,
+      distict_west: this.distict_west,
+      building_priority: this.building_priority,
+      building_type_id: this.building_type_id,
+      foundation_types: this.foundation_types,
+      root_types: this.root_types,
+      floor_access_systems: this.floor_access_systems,
+      building_frontages: this.building_frontages,
+      roof_cover_types: this.roof_cover_types,
+      window_types: this.window_types,
+      cooling_system_types: this.cooling_system_types,
+      heating_system_types: this.heating_system_types,
+      sewage_disposals: this.sewage_disposals,
+      earth_connection_types: this.earth_connection_types,
+      polystyrene: this.polystyrene,
+      underground: this.underground,
+      dilapidated: this.dilapidated,
+      two_supervisors: this.two_supervisors,
+      incremental_project: this.incremental_project,
+      quota_type_id: this.quota_type_id,
+      quota_value: this.quota_value,
     });
   }
+}
 
-  static fromDataArray(data: IResult<ProjectSummaryItem>): ProjectsSummaryDTO {
-    return data.recordset.map(
-      row =>
-        new ProjectSummaryDTO({
-          id: row.id,
-          case_no: row.case_no,
-          owner_name: row.owner_name,
-          owner_father: row.owner_father,
-          owner_cert_id: row.owner_shsh,
-          owner_mobile: row.owner_mobile,
-          total_units: row.total_units,
-          total_area: row.total_area,
-          total_floor: row.total_floor,
-          total_anbari: row.total_anbari,
-          total_parking: row.total_parking,
-          project_type: row.project_type,
-          usage_sanati: row.usage_sanati,
-          engineers: data.recordset.map(
-            item =>
-              new ProjectSummaryEngineerDTO({
-                eng_type: item.engineer_type,
-                personal_id: item.personel_id,
-                first_name: item.engineer_name,
-                last_name: item.engineer_family,
-                gender: item.gender,
-                shbillet: item.shbillet,
-              }),
-          ),
-        }),
-    );
+@model({})
+export class NewProjectLawyerDTO extends Model {
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({type: 'string', required: true})
+  power_of_attorney_number: string;
+  @property({type: 'date', required: true})
+  power_of_attorney_date: Date;
+  @property({type: 'string', required: false})
+  description?: string;
+
+  constructor(data?: Partial<NewProjectLawyerDTO>) {
+    super(data);
+  }
+
+  toModel(): ProjectLawyer {
+    return new ProjectLawyer({
+      user_id: this.user_id,
+      power_of_attorney_date: new Date(this.power_of_attorney_date),
+      power_of_attorney_number: this.power_of_attorney_number,
+      description: this.description,
+    });
   }
 }
-export type ProjectsSummaryDTO = ProjectSummaryDTO[];
+export type NewProjectLawyersDTO = NewProjectLawyerDTO[];
+
+@model({})
+export class NewProjectOwnerDTO extends Model {
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({type: 'string', required: true})
+  address: string;
+  @property({type: 'boolean', required: true})
+  is_delegate: boolean;
+
+  constructor(data?: Partial<NewProjectOwnerDTO>) {
+    super(data);
+  }
+
+  toModel(userId: string): ProjectOwner {
+    const now = new ModifyStamp({by: userId});
+    return new ProjectOwner({
+      user_id: this.user_id,
+      address: this.address,
+      is_delegate: this.is_delegate ?? false,
+      created: now,
+      updated: now,
+    });
+  }
+}
+export type NewProjectOwnersDTO = NewProjectOwnerDTO[];
+
+@model({})
+export class NewProjectPropertyRegistrationDetailsDTO extends Model {
+  @property({type: 'number', required: true})
+  main: number;
+  @property({type: 'number', required: true})
+  sub: number;
+  @property({type: 'number', required: true})
+  sector: number;
+  @property({type: 'number', required: true})
+  part: number;
+
+  constructor(data?: Partial<NewProjectPropertyRegistrationDetailsDTO>) {
+    super(data);
+  }
+
+  toModel(): ProjectPropertyRegistrationDetails {
+    return new ProjectPropertyRegistrationDetails({
+      main: this.main,
+      sub: this.sub,
+      sector: this.sector,
+      part: this.part,
+    });
+  }
+}
+
+@model({})
+export class NewProjectLocationAddressDTO extends Model {
+  // Property registration details
+  @property({required: true})
+  property_registration_details: NewProjectPropertyRegistrationDetailsDTO;
+
+  // Map geo data
+  @property({type: 'number', required: false})
+  long?: number;
+  @property({type: 'number', required: false})
+  lat?: number;
+  @property({type: 'object', required: false})
+  geo_info?: object;
+
+  // Location details
+  @property({type: 'string', required: true})
+  city_id: string;
+  @property({type: 'string', required: true})
+  municipality_district_id: string;
+  @property({type: 'number', required: false})
+  area?: number;
+  @property({type: 'string', required: true})
+  street: string;
+  @property({type: 'string', required: true})
+  alley: string;
+  @property({type: 'string', required: true})
+  plaque: string;
+  @property({type: 'number', required: true})
+  zip_code: number;
+
+  // Additional data
+  // @property({ type: 'string', required: true })
+  // type: string;
+
+  constructor(data?: Partial<NewProjectLocationAddressDTO>) {
+    super(data);
+    this.property_registration_details =
+      new NewProjectPropertyRegistrationDetailsDTO(
+        this.property_registration_details,
+      );
+  }
+
+  toModel(): ProjectLocationAddress {
+    return new ProjectLocationAddress({
+      city_id: this.city_id,
+      municipality_district_id: this.municipality_district_id,
+      street: this.street,
+      alley: this.alley,
+      plaque: this.plaque,
+      zip_code: this.zip_code,
+      // type: this.type,
+      property_registration_details:
+        this.property_registration_details.toModel(),
+      area: this.area,
+      long: this.long,
+      lat: this.lat,
+      geo_info: this.geo_info,
+    });
+  }
+}
+
+@model({})
+export class NewProjectOwnershipTypeDTO extends Model {
+  @property({type: 'string', required: true})
+  ownership_type_id: string;
+  @property({type: 'string', required: false})
+  description?: string;
+  @property({type: 'string', required: true})
+  form_number: string;
+  @property({type: 'string', required: true})
+  issue_date: string;
+  @property({type: 'string', required: true})
+  renewal_code: string;
+  @property({type: 'number', required: true})
+  building_density: number;
+
+  constructor(data?: Partial<NewProjectOwnershipTypeDTO>) {
+    super(data);
+  }
+
+  toModel(): ProjectOwnershipType {
+    return new ProjectOwnershipType({
+      ownership_type_id: this.ownership_type_id,
+      description: this.description,
+      form_number: this.form_number,
+      issue_date: this.issue_date,
+      renewal_code: this.renewal_code,
+      building_density: this.building_density,
+    });
+  }
+}
+
+@model({})
+export class NewProjectBuildingSiteLocationDTO extends Model {
+  @property({type: 'string', required: true})
+  location: string;
+  @property({type: 'number', required: true})
+  land_occupancy: number;
+
+  constructor(data?: Partial<NewProjectBuildingSiteLocationDTO>) {
+    super(data);
+  }
+
+  toModel(): ProjectBuildingSiteLocation {
+    return new ProjectBuildingSiteLocation({
+      land_occupancy: this.land_occupancy,
+      location: this.location,
+    });
+  }
+}
+
+@model()
+export class NewProjectRequestDTO extends Model {
+  @property({required: true})
+  address: NewProjectLocationAddressDTO;
+  @property({required: true})
+  ownership_type: NewProjectOwnershipTypeDTO;
+  @property.array(String, {required: true})
+  project_usage_types: string[];
+  @property({type: 'string', required: false})
+  project_usage_description?: string;
+  @property({required: true})
+  building_site_location: NewProjectBuildingSiteLocationDTO;
+  @property.array(NewProjectOwnerDTO, {required: true})
+  owners: NewProjectOwnersDTO;
+  @property({type: 'boolean', required: true})
+  owners_has_partners: boolean;
+  @property({required: false})
+  lawyer?: NewProjectLawyerDTO;
+  @property({required: true})
+  specification: NewProjectSpecificationDTO;
+
+  constructor(data?: Partial<NewProjectRequestDTO>) {
+    super(data);
+
+    // Conver simple object to instances of classes
+    this.address = new NewProjectLocationAddressDTO(this.address);
+    this.ownership_type = new NewProjectOwnershipTypeDTO(this.ownership_type);
+    this.building_site_location = new NewProjectBuildingSiteLocationDTO(
+      this.building_site_location,
+    );
+    this.owners = this.owners.map(x => new NewProjectOwnerDTO(x));
+    this.lawyer = this.lawyer
+      ? new NewProjectLawyerDTO(this.lawyer)
+      : undefined;
+    this.specification = new NewProjectSpecificationDTO(this.specification);
+  }
+
+  toModel(userId: string): Project {
+    const now = new ModifyStamp({by: userId});
+    return new Project({
+      created: now,
+      updated: now,
+      address: this.address.toModel(),
+      ownership_type: this.ownership_type.toModel(),
+      building_site_lcoation: this.building_site_location.toModel(),
+      ownership: new ProjectOwnership({
+        owners: this.owners.map(x => x.toModel(userId)),
+        has_partners: this.owners_has_partners,
+      }),
+      lawyers: this.lawyer ? [this.lawyer?.toModel()] : [],
+      specification: this.specification.toModel(),
+    });
+  }
+}
