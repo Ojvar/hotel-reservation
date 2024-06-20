@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {Entity, Model, model, property} from '@loopback/repository';
+import {AnyObject, Entity, Model, model, property} from '@loopback/repository';
 import {
   EnumStatus,
   EnumStatusValues,
@@ -9,8 +9,16 @@ import {
 } from './common';
 import {Attachment} from '../lib-models/src';
 
+export enum EnumBuildingProjectInvoiceType {
+  DEFENSE = 0,
+  OTHER = 99,
+}
+export const EnumBuildingProjectInvoiceTypeValues = Object.values(
+  EnumBuildingProjectInvoiceType,
+);
+
 @model({})
-export class ProjectLawyer extends TimestampModelWithId {
+export class BuildingProjectLawyer extends TimestampModelWithId {
   @property({type: 'string', required: true})
   user_id: string;
   @property({type: 'string', required: true})
@@ -28,15 +36,15 @@ export class ProjectLawyer extends TimestampModelWithId {
   @property({required: false})
   attachments?: Attachment;
 
-  constructor(data?: Partial<ProjectLawyer>) {
+  constructor(data?: Partial<BuildingProjectLawyer>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
   }
 }
-export type ProjectLawyers = ProjectLawyer[];
+export type BuildingProjectLawyers = BuildingProjectLawyer[];
 
 @model({})
-export class ProjectOwner extends TimestampModelWithId {
+export class BuildingProjectOwner extends TimestampModelWithId {
   @property({type: 'string', required: true})
   user_id: string;
   @property({type: 'string', required: true})
@@ -50,42 +58,42 @@ export class ProjectOwner extends TimestampModelWithId {
   })
   status: EnumStatus;
 
-  constructor(data?: Partial<ProjectOwner>) {
+  constructor(data?: Partial<BuildingProjectOwner>) {
     super(data);
     this.is_delegate = this.is_delegate ?? false;
     this.status = this.status ?? EnumStatus.ACTIVE;
   }
 }
-export type ProjectOwners = ProjectOwner[];
+export type BuildingProjectOwners = BuildingProjectOwner[];
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectOwnership extends Model {
-  @property.array(ProjectOwner, {required: true})
-  owners: ProjectOwners;
+export class BuildingProjectOwnership extends Model {
+  @property.array(BuildingProjectOwner, {required: true})
+  owners: BuildingProjectOwners;
   @property({type: 'boolean', required: true})
   has_partners: boolean;
   @property({required: false})
   attachments: Attachment;
 
-  constructor(data?: Partial<ProjectOwnership>) {
+  constructor(data?: Partial<BuildingProjectOwnership>) {
     super(data);
   }
 }
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectBuildingSiteLocation extends Model {
+export class BuildingProjectBuildingSiteLocation extends Model {
   @property({type: 'string', required: true})
   location: string;
   @property({type: 'number', required: true})
   land_occupancy: number;
 
-  constructor(data?: Partial<ProjectBuildingSiteLocation>) {
+  constructor(data?: Partial<BuildingProjectBuildingSiteLocation>) {
     super(data);
   }
 }
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectOwnershipType extends Model {
+export class BuildingProjectOwnershipType extends Model {
   @property({type: 'string', required: true})
   ownership_type_id: string;
   @property({type: 'string', required: false})
@@ -99,13 +107,13 @@ export class ProjectOwnershipType extends Model {
   @property({type: 'number', required: true})
   building_density: number;
 
-  constructor(data?: Partial<ProjectOwnershipType>) {
+  constructor(data?: Partial<BuildingProjectOwnershipType>) {
     super(data);
   }
 }
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectPropertyRegistrationDetails extends Model {
+export class BuildingProjectPropertyRegistrationDetails extends Model {
   @property({type: 'number', required: true})
   main: number;
   @property({type: 'number', required: true})
@@ -115,16 +123,16 @@ export class ProjectPropertyRegistrationDetails extends Model {
   @property({type: 'number', required: true})
   part: number;
 
-  constructor(data?: Partial<ProjectPropertyRegistrationDetails>) {
+  constructor(data?: Partial<BuildingProjectPropertyRegistrationDetails>) {
     super(data);
   }
 }
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectLocationAddress extends Model {
+export class BuildingProjectLocationAddress extends Model {
   //  Property Registation details
   @property({required: true})
-  property_registration_details: ProjectPropertyRegistrationDetails;
+  property_registration_details: BuildingProjectPropertyRegistrationDetails;
 
   // Map geo data
   @property({type: 'number', required: false})
@@ -155,13 +163,13 @@ export class ProjectLocationAddress extends Model {
   // @property({ type: 'string', required: true })
   // type: string;
 
-  constructor(data?: Partial<ProjectLocationAddress>) {
+  constructor(data?: Partial<BuildingProjectLocationAddress>) {
     super(data);
   }
 }
 
 @model({...REMOVE_ID_SETTING})
-export class ProjectSpecification extends Model {
+export class BuildingProjectSpecification extends Model {
   // Keep all descriptions for all fields
   @property({type: 'object', items: 'string', required: true})
   descriptions: Record<string, string>;
@@ -248,13 +256,51 @@ export class ProjectSpecification extends Model {
   @property({type: 'number', required: false})
   quota_value: number;
 
-  constructor(data?: Partial<ProjectSpecification>) {
+  constructor(data?: Partial<BuildingProjectSpecification>) {
+    super(data);
+  }
+}
+
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectInvoiceInfo extends Model {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumBuildingProjectInvoiceTypeValues},
+  })
+  type: EnumBuildingProjectInvoiceType;
+  @property({type: 'object', required: true})
+  meta: AnyObject;
+
+  constructor(data?: Partial<BuildingProjectInvoice>) {
     super(data);
   }
 }
 
 @model()
-export class Project extends Entity {
+export class BuildingProjectInvoice extends TimestampModelWithId {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({required: true})
+  invoice: BuildingProjectInvoiceInfo;
+
+  constructor(data?: Partial<BuildingProjectInvoice>) {
+    super(data);
+
+    if (this.invoice) {
+      this.invoice = new BuildingProjectInvoiceInfo(this.invoice);
+    }
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type BuildingProjectInvoices = BuildingProjectInvoice[];
+
+@model({name: 'building_projects'})
+export class BuildingProject extends Entity {
   @property({type: 'string', id: true, generated: true})
   id?: string;
   @property({required: true})
@@ -269,28 +315,36 @@ export class Project extends Entity {
   status: EnumStatus;
 
   @property({required: true})
-  address: ProjectLocationAddress;
+  address: BuildingProjectLocationAddress;
   @property({required: true})
-  ownership_type: ProjectOwnershipType;
+  ownership_type: BuildingProjectOwnershipType;
   @property.array(String, {required: true})
   project_usage_types: string[];
   @property({type: 'string', required: false})
   project_usage_description?: string;
   @property({required: true})
-  building_site_lcoation: ProjectBuildingSiteLocation;
+  building_site_lcoation: BuildingProjectBuildingSiteLocation;
   @property({required: true})
-  ownership: ProjectOwnership;
-  @property.array(ProjectLawyer, {required: false, default: []})
-  lawyers?: ProjectLawyers;
+  ownership: BuildingProjectOwnership;
+  @property.array(BuildingProjectLawyer, {required: false, default: []})
+  lawyers?: BuildingProjectLawyers;
   @property({required: true})
-  specification: ProjectSpecification;
+  specification: BuildingProjectSpecification;
+  @property.array(BuildingProjectInvoice, {required: false, default: []})
+  invoices?: BuildingProjectInvoices;
 
-  constructor(data?: Partial<Project>) {
+  constructor(data?: Partial<BuildingProject>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
     this.lawyers = this.lawyers ?? [];
+    this.invoices = this.invoices ?? [];
+  }
+
+  addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
+    this.invoices = [...(this.invoices ?? []), newInvoice];
+    this.updated = new ModifyStamp({by: userId});
   }
 }
 
 export interface ProjectRelations {}
-export type ProjectWithRelations = Project & ProjectRelations;
+export type ProjectWithRelations = BuildingProject & ProjectRelations;

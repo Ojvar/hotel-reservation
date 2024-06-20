@@ -2,9 +2,9 @@ import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
 import {getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
-  NewProjectDTO,
-  NewProjectRequestDTO,
-  ProjectRegistrationCodeDTO,
+  BuildingProjectDTO,
+  BuildingProjectRegistrationCodeDTO,
+  NewBuildingProjectRequestDTO,
   ProjectSummaryEngineerDTO,
 } from '../dto';
 import {
@@ -42,7 +42,7 @@ export class ProjectManagementController {
   })
   async getProjectRegistrationCode(
     @param.path.string('n_id') nId: string,
-  ): Promise<ProjectRegistrationCodeDTO> {
+  ): Promise<BuildingProjectRegistrationCodeDTO> {
     return this.projectMangementService.sendProjectRegistrationCode(nId);
   }
 
@@ -53,19 +53,18 @@ export class ProjectManagementController {
     responses: {
       200: {
         content: {
-          'application/json': {
-            schema: getModelSchemaRef(NewProjectDTO),
-          },
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
         },
       },
     },
   })
   async createNewProject(
-    @requestBody() body: NewProjectRequestDTO,
+    @requestBody() body: NewBuildingProjectRequestDTO,
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
-  ): Promise<NewProjectDTO | unknown> {
+  ): Promise<BuildingProjectDTO | unknown> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    body = new NewBuildingProjectRequestDTO(body);
     return this.projectMangementService.createNewProject(
       userId,
       nId,

@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {NewProjectRequestDTO, ProjectRegistrationCodeDTO} from '../dto';
+import {
+  BuildingProjectRegistrationCodeDTO,
+  NewBuildingProjectRequestDTO,
+} from '../dto';
 import {repository} from '@loopback/repository';
-import {ProfileRepository} from '../repositories';
+import {ProfileRepository, ProjectRepository} from '../repositories';
 import {VeirificationCodeService} from './veirification-code.service';
 
 export const ProjectManagementSteps = {
@@ -25,13 +28,14 @@ export class ProjectManagementService {
 
   constructor(
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
+    @repository(ProjectRepository) private projectRepo: ProjectRepository,
     @inject(VeirificationCodeService.BINDING_KEY)
     private verificationCodeService: VeirificationCodeService,
   ) {}
 
   async sendProjectRegistrationCode(
     nId: string,
-  ): Promise<ProjectRegistrationCodeDTO> {
+  ): Promise<BuildingProjectRegistrationCodeDTO> {
     const userProfile = await this.profileRepo.findByNIdOrFail(nId);
     const trackingCode =
       await this.verificationCodeService.generateAndStoreCode(
@@ -39,14 +43,16 @@ export class ProjectManagementService {
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
       );
-    return new ProjectRegistrationCodeDTO({tracking_code: trackingCode});
+    return new BuildingProjectRegistrationCodeDTO({
+      tracking_code: trackingCode,
+    });
   }
 
   async createNewProject(
     userId: string,
     nId: string,
     verificationCode: number,
-    data: NewProjectRequestDTO,
+    data: NewBuildingProjectRequestDTO,
   ): Promise<unknown> {
     // Check verification code
     await this.verificationCodeService.checkVerificationCodeByNId(
@@ -56,6 +62,15 @@ export class ProjectManagementService {
     );
 
     // try to save data into
-    return {userId, data};
+    const newProject = await this.projectRepo.create(data.toModel(userId));
+
+    // Remove verification code
+    await this.verificationCodeService.removeVerificationCodeByNId(
+      nId,
+      EnumRegisterProjectType.REG_PROJECT,
+    );
+
+    // return ProjectDTO.fromModel(newProject);
+    return newProject;
   }
 }
