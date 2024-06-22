@@ -8,27 +8,19 @@ import {
   TimestampModelWithId,
 } from './common';
 import {Attachment} from '../lib-models/src';
-
-export enum EnumBuildingProjectInvoiceType {
-  DEFENSE = 0,
-  OTHER = 99,
-}
-export const EnumBuildingProjectInvoiceTypeValues = Object.values(
-  EnumBuildingProjectInvoiceType,
-);
+import {HttpErrors} from '@loopback/rest';
 
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
-  @property({type: 'string', required: true})
+  @property({required: true})
   user_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   power_of_attorney_number: string;
   @property({type: 'date', required: true})
   power_of_attorney_date: Date;
-  @property({type: 'string', required: false})
+  @property({required: false})
   description?: string;
   @property({
-    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -45,14 +37,13 @@ export type BuildingProjectLawyers = BuildingProjectLawyer[];
 
 @model({})
 export class BuildingProjectOwner extends TimestampModelWithId {
-  @property({type: 'string', required: true})
+  @property({required: true})
   user_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   address: string;
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   is_delegate: boolean;
   @property({
-    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -70,7 +61,7 @@ export type BuildingProjectOwners = BuildingProjectOwner[];
 export class BuildingProjectOwnership extends Model {
   @property.array(BuildingProjectOwner, {required: true})
   owners: BuildingProjectOwners;
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   has_partners: boolean;
   @property({required: false})
   attachments: Attachment;
@@ -82,9 +73,9 @@ export class BuildingProjectOwnership extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectBuildingSiteLocation extends Model {
-  @property({type: 'string', required: true})
+  @property({required: true})
   location: string;
-  @property({type: 'number', required: true})
+  @property({required: true})
   land_occupancy: number;
 
   constructor(data?: Partial<BuildingProjectBuildingSiteLocation>) {
@@ -94,17 +85,17 @@ export class BuildingProjectBuildingSiteLocation extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectOwnershipType extends Model {
-  @property({type: 'string', required: true})
+  @property({required: true})
   ownership_type_id: string;
-  @property({type: 'string', required: false})
+  @property({required: false})
   description?: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   form_number: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   issue_date: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   renewal_code: string;
-  @property({type: 'number', required: true})
+  @property({required: true})
   building_density: number;
 
   constructor(data?: Partial<BuildingProjectOwnershipType>) {
@@ -114,13 +105,13 @@ export class BuildingProjectOwnershipType extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectPropertyRegistrationDetails extends Model {
-  @property({type: 'number', required: true})
+  @property({required: true})
   main: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   sub: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   sector: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   part: number;
 
   constructor(data?: Partial<BuildingProjectPropertyRegistrationDetails>) {
@@ -135,32 +126,32 @@ export class BuildingProjectLocationAddress extends Model {
   property_registration_details: BuildingProjectPropertyRegistrationDetails;
 
   // Map geo data
-  @property({type: 'number', required: false})
+  @property({required: false})
   long?: number;
-  @property({type: 'number', required: false})
+  @property({required: false})
   lat?: number;
   @property({type: 'object', required: false})
   geo_info?: object;
 
   // Location
-  @property({type: 'string', required: true})
+  @property({required: true})
   city_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   municipality_district_id: string;
-  @property({type: 'number', required: false})
+  @property({required: false})
   area?: number;
 
-  @property({type: 'string', required: true})
+  @property({required: true})
   street: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   alley: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   plaque: string;
-  @property({type: 'number', required: true})
+  @property({required: true})
   zip_code: number;
 
   // // Additional data
-  // @property({ type: 'string', required: true })
+  // @property({  required: true })
   // type: string;
 
   constructor(data?: Partial<BuildingProjectLocationAddress>) {
@@ -179,41 +170,41 @@ export class BuildingProjectSpecification extends Model {
   meta?: Record<string, string | number>;
 
   // Project data
-  @property({type: 'number', required: true})
+  @property({required: true})
   ground_area_before: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   ground_area_after: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_area: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   elevator_stops: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_floors: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   commercial_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   residental_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   parking_count: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   house_storage_count: number;
 
   // Districts data
-  @property({type: 'number', required: true})
+  @property({required: true})
   distict_north: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   distict_south: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   distict_east: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   distict_west: number;
 
   // Building data
-  @property({type: 'string', required: true})
+  @property({required: true})
   building_priority: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   building_type_id: string;
   @property.array(String, {required: true})
   foundation_types: string[];
@@ -237,23 +228,23 @@ export class BuildingProjectSpecification extends Model {
   earth_connection_types: string[];
 
   // Optional data
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   polystyrene: boolean;
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   underground: boolean;
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   dilapidated: boolean;
-  @property({type: 'string', required: true})
+  @property({required: true})
   incremental_project: boolean;
 
   /// TODO: SHOULD OPTIMIZE
-  @property({type: 'string', required: true})
+  @property({required: true})
   two_supervisors: boolean;
 
   // Quota
-  @property({type: 'string', required: false})
+  @property({required: false})
   quota_type_id: string;
-  @property({type: 'number', required: false})
+  @property({required: false})
   quota_value: number;
 
   constructor(data?: Partial<BuildingProjectSpecification>) {
@@ -263,16 +254,12 @@ export class BuildingProjectSpecification extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectInvoiceInfo extends Model {
-  @property({
-    type: 'number',
-    required: true,
-    jsonSchema: {enum: EnumBuildingProjectInvoiceTypeValues},
-  })
-  type: EnumBuildingProjectInvoiceType;
+  @property.array(String, {required: true})
+  tags: string[];
   @property({type: 'object', required: true})
   meta: AnyObject;
 
-  constructor(data?: Partial<BuildingProjectInvoice>) {
+  constructor(data?: Partial<BuildingProjectInvoiceInfo>) {
     super(data);
   }
 }
@@ -280,7 +267,6 @@ export class BuildingProjectInvoiceInfo extends Model {
 @model()
 export class BuildingProjectInvoice extends TimestampModelWithId {
   @property({
-    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -301,14 +287,13 @@ export type BuildingProjectInvoices = BuildingProjectInvoice[];
 
 @model({name: 'building_projects'})
 export class BuildingProject extends Entity {
-  @property({type: 'string', id: true, generated: true})
+  @property({id: true, generated: true})
   id?: string;
   @property({required: true})
   created: ModifyStamp;
   @property({required: true})
   updated: ModifyStamp;
   @property({
-    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -320,7 +305,7 @@ export class BuildingProject extends Entity {
   ownership_type: BuildingProjectOwnershipType;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({type: 'string', required: false})
+  @property({required: false})
   project_usage_description?: string;
   @property({required: true})
   building_site_lcoation: BuildingProjectBuildingSiteLocation;
@@ -343,6 +328,14 @@ export class BuildingProject extends Entity {
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
     this.invoices = [...(this.invoices ?? []), newInvoice];
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  getInvoiceByIdOrFail(invoiceId: string): BuildingProjectInvoice {
+    const result = this.invoices?.find(x => x.id?.toString() === invoiceId);
+    if (!result) {
+      throw new HttpErrors.NotFound('Invoice not found');
+    }
+    return result;
   }
 }
 
