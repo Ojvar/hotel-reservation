@@ -12,7 +12,7 @@ import {
   NewBuildingProjectRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
-import {ProfileRepository, ProjectRepository} from '../repositories';
+import {BuildingProjectRepository, ProfileRepository} from '../repositories';
 import {VeirificationCodeService} from './veirification-code.service';
 import {adjustMin, adjustRange} from '../helpers';
 import {BuildingProject, EnumStatus} from '../models';
@@ -38,7 +38,8 @@ export class ProjectManagementService {
 
   constructor(
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
-    @repository(ProjectRepository) private projectRepo: ProjectRepository,
+    @repository(BuildingProjectRepository)
+    private projectRepo: BuildingProjectRepository,
     @inject(VeirificationCodeService.BINDING_KEY)
     private verificationCodeService: VeirificationCodeService,
   ) {}

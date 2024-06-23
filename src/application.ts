@@ -33,7 +33,14 @@ import {
   RabbitmqComponent,
   RabbitmqComponentConfig,
 } from './loopback-rabbitmq/src';
-import {QengDataSource, QengDataSourceConfig} from './datasources';
+import {
+  AuthDataSource,
+  AuthDataSourceConfig,
+  ProfileDataSource,
+  ProfileDataSourceConfig,
+  QengDataSource,
+  QengDataSourceConfig,
+} from './datasources';
 
 export {ApplicationConfig};
 
@@ -50,6 +57,8 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   sqlDbConfig: SqlConfig;
   redisConfig: RedisClientOptions;
   rabbitmqConfig: RabbitmqComponentConfig;
+  pofileDataSourceConfig: ProfileDataSourceConfig;
+  authDataSourceConfig: AuthDataSourceConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -114,6 +123,13 @@ export class ProjectsServiceApplication extends BootMixin(
     this.bind(MsSqlService.BINDING_KEY_CONFIG).to(options.sqlDbConfig);
     this.bind(QengDataSource.CONFIG_BINDING_KEY).to(
       options.qengDataSourceConfig,
+    );
+
+    this.bind(ProfileDataSource.CONFIG_BINDING_KEY).to(
+      options.pofileDataSourceConfig,
+    );
+    this.bind(AuthDataSource.CONFIG_BINDING_KEY).to(
+      options.authDataSourceConfig,
     );
 
     // Redis

@@ -1,6 +1,6 @@
 import {inject, intercept} from '@loopback/core';
-import {ProjectService} from '../services';
-import {get, getModelSchemaRef, param} from '@loopback/rest';
+import {ProjectConverterService, ProjectService} from '../services';
+import {get, getModelSchemaRef, param, post} from '@loopback/rest';
 import {
   ProjectDetailsDTO,
   ProjectsSummaryDTO,
@@ -8,7 +8,12 @@ import {
   WorkRefReadyDTO,
   WorkRefReadyListDTO,
 } from '../dto';
-import {EnumRoles, protect} from '../lib-keycloak/src';
+import {
+  EnumRoles,
+  KeycloakSecurity,
+  KeycloakSecurityProvider,
+  protect,
+} from '../lib-keycloak/src';
 import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects';
@@ -18,6 +23,10 @@ const tags = ['Projects'];
 export class ProjectController {
   constructor(
     @inject(ProjectService.BINDING_KEY) private projectService: ProjectService,
+    @inject(ProjectConverterService.BINDING_KEY)
+    private projectConverterService: ProjectConverterService,
+    @inject(KeycloakSecurityProvider.BINDING_KEY)
+    private keycloakSecurity: KeycloakSecurity,
   ) {}
 
   @get(`${BASE_ADDR}/{case_no}/details`, {
@@ -98,5 +107,18 @@ export class ProjectController {
   })
   async getWorkrefReadyList(): Promise<WorkRefReadyListDTO> {
     return this.projectService.readyForWorkRefList();
+  }
+
+  @post(`${BASE_ADDR}/import/{case_no}`, {
+    tags,
+    summary: 'Import specified project',
+    description: 'Import specified project',
+    responses: {204: {}},
+  })
+  async importProject(
+    @param.path.string('case_no') caseNo: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectConverterService.importProject(userId, caseNo);
   }
 }

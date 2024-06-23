@@ -1,2 +1,2 @@
 export * from './profile.repository';
-export * from './project.repository';
+export * from './building-project.repository';
