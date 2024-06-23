@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {ProjectConverterService, ProjectManagementService} from '../services';
 import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   BuildingProjectDTO,
@@ -24,6 +24,8 @@ export class ProjectOperatorsController {
     private projectMangementService: ProjectManagementService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
+    @inject(ProjectConverterService.BINDING_KEY)
+    private projectConverterService: ProjectConverterService,
   ) {}
 
   @get(`${BASE_ADDR}/projects/verification-code/{n_id}`, {
@@ -71,5 +73,18 @@ export class ProjectOperatorsController {
       verificationCode,
       body,
     );
+  }
+
+  @post(`${BASE_ADDR}/import/{case_no}`, {
+    tags,
+    summary: 'Import specified project',
+    description: 'Import specified project',
+    responses: {204: {}},
+  })
+  async importProject(
+    @param.path.string('case_no') caseNo: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectConverterService.importProject(userId, caseNo);
   }
 }
