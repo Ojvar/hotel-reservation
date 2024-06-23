@@ -1,6 +1,6 @@
-import { inject, intercept } from '@loopback/context';
-import { ProjectManagementService } from '../services';
-import { get, getModelSchemaRef, param, post, requestBody } from '@loopback/rest';
+import {inject, intercept} from '@loopback/context';
+import {ProjectManagementService} from '../services';
+import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectRegistrationCodeDTO,
@@ -24,7 +24,7 @@ export class ProjectOperatorsController {
     private projectMangementService: ProjectManagementService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
-  ) { }
+  ) {}
 
   @get(`${BASE_ADDR}/projects/verification-code/{n_id}`, {
     tags,
@@ -53,7 +53,7 @@ export class ProjectOperatorsController {
     responses: {
       200: {
         content: {
-          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
         },
       },
     },
@@ -63,7 +63,7 @@ export class ProjectOperatorsController {
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
   ): Promise<BuildingProjectDTO> {
-    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
     return this.projectMangementService.createNewProject(
       userId,

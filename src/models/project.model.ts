@@ -16,16 +16,16 @@ export class BuildingProjectLawyer extends TimestampModelWithId {
   user_id: string;
   @property({required: true})
   power_of_attorney_number: string;
-  @property({type: 'date', required: true})
-  power_of_attorney_date: Date;
-  @property({required: false})
+  @property({type: 'date'})
+  power_of_attorney_date?: Date;
+  @property({})
   description?: string;
   @property({
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-  @property({required: false})
+  @property({})
   attachments?: Attachment;
 
   constructor(data?: Partial<BuildingProjectLawyer>) {
@@ -61,9 +61,9 @@ export type BuildingProjectOwners = BuildingProjectOwner[];
 export class BuildingProjectOwnership extends Model {
   @property.array(BuildingProjectOwner, {required: true})
   owners: BuildingProjectOwners;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   has_partners: boolean;
-  @property({required: false})
+  @property({})
   attachments: Attachment;
 
   constructor(data?: Partial<BuildingProjectOwnership>) {
@@ -87,7 +87,7 @@ export class BuildingProjectBuildingSiteLocation extends Model {
 export class BuildingProjectOwnershipType extends Model {
   @property({required: true})
   ownership_type_id: string;
-  @property({required: false})
+  @property({})
   description?: string;
   @property({required: true})
   form_number: string;
@@ -106,13 +106,13 @@ export class BuildingProjectOwnershipType extends Model {
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectPropertyRegistrationDetails extends Model {
   @property({required: true})
-  main: number;
+  main: string;
   @property({required: true})
-  sub: number;
+  sub: string;
   @property({required: true})
-  sector: number;
+  sector: string;
   @property({required: true})
-  part: number;
+  part: string;
 
   constructor(data?: Partial<BuildingProjectPropertyRegistrationDetails>) {
     super(data);
@@ -126,11 +126,11 @@ export class BuildingProjectLocationAddress extends Model {
   property_registration_details: BuildingProjectPropertyRegistrationDetails;
 
   // Map geo data
-  @property({required: false})
+  @property({})
   long?: number;
-  @property({required: false})
+  @property({})
   lat?: number;
-  @property({type: 'object', required: false})
+  @property({type: 'object'})
   geo_info?: object;
 
   // Location
@@ -138,17 +138,17 @@ export class BuildingProjectLocationAddress extends Model {
   city_id: string;
   @property({required: true})
   municipality_district_id: string;
-  @property({required: false})
+  @property({})
   area?: number;
 
-  @property({required: true})
-  street: string;
-  @property({required: true})
-  alley: string;
-  @property({required: true})
-  plaque: string;
-  @property({required: true})
-  zip_code: number;
+  @property({})
+  street?: string;
+  @property({})
+  alley?: string;
+  @property({})
+  plaque?: string;
+  @property({})
+  zip_code?: number;
 
   // // Additional data
   // @property({  required: true })
@@ -238,13 +238,13 @@ export class BuildingProjectSpecification extends Model {
   incremental_project: boolean;
 
   /// TODO: SHOULD OPTIMIZE
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   two_supervisors: boolean;
 
   // Quota
-  @property({required: false})
+  @property({})
   quota_type_id: string;
-  @property({required: false})
+  @property({})
   quota_value: number;
 
   constructor(data?: Partial<BuildingProjectSpecification>) {
@@ -285,7 +285,14 @@ export class BuildingProjectInvoice extends TimestampModelWithId {
 }
 export type BuildingProjectInvoices = BuildingProjectInvoice[];
 
-@model({name: 'building_projects'})
+@model({
+  name: 'building_projects',
+  settings: {
+    indexes: [
+      {keys: {case_no: 1}, options: {name: 'case_no_uidx', unique: true}},
+    ],
+  },
+})
 export class BuildingProject extends Entity {
   @property({id: true, generated: true})
   id?: string;
@@ -300,22 +307,24 @@ export class BuildingProject extends Entity {
   status: EnumStatus;
 
   @property({required: true})
+  case_no: string;
+  @property({required: true})
   address: BuildingProjectLocationAddress;
   @property({required: true})
   ownership_type: BuildingProjectOwnershipType;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({required: false})
+  @property({})
   project_usage_description?: string;
   @property({required: true})
   building_site_lcoation: BuildingProjectBuildingSiteLocation;
   @property({required: true})
   ownership: BuildingProjectOwnership;
-  @property.array(BuildingProjectLawyer, {required: false, default: []})
+  @property.array(BuildingProjectLawyer, {default: []})
   lawyers?: BuildingProjectLawyers;
   @property({required: true})
   specification: BuildingProjectSpecification;
-  @property.array(BuildingProjectInvoice, {required: false, default: []})
+  @property.array(BuildingProjectInvoice, {default: []})
   invoices?: BuildingProjectInvoices;
 
   constructor(data?: Partial<BuildingProject>) {

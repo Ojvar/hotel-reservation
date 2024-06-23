@@ -1,6 +1,6 @@
-import { inject, intercept } from '@loopback/context';
-import { ProjectManagementService } from '../services';
-import { get, getModelSchemaRef, param, post, requestBody } from '@loopback/rest';
+import {inject, intercept} from '@loopback/context';
+import {ProjectManagementService} from '../services';
+import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
@@ -13,7 +13,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import { Filter } from '@loopback/repository';
+import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
@@ -25,29 +25,28 @@ export class ProjectManagementController {
     private projectMangementService: ProjectManagementService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
-  ) { }
+  ) {}
 
-  @post(`${BASE_ADDR}/new-project/{n_id}`, {
+  @post(`${BASE_ADDR}/new-project`, {
     tags,
     summary: 'Create a new project',
     description: 'Create a new project',
     responses: {
       200: {
         content: {
-          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
         },
       },
     },
   })
   async createNewProject(
     @requestBody() body: NewBuildingProjectRequestDTO,
-    @param.path.string('n_id') nId: string,
   ): Promise<BuildingProjectDTO> {
-    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
     return this.projectMangementService.createNewProject(
       userId,
-      nId,
+      undefined,
       undefined,
       body,
     );

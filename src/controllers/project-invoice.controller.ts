@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { get, getModelSchemaRef, param, post, requestBody } from '@loopback/rest';
+import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import { inject, intercept } from '@loopback/context';
-import { ProjectManagementService } from '../services';
+import {inject, intercept} from '@loopback/context';
+import {ProjectManagementService} from '../services';
 import {
   BuildingProjectInvoiceDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectInvoicesDTO,
   NewBuildingProjectInvoiceRequestDTO,
 } from '../dto';
-import { Filter } from '@loopback/repository';
+import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects/{project_id}/invoices';
 const tags = ['Projects.Invoice'];
@@ -26,19 +26,19 @@ export class ProjectInvoiceController {
     private keycloakSecurity: KeycloakSecurity,
     @inject(ProjectManagementService.BINDING_KEY)
     private projectManagementService: ProjectManagementService,
-  ) { }
+  ) {}
 
   @post(`${BASE_ADDR}`, {
     tags,
     summary: 'Add new invoice',
     description: 'Add new invoice',
-    responses: { 204: { content: { 'application/json': {} } } },
+    responses: {204: {content: {'application/json': {}}}},
   })
   async addNewInvoice(
     @requestBody() body: NewBuildingProjectInvoiceRequestDTO,
     @param.path.string('project_id') project_id: string,
   ): Promise<void> {
-    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectInvoiceRequestDTO(body);
     await this.projectManagementService.addNewInvoice(userId, project_id, body);
   }

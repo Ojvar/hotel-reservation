@@ -38,14 +38,14 @@ export class BuildingProjectRegistrationCodeDTO extends Model {
 
 @model({})
 export class BuildingProjectPropRegDetailsDTO extends Model {
-  @property({type: 'number'})
-  main: number;
-  @property({type: 'number'})
-  sub: number;
-  @property({type: 'number'})
-  sector: number;
-  @property({type: 'number'})
-  part: number;
+  @property({})
+  main: string;
+  @property({})
+  sub: string;
+  @property({})
+  sector: string;
+  @property({})
+  part: string;
 
   constructor(data?: Partial<BuildingProjectPropRegDetailsDTO>) {
     super(data);
@@ -248,8 +248,8 @@ export class BuildingProjectLawyerDTO extends Model {
 
   @property({required: true})
   power_of_attorney_number: string;
-  @property({type: 'date', required: true})
-  power_of_attorney_date: Date;
+  @property({type: 'date', required: false})
+  power_of_attorney_date?: Date;
   @property({required: false})
   description?: string;
   @property({

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { BindingKey, BindingScope, inject, injectable } from '@loopback/core';
+import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
@@ -11,16 +11,16 @@ import {
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
 } from '../dto';
-import { AnyObject, Filter, repository } from '@loopback/repository';
-import { ProfileRepository, ProjectRepository } from '../repositories';
-import { VeirificationCodeService } from './veirification-code.service';
-import { adjustMin, adjustRange } from '../helpers';
-import { BuildingProject, EnumStatus } from '../models';
-import { ObjectId } from 'bson';
+import {AnyObject, Filter, repository} from '@loopback/repository';
+import {ProfileRepository, ProjectRepository} from '../repositories';
+import {VeirificationCodeService} from './veirification-code.service';
+import {adjustMin, adjustRange} from '../helpers';
+import {BuildingProject, EnumStatus} from '../models';
+import {ObjectId} from 'bson';
 
 export const ProjectManagementSteps = {
-  REGISTRATION: { code: 0, title: 'ثبت پروژه' },
-  DESIGNER_SPECIFICATION: { code: 1, title: 'تغیین مهندس طراح' },
+  REGISTRATION: {code: 0, title: 'ثبت پروژه'},
+  DESIGNER_SPECIFICATION: {code: 1, title: 'تغیین مهندس طراح'},
 };
 
 export enum EnumRegisterProjectType {
@@ -28,7 +28,7 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-@injectable({ scope: BindingScope.TRANSIENT })
+@injectable({scope: BindingScope.TRANSIENT})
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
@@ -41,7 +41,7 @@ export class ProjectManagementService {
     @repository(ProjectRepository) private projectRepo: ProjectRepository,
     @inject(VeirificationCodeService.BINDING_KEY)
     private verificationCodeService: VeirificationCodeService,
-  ) { }
+  ) {}
 
   async sendProjectRegistrationCode(
     nId: string,
@@ -60,22 +60,27 @@ export class ProjectManagementService {
 
   async createNewProject(
     userId: string,
-    nId: string,
+    nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
   ): Promise<BuildingProjectDTO> {
-    if (verificationCode) {
+    if (verificationCode && nId) {
       await this.verificationCodeService.checkVerificationCodeByNId(
         nId,
         EnumRegisterProjectType.REG_PROJECT,
         verificationCode,
       );
     }
+
     const newProject = await this.projectRepo.create(data.toModel(userId));
-    await this.verificationCodeService.removeVerificationCodeByNId(
-      nId,
-      EnumRegisterProjectType.REG_PROJECT,
-    );
+
+    if (verificationCode && nId) {
+      await this.verificationCodeService.removeVerificationCodeByNId(
+        nId,
+        EnumRegisterProjectType.REG_PROJECT,
+      );
+    }
+
     return BuildingProjectDTO.fromModel(newProject);
   }
 
@@ -98,7 +103,6 @@ export class ProjectManagementService {
     return result.map(BuildingProjectDTO.fromModel);
   }
 
-  
   async addNewInvoice(
     userId: string,
     id: string,
@@ -155,5 +159,4 @@ export class ProjectManagementService {
     const invoices = await pointer.toArray();
     return invoices?.map(BuildingProjectInvoiceDTO.fromModel) ?? [];
   }
-
 }
