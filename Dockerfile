@@ -12,7 +12,7 @@ COPY --chown=node package*.json ./
 RUN yarn install --loglevel verbose
 
 COPY --chown=node . .
-RUN yran build
+RUN yarn build
 
 ## DEPLOY STAGE
 FROM $NODE_BASE_IMAGE as stage_deploy
