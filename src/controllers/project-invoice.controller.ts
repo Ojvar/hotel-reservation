@@ -84,7 +84,7 @@ export class ProjectInvoiceController {
   async getAllInvoice(
     @param.path.string('project_id') projectId: string,
     @param.filter(BuildingProjectInvoiceFilter)
-    filter: Filter<BuildingProjectInvoiceFilter>,
+    filter: Filter<BuildingProjectInvoiceFilter> = {},
   ): Promise<BuildingProjectInvoicesDTO> {
     return this.projectManagementService.getAllInvoices(projectId, filter);
   }

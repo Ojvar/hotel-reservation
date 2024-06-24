@@ -125,10 +125,10 @@ export class ProjectManagementService {
 
   async getAllInvoices(
     projectId: string,
-    userFilter: Filter<BuildingProjectInvoiceFilter>,
+    userFilter: Filter<BuildingProjectInvoiceFilter> = {},
   ): Promise<BuildingProjectInvoicesDTO> {
-    const {type: invoiceType, meta: invoiceMeta = {}} =
-      (userFilter.where as AnyObject) ?? {};
+    const {type: invoiceType, meta: invoiceMeta = {}} = (userFilter.where ??
+      {}) as AnyObject;
 
     const aggregate = [
       {$match: {_id: new ObjectId(projectId)}},
@@ -157,7 +157,8 @@ export class ProjectManagementService {
       'aggregate',
       aggregate,
     );
-    const invoices = await pointer.toArray();
+    const [result] = await pointer.toArray();
+    const {invoices = []} = result;
     return invoices?.map(BuildingProjectInvoiceDTO.fromModel) ?? [];
   }
 }
