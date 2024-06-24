@@ -5,7 +5,8 @@ import {
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
   BuildingProjectInvoiceFilter,
-  BuildingProjectInvoicesDTO,
+  BuildingProjectInvoicesListDTO,
+  BuildingProjectInvoicesListsDTO,
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectsDTO,
   NewBuildingProjectInvoiceRequestDTO,
@@ -124,19 +125,25 @@ export class ProjectManagementService {
   }
 
   async getAllInvoices(
-    projectId: string,
+    projectId: string | undefined = undefined,
     userFilter: Filter<BuildingProjectInvoiceFilter> = {},
-  ): Promise<BuildingProjectInvoicesDTO> {
-    const {type: invoiceType, meta: invoiceMeta = {}} = (userFilter.where ??
+  ): Promise<BuildingProjectInvoicesListsDTO> {
+    const {tags: invoiceTags, meta: invoiceMeta = {}} = (userFilter.where ??
       {}) as AnyObject;
 
     const aggregate = [
-      {$match: {_id: new ObjectId(projectId)}},
+      {$sort: {_id: 1}},
+      {
+        $match: {
+          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
+          status: EnumStatus.ACTIVE,
+        },
+      },
       {$unwind: '$invoices'},
       {
         $match: {
-          ...(invoiceType ? {'invoices.type': invoiceType} : {}),
-          ...invoiceMeta,
+          ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+          ...(invoiceMeta ?? {}),
         },
       },
       {$skip: adjustMin(userFilter.skip ?? 0)},
@@ -157,8 +164,7 @@ export class ProjectManagementService {
       'aggregate',
       aggregate,
     );
-    const [result] = await pointer.toArray();
-    const {invoices = []} = result;
-    return invoices?.map(BuildingProjectInvoiceDTO.fromModel) ?? [];
+    const result = await pointer.toArray();
+    return result.map(BuildingProjectInvoicesListDTO.fromModel);
   }
 }

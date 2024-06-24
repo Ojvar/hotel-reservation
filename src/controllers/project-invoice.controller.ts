@@ -11,7 +11,8 @@ import {ProjectManagementService} from '../services';
 import {
   BuildingProjectInvoiceDTO,
   BuildingProjectInvoiceFilter,
-  BuildingProjectInvoicesDTO,
+  BuildingProjectInvoicesListDTO,
+  BuildingProjectInvoicesListsDTO,
   NewBuildingProjectInvoiceRequestDTO,
 } from '../dto';
 import {Filter} from '@loopback/repository';
@@ -74,7 +75,7 @@ export class ProjectInvoiceController {
           'application/json': {
             schema: {
               type: 'array',
-              items: getModelSchemaRef(BuildingProjectInvoiceDTO),
+              items: getModelSchemaRef(BuildingProjectInvoicesListDTO),
             },
           },
         },
@@ -85,7 +86,7 @@ export class ProjectInvoiceController {
     @param.path.string('project_id') projectId: string,
     @param.filter(BuildingProjectInvoiceFilter)
     filter: Filter<BuildingProjectInvoiceFilter> = {},
-  ): Promise<BuildingProjectInvoicesDTO> {
+  ): Promise<BuildingProjectInvoicesListsDTO> {
     return this.projectManagementService.getAllInvoices(projectId, filter);
   }
 }
