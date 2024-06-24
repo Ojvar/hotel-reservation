@@ -9,8 +9,7 @@ import {KeycloakAgentService} from '../lib-keycloak/src';
 import {AuthService, AuthServiceProvider} from './auth.service';
 import {AnyObject, repository} from '@loopback/repository';
 import {BuildingProjectRepository} from '../repositories';
-import {BuildingProject} from '../models';
-import {NewBuildingProjectRequestDTO} from '../dto';
+import {BuildingProjectDTO, NewBuildingProjectRequestDTO} from '../dto';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {
@@ -42,7 +41,7 @@ WHERE   CaseNo = '${caseNo}'
   async importProject(
     userId: string,
     caseNo: string,
-  ): Promise<BuildingProject> {
+  ): Promise<BuildingProjectDTO> {
     const {
       recordset: [project],
     } = await this.sqlService.runQueryWithResult<PlanControlProject>(
@@ -55,7 +54,11 @@ WHERE   CaseNo = '${caseNo}'
     // convert project new-style
     const projectObject = await this.toProjectObject(project);
     const prjDto = new NewBuildingProjectRequestDTO({...projectObject});
-    return this.buildingProjectRepo.create(prjDto.toModel(userId));
+    const newBuildingProject = await this.buildingProjectRepo.create(
+      prjDto.toModel(userId),
+    );
+
+    return BuildingProjectDTO.fromModel(newBuildingProject);
   }
 
   async createProfile(

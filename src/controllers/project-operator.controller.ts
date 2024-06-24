@@ -79,12 +79,18 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Import specified project',
     description: 'Import specified project',
-    responses: {204: {}},
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
   })
   async importProject(
     @param.path.string('case_no') caseNo: string,
-  ): Promise<void> {
+  ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectConverterService.importProject(userId, caseNo);
+    return this.projectConverterService.importProject(userId, caseNo);
   }
 }
