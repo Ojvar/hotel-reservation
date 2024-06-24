@@ -304,7 +304,7 @@ export class BuildingProjectDTO extends Model {
   @property({required: false})
   project_usage_description?: string;
   @property()
-  building_site_lcoation: BuildingProjectBuildingSiteLocationDTO;
+  building_site_location: BuildingProjectBuildingSiteLocationDTO;
   @property.array(BuildingProjectLawyerDTO)
   lawyers?: BuildingProjectLawyersDTO;
 
@@ -324,8 +324,8 @@ export class BuildingProjectDTO extends Model {
       ),
       project_usage_description: data.project_usage_description,
       project_usage_types: data.project_usage_types,
-      building_site_lcoation: BuildingProjectBuildingSiteLocationDTO.fromModel(
-        data.building_site_lcoation,
+      building_site_location: BuildingProjectBuildingSiteLocationDTO.fromModel(
+        data.building_site_location,
       ),
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
       //// TODO: Add other fields

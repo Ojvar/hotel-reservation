@@ -386,7 +386,7 @@ export class NewBuildingProjectRequestDTO extends Model {
       project_usage_description: this.project_usage_description,
       address: this.address.toModel(),
       ownership_type: this.ownership_type.toModel(),
-      building_site_lcoation: this.building_site_location.toModel(),
+      building_site_location: this.building_site_location.toModel(),
       ownership: new BuildingProjectOwnership({
         owners: this.owners.map(x => x.toModel(userId)),
         has_partners: this.owners_has_partners,

@@ -5,8 +5,6 @@ import {
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
   BuildingProjectInvoiceFilter,
-  BuildingProjectInvoicesListDTO,
-  BuildingProjectInvoicesListsDTO,
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectsDTO,
   NewBuildingProjectInvoiceRequestDTO,
@@ -124,40 +122,67 @@ export class ProjectManagementService {
     return BuildingProjectInvoiceDTO.fromModel(invoice);
   }
 
+  /// TODO: Create DTO
   async getAllInvoices(
     projectId: string | undefined = undefined,
     userFilter: Filter<BuildingProjectInvoiceFilter> = {},
-  ): Promise<BuildingProjectInvoicesListsDTO> {
-    const {tags: invoiceTags, meta: invoiceMeta = {}} = (userFilter.where ??
-      {}) as AnyObject;
+  ): Promise<AnyObject[]> {
+    const {tags: invoiceTags} = (userFilter.where ?? {}) as AnyObject;
 
+    const invoicesConditions = {
+      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+    };
     const aggregate = [
       {$sort: {_id: 1}},
       {
         $match: {
-          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
           status: EnumStatus.ACTIVE,
+          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
         },
       },
-      {$unwind: '$invoices'},
-      {
-        $match: {
-          ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
-          ...(invoiceMeta ?? {}),
-        },
-      },
-      {$skip: adjustMin(userFilter.skip ?? 0)},
-      {$limit: adjustRange(userFilter.limit ?? 100)},
+      {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
+      ...(Object.keys(invoicesConditions).length ? [invoicesConditions] : []),
       {
         $group: {
           _id: '$_id',
-          id: {$first: '$_id'},
-          created: {$first: '$created'},
-          updated: {$first: '$updated'},
-          status: {$first: '$status'},
-          invoices: {$push: '$invoices'},
+          mergedFields: {$mergeObjects: '$$ROOT'},
+          all_states: {$push: '$states'},
         },
       },
+      {
+        $replaceRoot: {
+          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
+        },
+      },
+      {$set: {states: '$all_states'}},
+      {$unset: ['all_states', 'mergedFields']},
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'ownership.owners.user_id',
+          foreignField: 'user_id',
+          as: 'owners_profile',
+        },
+      },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'lawyers.user_id',
+          foreignField: 'user_id',
+          as: 'lawyers_profile',
+        },
+      },
+      {
+        $lookup: {
+          from: 'basedata',
+          localField: 'ownership_type.ownership_type_id',
+          foreignField: '_id',
+          as: 'ownership_info',
+        },
+      },
+      {$set: {ownership_info: {$first: '$ownership_info'}}},
+      {$skip: adjustMin(userFilter.skip ?? 0)},
+      {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
     const pointer = await this.projectRepo.execute(
       BuildingProject.modelName,
@@ -165,6 +190,42 @@ export class ProjectManagementService {
       aggregate,
     );
     const result = await pointer.toArray();
-    return result.map(BuildingProjectInvoicesListDTO.fromModel);
+
+    // TODO: MOve this conversion into dto
+    const getProfile = (userId: string, profiles: AnyObject[]): AnyObject => {
+      const profile = profiles.find(x => x.user_id === userId) ?? {};
+      return {
+        n_in: profile.n_in,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+      };
+    };
+
+    const output = result.map((r: AnyObject) => ({
+      ...r,
+      _id: undefined,
+      id: r._id.toString(),
+      ownership: {
+        ...r.ownership,
+        owners: r.ownership.owners.map((o: AnyObject) => ({
+          ...o,
+          profile: getProfile(o.user_id, r.owners_profile),
+        })),
+        lawyers: r.lawyers.map((l: AnyObject) => ({
+          ...l,
+          profile: getProfile(l.user_id, r.lawyers_profile),
+        })),
+        ownership_type: {
+          ...r.ownership_type,
+          ownership_type: r.ownership_info.key,
+        },
+        owners_profile: undefined,
+        lawyers_profile: undefined,
+        ownership_info: undefined,
+      },
+    }));
+
+    return output;
+    // return result.map(BuildingProjectInvoicesListDTO.fromModel);
   }
 }

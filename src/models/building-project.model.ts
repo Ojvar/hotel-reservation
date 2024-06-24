@@ -317,7 +317,7 @@ export class BuildingProject extends Entity {
   @property({})
   project_usage_description?: string;
   @property({required: true})
-  building_site_lcoation: BuildingProjectBuildingSiteLocation;
+  building_site_location: BuildingProjectBuildingSiteLocation;
   @property({required: true})
   ownership: BuildingProjectOwnership;
   @property.array(BuildingProjectLawyer, {default: []})

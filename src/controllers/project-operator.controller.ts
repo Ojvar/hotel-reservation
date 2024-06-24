@@ -4,8 +4,6 @@ import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
-  BuildingProjectInvoicesListDTO,
-  BuildingProjectInvoicesListsDTO,
   BuildingProjectRegistrationCodeDTO,
   NewBuildingProjectRequestDTO,
   ProjectSummaryEngineerDTO,
@@ -16,7 +14,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
+import {AnyObject, Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -108,7 +106,8 @@ export class ProjectOperatorsController {
           'application/json': {
             schema: {
               type: 'array',
-              items: getModelSchemaRef(BuildingProjectInvoicesListDTO),
+              // USE DTO
+              items: getModelSchemaRef(Object),
             },
           },
         },
@@ -118,7 +117,7 @@ export class ProjectOperatorsController {
   async getAllInvoice(
     @param.filter(BuildingProjectInvoiceFilter)
     filter: Filter<BuildingProjectInvoiceFilter> = {},
-  ): Promise<BuildingProjectInvoicesListsDTO> {
+  ): Promise<AnyObject[]> {
     return this.projectManagementService.getAllInvoices(undefined, filter);
   }
 }

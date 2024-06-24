@@ -88,29 +88,3 @@ export class BuildingProjectInvoiceDTO extends Model {
   }
 }
 export type BuildingProjectInvoicesDTO = BuildingProjectInvoiceDTO[];
-
-@model()
-export class BuildingProjectInvoicesListDTO extends Model {
-  @property({})
-  id: string;
-  @property({})
-  created_at: Date;
-  @property({})
-  updated_at: Date;
-  @property.array(BuildingProjectInvoiceDTO, {})
-  invoices: BuildingProjectInvoicesDTO;
-
-  constructor(data?: Partial<BuildingProjectInvoicesListDTO>) {
-    super(data);
-  }
-
-  static fromModel(data: AnyObject): BuildingProjectInvoicesListDTO {
-    return new BuildingProjectInvoicesListDTO({
-      id: data.id,
-      created_at: data.created.at,
-      updated_at: data.updated_at,
-      invoices: data.invoices.map(BuildingProjectInvoiceDTO.fromModel),
-    });
-  }
-}
-export type BuildingProjectInvoicesListsDTO = BuildingProjectInvoicesListDTO[];

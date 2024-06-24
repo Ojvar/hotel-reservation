@@ -11,11 +11,9 @@ import {ProjectManagementService} from '../services';
 import {
   BuildingProjectInvoiceDTO,
   BuildingProjectInvoiceFilter,
-  BuildingProjectInvoicesListDTO,
-  BuildingProjectInvoicesListsDTO,
   NewBuildingProjectInvoiceRequestDTO,
 } from '../dto';
-import {Filter} from '@loopback/repository';
+import {AnyObject, Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects/{project_id}/invoices';
 const tags = ['Projects.Invoice'];
@@ -75,7 +73,7 @@ export class ProjectInvoiceController {
           'application/json': {
             schema: {
               type: 'array',
-              items: getModelSchemaRef(BuildingProjectInvoicesListDTO),
+              items: getModelSchemaRef(Object),
             },
           },
         },
@@ -86,7 +84,7 @@ export class ProjectInvoiceController {
     @param.path.string('project_id') projectId: string,
     @param.filter(BuildingProjectInvoiceFilter)
     filter: Filter<BuildingProjectInvoiceFilter> = {},
-  ): Promise<BuildingProjectInvoicesListsDTO> {
+  ): Promise<AnyObject[]> {
     return this.projectManagementService.getAllInvoices(projectId, filter);
   }
 }
