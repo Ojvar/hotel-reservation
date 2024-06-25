@@ -219,10 +219,10 @@ export class ProjectManagementService {
           ...r.ownership_type,
           ownership_type: r.ownership_info.key,
         },
-        owners_profile: undefined,
-        lawyers_profile: undefined,
-        ownership_info: undefined,
       },
+      owners_profile: undefined,
+      lawyers_profile: undefined,
+      ownership_info: undefined,
     }));
 
     return output;
