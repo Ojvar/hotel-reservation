@@ -309,6 +309,8 @@ export class BuildingProject extends Entity {
   @property({required: true})
   case_no: string;
   @property({required: true})
+  case_date: Date;
+  @property({required: true})
   address: BuildingProjectLocationAddress;
   @property({required: true})
   ownership_type: BuildingProjectOwnershipType;
@@ -345,6 +347,31 @@ export class BuildingProject extends Entity {
       throw new HttpErrors.NotFound('Invoice not found');
     }
     return result;
+  }
+
+  updateInvoice(
+    userId: string,
+    invoiceId: string,
+    data: BuildingProjectInvoiceInfo,
+  ): void {
+    const invoices = this.invoices ?? [];
+    const index = invoices.findIndex(
+      x => x.id?.toString() === invoiceId && x.status === EnumStatus.ACTIVE,
+    );
+    if (index === -1) {
+      throw new HttpErrors.NotFound('Invoice not found');
+    }
+
+    const now = new ModifyStamp({by: userId});
+    const oldInvoice = invoices[index];
+    invoices[index] = new BuildingProjectInvoice({
+      ...oldInvoice,
+      updated: now,
+      invoice: data,
+    });
+
+    this.invoices = invoices;
+    this.updated = now;
   }
 }
 

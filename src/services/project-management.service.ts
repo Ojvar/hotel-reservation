@@ -9,6 +9,7 @@ import {
   BuildingProjectsDTO,
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
+  UpdateInvoiceRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
 import {BuildingProjectRepository, ProfileRepository} from '../repositories';
@@ -42,6 +43,17 @@ export class ProjectManagementService {
     @inject(VeirificationCodeService.BINDING_KEY)
     private verificationCodeService: VeirificationCodeService,
   ) {}
+
+  async updateProjectInvoice(
+    userId: string,
+    projectId: string,
+    invoiceId: string,
+    body: UpdateInvoiceRequestDTO,
+  ): Promise<void> {
+    const project = await this.projectRepo.findById(projectId);
+    project.updateInvoice(userId, invoiceId, body.toModel());
+    await this.projectRepo.update(project);
+  }
 
   async sendProjectRegistrationCode(
     nId: string,

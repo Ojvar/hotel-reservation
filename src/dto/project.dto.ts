@@ -338,6 +338,8 @@ export class NewBuildingProjectRequestDTO extends Model {
   @property({required: true})
   case_no: string;
   @property({required: true})
+  case_date: Date;
+  @property({required: true})
   address: NewBuildingProjectLocationAddressDTO;
   @property({required: true})
   ownership_type: NewBuildingProjectOwnershipTypeDTO;
@@ -382,6 +384,7 @@ export class NewBuildingProjectRequestDTO extends Model {
       created: now,
       updated: now,
       case_no: this.case_no,
+      case_date: this.case_date,
       project_usage_types: this.project_usage_types,
       project_usage_description: this.project_usage_description,
       address: this.address.toModel(),

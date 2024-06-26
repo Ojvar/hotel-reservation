@@ -3,6 +3,7 @@ import {AnyObject, Model, model, property} from '@loopback/repository';
 import {
   BuildingProject,
   BuildingProjectBuildingSiteLocation,
+  BuildingProjectInvoiceInfo,
   BuildingProjectLawyer,
   BuildingProjectLocationAddress,
   BuildingProjectOwner,
@@ -23,6 +24,25 @@ export class BuildingProjectFilter extends Model {
 
   constructor(data?: Partial<BuildingProjectFilter>) {
     super(data);
+  }
+}
+
+@model()
+export class UpdateInvoiceRequestDTO extends Model {
+  @property.array(String, {required: true})
+  tags: string[];
+  @property({type: 'object', required: true})
+  meta: AnyObject;
+
+  constructor(data?: Partial<UpdateInvoiceRequestDTO>) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectInvoiceInfo {
+    return new BuildingProjectInvoiceInfo({
+      meta: this.meta,
+      tags: this.tags,
+    });
   }
 }
 

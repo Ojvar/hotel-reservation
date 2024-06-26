@@ -1,12 +1,20 @@
 import {inject, intercept} from '@loopback/context';
 import {ProjectConverterService, ProjectManagementService} from '../services';
-import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  post,
+  requestBody,
+} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
   NewBuildingProjectRequestDTO,
   ProjectSummaryEngineerDTO,
+  UpdateInvoiceRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -119,5 +127,25 @@ export class ProjectOperatorsController {
     filter: Filter<BuildingProjectInvoiceFilter> = {},
   ): Promise<AnyObject[]> {
     return this.projectManagementService.getAllInvoices(undefined, filter);
+  }
+
+  @patch(`${BASE_ADDR}/invoices/{project_id}/{invoice_id}`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async updateInvoice(
+    @requestBody() body: UpdateInvoiceRequestDTO,
+    @param.path.string('project_id') projectId: string,
+    @param.path.string('invoice_id') invoiceId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.updateProjectInvoice(
+      userId,
+      projectId,
+      invoiceId,
+      new UpdateInvoiceRequestDTO(body),
+    );
   }
 }

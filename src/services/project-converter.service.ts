@@ -148,6 +148,7 @@ WHERE   CaseNo = '${caseNo}'
 
     return {
       case_no: data.CaseNo,
+      case_date: data.CaseDate,
       address: {
         property_registration_details: {
           main: data.MainRecordZip,
@@ -158,11 +159,11 @@ WHERE   CaseNo = '${caseNo}'
         long: 0,
         lat: 0,
         city_id:
-          basedata.cities[data.Address_State as keyof typeof basedata.cities] ??
+          basedata.states[data.Address_State as keyof typeof basedata.states] ??
           '',
         municipality_district_id:
-          basedata.states[
-            data.Address_Municipal as keyof typeof basedata.states
+          basedata.cities[
+            data.Address_Municipal as keyof typeof basedata.cities
           ] ?? '',
         area: 0,
         street: data.Address_Street,
