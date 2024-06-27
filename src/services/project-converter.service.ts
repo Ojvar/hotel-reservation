@@ -159,8 +159,7 @@ WHERE   CaseNo = '${caseNo}'
         long: 0,
         lat: 0,
         city_id:
-          basedata.states[data.Address_State as keyof typeof basedata.states] ??
-          '',
+          basedata.cities[data.city_id as keyof typeof basedata.cities] ?? '',
         municipality_district_id:
           basedata.cities[
             data.Address_Municipal as keyof typeof basedata.cities
