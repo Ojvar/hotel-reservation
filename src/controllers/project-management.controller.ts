@@ -1,11 +1,11 @@
 import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
-  NewProjectDTO,
-  NewProjectRequestDTO,
-  ProjectRegistrationCodeDTO,
-  ProjectSummaryEngineerDTO,
+  BuildingProjectDTO,
+  BuildingProjectFilter,
+  BuildingProjectsDTO,
+  NewBuildingProjectRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -13,9 +13,10 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
+import {Filter} from '@loopback/repository';
 
-const BASE_ADDR = '/project-management';
-const tags = ['ProjectManagement'];
+const BASE_ADDR = '/projects/management';
+const tags = ['Projects.Management'];
 
 @intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
 export class ProjectManagementController {
@@ -26,51 +27,52 @@ export class ProjectManagementController {
     private keycloakSecurity: KeycloakSecurity,
   ) {}
 
-  @post(`${BASE_ADDR}/{n_id}`, {
-    tags,
-    summary: 'Get validation code to registrating new project',
-    description: 'Get validation code to registrating new project',
-    responses: {
-      200: {
-        content: {
-          'application/json': {
-            schema: getModelSchemaRef(ProjectSummaryEngineerDTO),
-          },
-        },
-      },
-    },
-  })
-  async getProjectRegistrationCode(
-    @param.path.string('n_id') nId: string,
-  ): Promise<ProjectRegistrationCodeDTO> {
-    return this.projectMangementService.sendProjectRegistrationCode(nId);
-  }
-
-  @post(`${BASE_ADDR}/new-project/{n_id}/{verification_code}`, {
+  @post(`${BASE_ADDR}/new-project`, {
     tags,
     summary: 'Create a new project',
     description: 'Create a new project',
     responses: {
       200: {
         content: {
-          'application/json': {
-            schema: getModelSchemaRef(NewProjectDTO),
-          },
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
         },
       },
     },
   })
   async createNewProject(
-    @requestBody() body: NewProjectRequestDTO,
-    @param.path.string('n_id') nId: string,
-    @param.path.string('verification_code') verificationCode: number,
-  ): Promise<NewProjectDTO | unknown> {
+    @requestBody() body: NewBuildingProjectRequestDTO,
+  ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    body = new NewBuildingProjectRequestDTO(body);
     return this.projectMangementService.createNewProject(
       userId,
-      nId,
-      verificationCode,
+      undefined,
+      undefined,
       body,
     );
+  }
+
+  @get(`${BASE_ADDR}`, {
+    tags,
+    summary: 'Get all projects list',
+    description: 'Get all projects list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getProjectsList(
+    @param.filter(BuildingProjectFilter)
+    filter: Filter<BuildingProjectFilter> = {},
+  ): Promise<BuildingProjectsDTO> {
+    return this.projectMangementService.getProjectsList(filter);
   }
 }

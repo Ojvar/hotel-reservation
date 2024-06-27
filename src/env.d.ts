@@ -44,5 +44,8 @@ declare namespace NodeJS {
 
     KEYCLOAK_ALLOWED_LIST: string;
     KEYCLOAK_REJECTED_LIST: string;
+
+    PROFILE_SERVICE_BASE_URL: string;
+    AUTH_SERVICE_BASE_URL: string;
   }
 }

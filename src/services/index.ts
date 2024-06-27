@@ -4,3 +4,6 @@ export * from './engineer.service';
 export * from './project-management.service';
 export * from './message.service';
 export * from './veirification-code.service';
+export * from './project-converter.service';
+export * from './profile.service';
+export * from './auth.service';
