@@ -23,11 +23,16 @@ export class VeirificationCodeService {
 
   readonly C_PROJECT_MANAGMENET_SMS_TAG = 'REG_PRJ';
   readonly C_PROJECT_MANAGMENET_SMS_SENDER = 'PROJECTS_SERVICE';
+  readonly C_PRJ_MGR = 'prj_mgr';
 
   constructor(
     @inject(RedisService.BINDING_KEY) private redisService: RedisService,
     @inject(MessageService.BINDING_KEY) private messageService: MessageService,
   ) {}
+
+  getKey(data: (string | number)[]): string {
+    return data.map(x => x.toString()).join('-');
+  }
 
   async generateAndStoreCode(
     title: string,
@@ -36,7 +41,7 @@ export class VeirificationCodeService {
     expireTime: number = 180,
     meta: AnyObject = {},
   ): Promise<string> {
-    const key = `PRJ_MGR_${owner.n_in}_${postfix}`;
+    const key = this.getKey([this.C_PRJ_MGR, owner.n_in, postfix]);
 
     // Check for existing code
     const oldRedisData = await this.redisService.client.GET(key);
@@ -72,14 +77,13 @@ ${code}
 
 مهلت اعتبار ${expireTime / 60} دقیقه
 `;
-    await this.messageService.sendSms(
-      new SmsMessage({
-        sender: this.C_PROJECT_MANAGMENET_SMS_SENDER,
-        tag: this.C_PROJECT_MANAGMENET_SMS_TAG,
-        body: msg,
-        receiver: owner.mobile,
-      }),
-    );
+    const smsMessage = new SmsMessage({
+      sender: this.C_PROJECT_MANAGMENET_SMS_SENDER,
+      tag: this.C_PROJECT_MANAGMENET_SMS_TAG,
+      body: msg,
+      receiver: owner.mobile,
+    });
+    await this.messageService.sendSms(smsMessage);
 
     return trackingCode;
   }
@@ -89,7 +93,7 @@ ${code}
     postfix: number,
     verificationCode: number,
   ): Promise<void> {
-    const key = `PRJ_MGR_${nIn}_${postfix}`;
+    const key = this.getKey([this.C_PRJ_MGR, nIn, postfix]);
 
     // Check for existing code
     const oldRedisData = await this.redisService.client.GET(key);
@@ -101,5 +105,13 @@ ${code}
     if (storedData.code.toString() !== verificationCode.toString()) {
       throw new HttpErrors.UnprocessableEntity('Invalid verification code');
     }
+  }
+
+  async removeVerificationCodeByNId(
+    nIn: string,
+    postfix: number,
+  ): Promise<void> {
+    const key = this.getKey([this.C_PRJ_MGR, nIn, postfix]);
+    await this.redisService.client.DEL(key);
   }
 }

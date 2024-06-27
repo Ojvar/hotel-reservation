@@ -775,6 +775,8 @@ export class ProjectSummaryDTO extends Model {
   @property({type: 'string'})
   case_no: string;
   @property({type: 'string'})
+  case_date: Date;
+  @property({type: 'string'})
   owner_name: string;
   @property({type: 'string'})
   owner_father: string;
@@ -809,6 +811,7 @@ export class ProjectSummaryDTO extends Model {
     return new ProjectSummaryDTO({
       id: firstData.id,
       case_no: firstData.case_no,
+      case_date: firstData.case_date,
       owner_name: firstData.owner_name,
       owner_father: firstData.owner_father,
       owner_cert_id: firstData.owner_shsh,
@@ -840,6 +843,7 @@ export class ProjectSummaryDTO extends Model {
         new ProjectSummaryDTO({
           id: row.id,
           case_no: row.case_no,
+          case_date: row.case_date,
           owner_name: row.owner_name,
           owner_father: row.owner_father,
           owner_cert_id: row.owner_shsh,

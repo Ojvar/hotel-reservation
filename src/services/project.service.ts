@@ -23,6 +23,7 @@ export interface ProjectSummaryEngineer {
 export interface ProjectSummaryItem extends ProjectSummaryEngineer {
   id: string;
   case_no: string;
+  case_date: Date;
   owner_name: string;
   owner_father: string;
   owner_mobile: string;
@@ -308,6 +309,7 @@ FROM
        (
           SELECT  id,
                   CaseNo as case_no,
+                  CaseDate as case_date,
                   Owner_Name as owner_name,
                   Owner_Father as owner_father,
                   OwnerMobile as owner_mobile,
@@ -343,6 +345,7 @@ FROM
        (
           SELECT  id,
                   CaseNo as case_no,
+                  CaseDate as case_date,
                   Owner_Name as owner_name,
                   Owner_Father as owner_father,
                   OwnerMobile as owner_mobile,

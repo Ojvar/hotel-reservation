@@ -48,7 +48,7 @@ export class QengDataSource
   ) {
     super({...dsConfig, ...config});
     super.once('connected', () => {
-      super.autoupdate().catch(console.error);
+      super.autoupdate().then(console.log).catch(console.error);
     });
   }
 }

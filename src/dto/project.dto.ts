@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {Model, model, property} from '@loopback/repository';
 import {
-  Project,
-  ProjectBuildingSiteLocation,
-  ProjectLawyer,
-  ProjectLocationAddress,
-  ProjectOwner,
-  ProjectOwnership,
-  ProjectOwnershipType,
-  ProjectPropertyRegistrationDetails,
-  ProjectSpecification,
+  BuildingProject,
+  BuildingProjectBuildingSiteLocation,
+  BuildingProjectLawyer,
+  BuildingProjectLocationAddress,
+  BuildingProjectOwner,
+  BuildingProjectOwnership,
+  BuildingProjectOwnershipType,
+  BuildingProjectPropertyRegistrationDetails,
+  BuildingProjectSpecification,
 } from '../models';
 import {ModifyStamp} from '../lib-models/src';
 
 @model({})
-export class NewProjectSpecificationDTO extends Model {
+export class NewBuildingProjectSpecificationDTO extends Model {
   // Keep all descriptions for all fields
   @property({type: 'object', items: 'string', required: true})
   descriptions: Record<string, string>;
@@ -22,25 +22,25 @@ export class NewProjectSpecificationDTO extends Model {
   meta?: Record<string, string | number>;
 
   // Project data
-  @property({type: 'number', required: true})
+  @property({required: true})
   ground_area_before: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   ground_area_after: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_area: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   elevator_stops: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_floors: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   commercial_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   residental_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   total_units: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   parking_count: number;
-  @property({type: 'number', required: true})
+  @property({required: true})
   house_storage_count: number;
 
   // Districts data
@@ -54,9 +54,9 @@ export class NewProjectSpecificationDTO extends Model {
   distict_west: number;
 
   // Building data
-  @property({type: 'string', required: true})
+  @property({required: true})
   building_priority: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   building_type_id: string;
   @property.array(String, {required: true})
   foundation_types: string[];
@@ -86,25 +86,25 @@ export class NewProjectSpecificationDTO extends Model {
   underground: boolean;
   @property({type: 'boolean', required: true})
   dilapidated: boolean;
-  @property({type: 'string', required: true})
+  @property({required: true})
   incremental_project: boolean;
 
   /// TODO: SHOULD OPTIMIZE
-  @property({type: 'string', required: true})
+  @property({type: 'boolean', required: true})
   two_supervisors: boolean;
 
   // Quota
-  @property({type: 'string', required: false})
+  @property({required: false})
   quota_type_id: string;
-  @property({type: 'number', required: false})
+  @property({required: false})
   quota_value: number;
 
-  constructor(data?: Partial<NewProjectSpecificationDTO>) {
+  constructor(data?: Partial<NewBuildingProjectSpecificationDTO>) {
     super(data);
   }
 
-  toModel(): ProjectSpecification {
-    return new ProjectSpecification({
+  toModel(): BuildingProjectSpecification {
+    return new BuildingProjectSpecification({
       descriptions: this.descriptions,
       meta: this.meta ?? {},
       ground_area_before: this.ground_area_before,
@@ -145,47 +145,52 @@ export class NewProjectSpecificationDTO extends Model {
 }
 
 @model({})
-export class NewProjectLawyerDTO extends Model {
-  @property({type: 'string', required: true})
+export class BuildingNewProjectLawyerDTO extends Model {
+  @property({required: true})
   user_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   power_of_attorney_number: string;
-  @property({type: 'date', required: true})
-  power_of_attorney_date: Date;
-  @property({type: 'string', required: false})
+  @property({type: 'date', required: false})
+  power_of_attorney_date?: Date;
+  @property({required: false})
   description?: string;
 
-  constructor(data?: Partial<NewProjectLawyerDTO>) {
+  constructor(data?: Partial<BuildingNewProjectLawyerDTO>) {
     super(data);
   }
 
-  toModel(): ProjectLawyer {
-    return new ProjectLawyer({
+  toModel(userId: string): BuildingProjectLawyer {
+    const now = new ModifyStamp({by: userId});
+    return new BuildingProjectLawyer({
+      created: now,
+      updated: now,
       user_id: this.user_id,
-      power_of_attorney_date: new Date(this.power_of_attorney_date),
+      power_of_attorney_date: this.power_of_attorney_date
+        ? new Date(this.power_of_attorney_date)
+        : undefined,
       power_of_attorney_number: this.power_of_attorney_number,
       description: this.description,
     });
   }
 }
-export type NewProjectLawyersDTO = NewProjectLawyerDTO[];
+export type NewBuildingProjectLawyersDTO = BuildingNewProjectLawyerDTO[];
 
 @model({})
-export class NewProjectOwnerDTO extends Model {
-  @property({type: 'string', required: true})
+export class NewBuildingProjectOwnerDTO extends Model {
+  @property({required: true})
   user_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   address: string;
-  @property({type: 'boolean', required: true})
+  @property({required: true})
   is_delegate: boolean;
 
-  constructor(data?: Partial<NewProjectOwnerDTO>) {
+  constructor(data?: Partial<NewBuildingProjectOwnerDTO>) {
     super(data);
   }
 
-  toModel(userId: string): ProjectOwner {
+  toModel(userId: string): BuildingProjectOwner {
     const now = new ModifyStamp({by: userId});
-    return new ProjectOwner({
+    return new BuildingProjectOwner({
       user_id: this.user_id,
       address: this.address,
       is_delegate: this.is_delegate ?? false,
@@ -194,25 +199,25 @@ export class NewProjectOwnerDTO extends Model {
     });
   }
 }
-export type NewProjectOwnersDTO = NewProjectOwnerDTO[];
+export type NewBuildingProjectOwnersDTO = NewBuildingProjectOwnerDTO[];
 
 @model({})
-export class NewProjectPropertyRegistrationDetailsDTO extends Model {
-  @property({type: 'number', required: true})
-  main: number;
-  @property({type: 'number', required: true})
-  sub: number;
-  @property({type: 'number', required: true})
-  sector: number;
-  @property({type: 'number', required: true})
-  part: number;
+export class NewBuildingProjectPropRegDetailsDTO extends Model {
+  @property({required: true})
+  main: string;
+  @property({required: true})
+  sub: string;
+  @property({required: true})
+  sector: string;
+  @property({required: true})
+  part: string;
 
-  constructor(data?: Partial<NewProjectPropertyRegistrationDetailsDTO>) {
+  constructor(data?: Partial<NewBuildingProjectPropRegDetailsDTO>) {
     super(data);
   }
 
-  toModel(): ProjectPropertyRegistrationDetails {
-    return new ProjectPropertyRegistrationDetails({
+  toModel(): BuildingProjectPropertyRegistrationDetails {
+    return new BuildingProjectPropertyRegistrationDetails({
       main: this.main,
       sub: this.sub,
       sector: this.sector,
@@ -222,49 +227,45 @@ export class NewProjectPropertyRegistrationDetailsDTO extends Model {
 }
 
 @model({})
-export class NewProjectLocationAddressDTO extends Model {
+export class NewBuildingProjectLocationAddressDTO extends Model {
   // Property registration details
   @property({required: true})
-  property_registration_details: NewProjectPropertyRegistrationDetailsDTO;
+  property_registration_details: NewBuildingProjectPropRegDetailsDTO;
 
   // Map geo data
-  @property({type: 'number', required: false})
+  @property({required: false})
   long?: number;
-  @property({type: 'number', required: false})
+  @property({required: false})
   lat?: number;
   @property({type: 'object', required: false})
   geo_info?: object;
 
   // Location details
-  @property({type: 'string', required: true})
+  @property({required: true})
   city_id: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   municipality_district_id: string;
-  @property({type: 'number', required: false})
+  @property({required: false})
   area?: number;
-  @property({type: 'string', required: true})
-  street: string;
-  @property({type: 'string', required: true})
-  alley: string;
-  @property({type: 'string', required: true})
-  plaque: string;
-  @property({type: 'number', required: true})
-  zip_code: number;
+  @property({required: false})
+  street?: string;
+  @property({required: false})
+  alley?: string;
+  @property({required: false})
+  plaque?: string;
+  @property({required: false})
+  zip_code?: number;
 
-  // Additional data
-  // @property({ type: 'string', required: true })
-  // type: string;
-
-  constructor(data?: Partial<NewProjectLocationAddressDTO>) {
+  constructor(data?: Partial<NewBuildingProjectLocationAddressDTO>) {
     super(data);
     this.property_registration_details =
-      new NewProjectPropertyRegistrationDetailsDTO(
+      new NewBuildingProjectPropRegDetailsDTO(
         this.property_registration_details,
       );
   }
 
-  toModel(): ProjectLocationAddress {
-    return new ProjectLocationAddress({
+  toModel(): BuildingProjectLocationAddress {
+    return new BuildingProjectLocationAddress({
       city_id: this.city_id,
       municipality_district_id: this.municipality_district_id,
       street: this.street,
@@ -283,26 +284,26 @@ export class NewProjectLocationAddressDTO extends Model {
 }
 
 @model({})
-export class NewProjectOwnershipTypeDTO extends Model {
-  @property({type: 'string', required: true})
+export class NewBuildingProjectOwnershipTypeDTO extends Model {
+  @property({required: true})
   ownership_type_id: string;
-  @property({type: 'string', required: false})
+  @property({required: false})
   description?: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   form_number: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   issue_date: string;
-  @property({type: 'string', required: true})
+  @property({required: true})
   renewal_code: string;
-  @property({type: 'number', required: true})
+  @property({required: true})
   building_density: number;
 
-  constructor(data?: Partial<NewProjectOwnershipTypeDTO>) {
+  constructor(data?: Partial<NewBuildingProjectOwnershipTypeDTO>) {
     super(data);
   }
 
-  toModel(): ProjectOwnershipType {
-    return new ProjectOwnershipType({
+  toModel(): BuildingProjectOwnershipType {
+    return new BuildingProjectOwnershipType({
       ownership_type_id: this.ownership_type_id,
       description: this.description,
       form_number: this.form_number,
@@ -314,18 +315,18 @@ export class NewProjectOwnershipTypeDTO extends Model {
 }
 
 @model({})
-export class NewProjectBuildingSiteLocationDTO extends Model {
-  @property({type: 'string', required: true})
+export class NewBuildingProjectSiteLocationDTO extends Model {
+  @property({required: true})
   location: string;
-  @property({type: 'number', required: true})
+  @property({required: true})
   land_occupancy: number;
 
-  constructor(data?: Partial<NewProjectBuildingSiteLocationDTO>) {
+  constructor(data?: Partial<NewBuildingProjectSiteLocationDTO>) {
     super(data);
   }
 
-  toModel(): ProjectBuildingSiteLocation {
-    return new ProjectBuildingSiteLocation({
+  toModel(): BuildingProjectBuildingSiteLocation {
+    return new BuildingProjectBuildingSiteLocation({
       land_occupancy: this.land_occupancy,
       location: this.location,
     });
@@ -333,55 +334,67 @@ export class NewProjectBuildingSiteLocationDTO extends Model {
 }
 
 @model()
-export class NewProjectRequestDTO extends Model {
+export class NewBuildingProjectRequestDTO extends Model {
   @property({required: true})
-  address: NewProjectLocationAddressDTO;
+  case_no: string;
   @property({required: true})
-  ownership_type: NewProjectOwnershipTypeDTO;
+  case_date: Date;
+  @property({required: true})
+  address: NewBuildingProjectLocationAddressDTO;
+  @property({required: true})
+  ownership_type: NewBuildingProjectOwnershipTypeDTO;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({type: 'string', required: false})
+  @property({required: false})
   project_usage_description?: string;
   @property({required: true})
-  building_site_location: NewProjectBuildingSiteLocationDTO;
-  @property.array(NewProjectOwnerDTO, {required: true})
-  owners: NewProjectOwnersDTO;
-  @property({type: 'boolean', required: true})
+  building_site_location: NewBuildingProjectSiteLocationDTO;
+  @property.array(NewBuildingProjectOwnerDTO, {required: true})
+  owners: NewBuildingProjectOwnersDTO;
+  @property({required: true})
   owners_has_partners: boolean;
   @property({required: false})
-  lawyer?: NewProjectLawyerDTO;
+  lawyer?: BuildingNewProjectLawyerDTO;
   @property({required: true})
-  specification: NewProjectSpecificationDTO;
+  specification: NewBuildingProjectSpecificationDTO;
 
-  constructor(data?: Partial<NewProjectRequestDTO>) {
+  constructor(data?: Partial<NewBuildingProjectRequestDTO>) {
     super(data);
 
     // Conver simple object to instances of classes
-    this.address = new NewProjectLocationAddressDTO(this.address);
-    this.ownership_type = new NewProjectOwnershipTypeDTO(this.ownership_type);
-    this.building_site_location = new NewProjectBuildingSiteLocationDTO(
+    this.address = new NewBuildingProjectLocationAddressDTO(this.address);
+    this.ownership_type = new NewBuildingProjectOwnershipTypeDTO(
+      this.ownership_type,
+    );
+    this.building_site_location = new NewBuildingProjectSiteLocationDTO(
       this.building_site_location,
     );
-    this.owners = this.owners.map(x => new NewProjectOwnerDTO(x));
+    this.owners = this.owners.map(x => new NewBuildingProjectOwnerDTO(x));
     this.lawyer = this.lawyer
-      ? new NewProjectLawyerDTO(this.lawyer)
+      ? new BuildingNewProjectLawyerDTO(this.lawyer)
       : undefined;
-    this.specification = new NewProjectSpecificationDTO(this.specification);
+    this.specification = new NewBuildingProjectSpecificationDTO(
+      this.specification,
+    );
   }
 
-  toModel(userId: string): Project {
+  toModel(userId: string): BuildingProject {
     const now = new ModifyStamp({by: userId});
-    return new Project({
+    return new BuildingProject({
       created: now,
       updated: now,
+      case_no: this.case_no,
+      case_date: this.case_date,
+      project_usage_types: this.project_usage_types,
+      project_usage_description: this.project_usage_description,
       address: this.address.toModel(),
       ownership_type: this.ownership_type.toModel(),
-      building_site_lcoation: this.building_site_location.toModel(),
-      ownership: new ProjectOwnership({
+      building_site_location: this.building_site_location.toModel(),
+      ownership: new BuildingProjectOwnership({
         owners: this.owners.map(x => x.toModel(userId)),
         has_partners: this.owners_has_partners,
       }),
-      lawyers: this.lawyer ? [this.lawyer?.toModel()] : [],
+      lawyers: this.lawyer ? [this.lawyer?.toModel(userId)] : [],
       specification: this.specification.toModel(),
     });
   }
