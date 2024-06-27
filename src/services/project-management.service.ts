@@ -210,6 +210,7 @@ export class ProjectManagementService {
         n_in: profile.n_in,
         first_name: profile.first_name,
         last_name: profile.last_name,
+        mobile: profile.mobile,
       };
     };
 
