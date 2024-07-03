@@ -354,3 +354,15 @@ export class BuildingProjectDTO extends Model {
   }
 }
 export type BuildingProjectsDTO = BuildingProjectDTO[];
+
+@model()
+export class AddNewJobRequestDTO extends Model {
+  @property({required: true})
+  job_id: string;
+  @property({required: false})
+  invoice_id?: string;
+
+  constructor(data?: Partial<AddNewJobRequestDTO>) {
+    super(data);
+  }
+}

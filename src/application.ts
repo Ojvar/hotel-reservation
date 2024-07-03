@@ -77,6 +77,11 @@ export class ProjectsServiceApplication extends BootMixin(
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
+      consumers: {
+        dirs: ['consumers'],
+        extensions: ['.consumer.js'],
+        nested: true,
+      },
       controllers: {
         // Customize ControllerBooter Conventions here
         dirs: ['controllers'],
@@ -137,9 +142,10 @@ export class ProjectsServiceApplication extends BootMixin(
     this.bind(RedisService.CONFIG_BINDING_KEY).to(options.redisConfig);
 
     // RabbitMQ
-    this.bind(RabbitmqBindings.CONFIG).to(options.rabbitmqConfig);
+    this.configure(RabbitmqBindings.COMPONENT).to(options.rabbitmqConfig);
     this.component(RabbitmqComponent);
     this.booters(ConsumersBooter);
     this.component(QueueComponent);
+    console.log(options.rabbitmqConfig);
   }
 }

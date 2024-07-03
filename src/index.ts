@@ -124,8 +124,22 @@ export function getApplicationConfig(
       prefetchCount: 1,
       exchanges: [
         {
+          name: RMQ_EXCHANGES.JOBS.name,
+          type: RMQ_EXCHANGES.JOBS.type,
+          options: {durable: true, alternateExchange: 'handler'},
+          queues: [
+            {
+              queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.name,
+              routingKey:
+                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.route_key,
+              queueOptions: {durable: true},
+            },
+          ],
+        },
+        {
           name: RMQ_EXCHANGES.MESSAGE.name,
           type: RMQ_EXCHANGES.MESSAGE.type,
+          options: {durable: true},
           queues: [
             {
               queue: RMQ_EXCHANGES.MESSAGE.queues.SMS.name,

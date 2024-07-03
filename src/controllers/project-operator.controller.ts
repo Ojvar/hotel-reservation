@@ -9,9 +9,11 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {
+  AddNewJobRequestDTO,
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
+  JobCandiateResultDTO,
   NewBuildingProjectRequestDTO,
   ProjectSummaryEngineerDTO,
   UpdateInvoiceRequestDTO,
@@ -146,6 +148,51 @@ export class ProjectOperatorsController {
       projectId,
       invoiceId,
       new UpdateInvoiceRequestDTO(body),
+    );
+  }
+
+  @post(`${BASE_ADDR}/jobs/{project_id}`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async addNewJob(
+    @requestBody() body: AddNewJobRequestDTO,
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.addNewJob(userId, projectId, body);
+  }
+
+  @get(`/test`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async test(): Promise<void> {
+    /*
+     * DONE
+     *
+     * 667d5b9a37efa5eb22b79344
+     * 667d5b6bacdaf064905cb269
+     * 667d481d9e930e151cbd3981
+     * 667d5b84acdaf05b755cb26a
+     */
+
+    const body = require('/home/nine/rmq.json').find(
+      (x: AnyObject) => x.job.id.toString() === '667d5b84acdaf05b755cb26a',
+    );
+    if (!body) {
+      console.log('not found');
+      return;
+    }
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+
+    await this.projectManagementService.updateJobData(
+      userId,
+      new JobCandiateResultDTO({...body}),
     );
   }
 }

@@ -285,6 +285,48 @@ export class BuildingProjectInvoice extends TimestampModelWithId {
 }
 export type BuildingProjectInvoices = BuildingProjectInvoice[];
 
+@model()
+export class BuildingProjectJobResult extends TimestampModelWithId {
+  @property({required: true})
+  published_at: Date;
+  @property({required: true})
+  job_id: string;
+  @property({required: true, jsonSchema: {enum: EnumStatusValues}})
+  job_status: EnumStatus;
+  @property({required: true})
+  schedule_id: string;
+  @property({required: true})
+  schedule_status: EnumStatus;
+  @property({required: true})
+  schedule_created_at: Date;
+  @property({required: false})
+  schedule_error?: string | null;
+  @property.array(String, {required: false})
+  selected_users?: string[];
+
+  constructor(data?: Partial<BuildingProjectJobResult>) {
+    super(data);
+  }
+}
+
+@model()
+export class BuildingProjectJob extends TimestampModelWithId {
+  @property({required: true})
+  job_id: string;
+  @property({required: false})
+  invoice_id?: string;
+  @property({required: true, jsonSchema: {enum: EnumStatusValues}})
+  status: EnumStatus;
+  @property({required: false})
+  result?: BuildingProjectJobResult;
+
+  constructor(data?: Partial<BuildingProjectJob>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type BuildingProjectJobs = BuildingProjectJob[];
+
 @model({
   name: 'building_projects',
   settings: {
@@ -328,12 +370,15 @@ export class BuildingProject extends Entity {
   specification: BuildingProjectSpecification;
   @property.array(BuildingProjectInvoice, {default: []})
   invoices?: BuildingProjectInvoices;
+  @property.array(BuildingProjectJob, {default: []})
+  jobs?: BuildingProjectJobs;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
     this.lawyers = this.lawyers ?? [];
     this.invoices = this.invoices ?? [];
+    this.jobs = this.jobs ?? [];
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
@@ -372,6 +417,50 @@ export class BuildingProject extends Entity {
 
     this.invoices = invoices;
     this.updated = now;
+  }
+
+  addNewJob(userId: string, jobId: string, invoiceId?: string): void {
+    const jobs = this.jobs ?? [];
+
+    // Find existing job
+    const oldJob = jobs.find(
+      job => job.job_id === jobId && job.status === EnumStatus.ACTIVE,
+    );
+    if (oldJob) {
+      throw new HttpErrors.NotAcceptable('Job already registered');
+    }
+
+    // Add new job
+    const now = new ModifyStamp({by: userId});
+    jobs.push(
+      new BuildingProjectJob({
+        created: now,
+        updated: now,
+        invoice_id: invoiceId,
+        job_id: jobId,
+      }),
+    );
+    this.jobs = jobs;
+  }
+
+  updateJobOfFail(
+    userId: string,
+    jobId: string,
+    result: BuildingProjectJobResult,
+  ): void {
+    const jobs = this.jobs ?? [];
+    const jobIndex = jobs.findIndex(
+      j => j.job_id.toString() === jobId.toString(),
+    );
+    if (jobIndex === -1) {
+      throw new HttpErrors.NotFound('Job not found');
+    }
+    jobs[jobIndex] = new BuildingProjectJob({
+      ...jobs[jobIndex],
+      updated: new ModifyStamp({by: userId}),
+      result,
+    });
+    this.jobs = jobs;
   }
 }
 
