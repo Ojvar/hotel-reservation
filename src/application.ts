@@ -146,6 +146,5 @@ export class ProjectsServiceApplication extends BootMixin(
     this.component(RabbitmqComponent);
     this.booters(ConsumersBooter);
     this.component(QueueComponent);
-    console.log(options.rabbitmqConfig);
   }
 }

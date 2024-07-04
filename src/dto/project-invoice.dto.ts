@@ -12,6 +12,10 @@ export class BuildingProjectInvoiceFilter extends Model {
   tags: string[];
   @property({type: 'object', required: true})
   meta: AnyObject;
+  @property({type: 'string', required: true})
+  job_invoice: string;
+  @property({type: 'object', required: true})
+  job_result: AnyObject;
 
   constructor(data?: Partial<BuildingProjectInvoiceFilter>) {
     super(data);

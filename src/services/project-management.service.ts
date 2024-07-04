@@ -183,11 +183,23 @@ export class ProjectManagementService {
     projectId: string | undefined = undefined,
     userFilter: Filter<BuildingProjectInvoiceFilter> = {},
   ): Promise<AnyObject[]> {
-    const {tags: invoiceTags} = (userFilter.where ?? {}) as AnyObject;
+    const {
+      tags: invoiceTags,
+      job_invoice: jobInvoice,
+      job_result: jobResult,
+    } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
       ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
     };
+    const jobsCondition: AnyObject = {};
+    if (jobResult) {
+      jobsCondition['result'] = jobResult;
+    }
+    if (jobInvoice) {
+      jobsCondition['invoice_id'] = new ObjectId(jobInvoice as string);
+    }
+
     const aggregate = [
       {$sort: {_id: 1}},
       {
@@ -198,6 +210,9 @@ export class ProjectManagementService {
       },
       {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
       ...(Object.keys(invoicesConditions).length ? [invoicesConditions] : []),
+      ...(Object.keys(jobsCondition).length
+        ? [{$match: {jobs: {$elemMatch: jobsCondition}}}]
+        : []),
       {
         $group: {
           _id: '$_id',
