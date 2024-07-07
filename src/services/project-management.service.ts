@@ -201,7 +201,6 @@ export class ProjectManagementService {
     }
 
     const aggregate = [
-      {$sort: {_id: 1}},
       {
         $match: {
           status: EnumStatus.ACTIVE,
@@ -217,6 +216,7 @@ export class ProjectManagementService {
         $group: {
           _id: '$_id',
           mergedFields: {$mergeObjects: '$$ROOT'},
+          all_invoices: {$push: '$invoices'},
           all_states: {$push: '$states'},
         },
       },
@@ -225,8 +225,8 @@ export class ProjectManagementService {
           newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
         },
       },
-      {$set: {states: '$all_states'}},
-      {$unset: ['all_states', 'mergedFields']},
+      {$set: {states: '$all_states', invoices: '$all_invoices'}},
+      {$unset: ['all_states', 'all_invoices', 'mergedFields']},
       {
         $lookup: {
           from: 'profiles',
@@ -252,6 +252,7 @@ export class ProjectManagementService {
         },
       },
       {$set: {ownership_info: {$first: '$ownership_info'}}},
+      {$sort: {_id: 1}},
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
