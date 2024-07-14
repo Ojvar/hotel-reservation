@@ -18,7 +18,7 @@ import {
   KeycloakDataSource,
   KeycloakSequence,
 } from './lib-keycloak/src';
-import {SENTRY_INTERCEPTOR_CONFIG, SentryComponent} from './lib-sentry/src';
+import {SentryComponent, SentryInterceptor} from './lib-sentry/src';
 import {MsSqlService} from './services';
 import {config as SqlConfig} from 'mssql';
 import {
@@ -41,14 +41,12 @@ import {
   QengDataSource,
   QengDataSourceConfig,
 } from './datasources';
+import * as sentry from '@sentry/node';
 
 export {ApplicationConfig};
 
 export type ProjectsServiceApplicationConfig = ApplicationConfig & {
-  sentry: {
-    dsn: string;
-    sampleRate?: number;
-  };
+  sentry: sentry.NodeOptions | undefined;
   keycloak: {
     allowedList: string;
     rejectedList: string;
@@ -95,12 +93,7 @@ export class ProjectsServiceApplication extends BootMixin(
   configApp(options: ProjectsServiceApplicationConfig) {
     // Sentry
     this.component(SentryComponent);
-    this.bind(SENTRY_INTERCEPTOR_CONFIG).to({
-      dsn: options.sentry.dsn,
-      tracesSampleRate: options.sentry.sampleRate ?? 0.3,
-      integrations: integrations =>
-        integrations.filter(integration => integration.name !== 'Http'),
-    });
+    this.bind(SentryInterceptor.CONFIG_BINDING_KEY).to({...options.sentry});
 
     // Keycloak
     const splitRegex = new RegExp(/[,;\t\ ]/, 'g');

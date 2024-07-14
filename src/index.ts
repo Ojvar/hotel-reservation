@@ -7,6 +7,7 @@ import {
 } from './application';
 import {RMQ_EXCHANGES} from './helpers';
 import {MessageHandlerErrorBehavior} from './loopback-rabbitmq/src';
+import {nodeProfilingIntegration} from '@sentry/profiling-node';
 
 export * from './application';
 
@@ -68,8 +69,12 @@ export function getApplicationConfig(
       openApiSpec: {setServersFromRequest: true},
     },
     sentry: {
+      integrations: [nodeProfilingIntegration()],
       dsn: process.env.SENTRY_DSN,
       sampleRate: parseFloat(process.env.SENTRY_SAMPLE_RATE ?? '0.3'),
+      profilesSampleRate: parseFloat(
+        process.env.SENTRY_PROFILES_SAMPLE_RATE ?? '0.3',
+      ),
     },
     keycloak: {
       allowedList: process.env.KEYCLOAK_ALLOWED_LIST,
@@ -126,7 +131,7 @@ export function getApplicationConfig(
         {
           name: RMQ_EXCHANGES.JOBS.name,
           type: RMQ_EXCHANGES.JOBS.type,
-          options: {durable: true, alternateExchange: 'handler'},
+          options: RMQ_EXCHANGES.JOBS.options,
           queues: [
             {
               queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.name,
@@ -139,7 +144,7 @@ export function getApplicationConfig(
         {
           name: RMQ_EXCHANGES.MESSAGE.name,
           type: RMQ_EXCHANGES.MESSAGE.type,
-          options: {durable: true},
+          options: RMQ_EXCHANGES.MESSAGE.options,
           queues: [
             {
               queue: RMQ_EXCHANGES.MESSAGE.queues.SMS.name,

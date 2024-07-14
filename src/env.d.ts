@@ -10,6 +10,7 @@ declare namespace NodeJS {
 
     SENTRY_DSN: string;
     SENTRY_SAMPLE_RATE: string;
+    SENTRY_PROFILES_SAMPLE_RATE: string;
 
     QENG_DB_URL: string;
     QENG_DB_HOST: string;
