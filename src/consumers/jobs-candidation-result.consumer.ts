@@ -4,7 +4,7 @@ import {JobCandiateResultDTO} from '../dto';
 import {inject} from '@loopback/context';
 import {ProjectManagementService} from '../services';
 
-export class AuthNewUserConsumer {
+export class JobCandiateResultConsumer {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
     private projectManagementService: ProjectManagementService,
@@ -12,7 +12,7 @@ export class AuthNewUserConsumer {
 
   @rabbitConsume({
     exchange: RMQ_EXCHANGES.JOBS.name,
-    routingKey: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.route_key,
+    routingKey: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.routingKey,
     queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.name,
   })
   async handle(message: JobCandiateResultDTO, _rawMessage: ConsumeMessage) {

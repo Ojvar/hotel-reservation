@@ -136,8 +136,17 @@ export function getApplicationConfig(
             {
               queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.name,
               routingKey:
-                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.route_key,
-              queueOptions: {durable: true},
+                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.routingKey,
+              queueOptions:
+                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.options,
+            },
+            {
+              queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT_MSG.name,
+              routingKey:
+                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT_MSG
+                  .routingKey,
+              queueOptions:
+                RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT_MSG.options,
             },
           ],
         },
@@ -148,8 +157,8 @@ export function getApplicationConfig(
           queues: [
             {
               queue: RMQ_EXCHANGES.MESSAGE.queues.SMS.name,
-              routingKey: RMQ_EXCHANGES.MESSAGE.queues.SMS.route_key,
-              queueOptions: {durable: true},
+              routingKey: RMQ_EXCHANGES.MESSAGE.queues.SMS.routingKey,
+              queueOptions: RMQ_EXCHANGES.MESSAGE.queues.SMS.options,
             },
           ],
         },
