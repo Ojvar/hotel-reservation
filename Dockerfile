@@ -15,7 +15,7 @@ COPY --chown=node . .
 RUN yarn build
 
 ## DEPLOY STAGE
-FROM $NODE_BASE_IMAGE as stage_deploy
+FROM $NODE_BASE_IMAGE AS stage_deploy
 RUN apt-get update -y \
     && apt-get upgrade -y \
     && apt-get install -y curl \
