@@ -12,15 +12,16 @@ import {HttpErrors} from '@loopback/rest';
 
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
-  @property({required: true})
+  @property({type: 'string', required: true})
   user_id: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   power_of_attorney_number: string;
   @property({type: 'date'})
   power_of_attorney_date?: Date;
-  @property({})
+  @property({type: 'string'})
   description?: string;
   @property({
+    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -37,13 +38,14 @@ export type BuildingProjectLawyers = BuildingProjectLawyer[];
 
 @model({})
 export class BuildingProjectOwner extends TimestampModelWithId {
-  @property({required: true})
+  @property({type: 'string', required: true})
   user_id: string;
-  @property({required: true})
+  @property({tyep: 'string', required: true})
   address: string;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   is_delegate: boolean;
   @property({
+    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -63,8 +65,8 @@ export class BuildingProjectOwnership extends Model {
   owners: BuildingProjectOwners;
   @property({type: 'boolean', required: true})
   has_partners: boolean;
-  @property({})
-  attachments: Attachment;
+  @property({type: 'object', required: false})
+  attachments?: Attachment;
 
   constructor(data?: Partial<BuildingProjectOwnership>) {
     super(data);
@@ -73,9 +75,9 @@ export class BuildingProjectOwnership extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectBuildingSiteLocation extends Model {
-  @property({required: true})
+  @property({type: 'string', required: true})
   location: string;
-  @property({required: true})
+  @property({type: 'number', required: true})
   land_occupancy: number;
 
   constructor(data?: Partial<BuildingProjectBuildingSiteLocation>) {
@@ -85,17 +87,17 @@ export class BuildingProjectBuildingSiteLocation extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectOwnershipType extends Model {
-  @property({required: true})
+  @property({type: 'string', required: true})
   ownership_type_id: string;
-  @property({})
+  @property({type: 'string'})
   description?: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   form_number: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   issue_date: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   renewal_code: string;
-  @property({required: true})
+  @property({type: 'number', required: true})
   building_density: number;
 
   constructor(data?: Partial<BuildingProjectOwnershipType>) {
@@ -105,13 +107,13 @@ export class BuildingProjectOwnershipType extends Model {
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectPropertyRegistrationDetails extends Model {
-  @property({required: true})
+  @property({type: 'string', required: true})
   main: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   sub: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   sector: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   part: string;
 
   constructor(data?: Partial<BuildingProjectPropertyRegistrationDetails>) {
@@ -134,9 +136,9 @@ export class BuildingProjectLocationAddress extends Model {
   geo_info?: object;
 
   // Location
-  @property({required: true})
+  @property({type: 'string', required: true})
   city_id: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   municipality_district_id: string;
   @property({type: 'number'})
   area?: number;
@@ -170,41 +172,41 @@ export class BuildingProjectSpecification extends Model {
   meta?: Record<string, string | number>;
 
   // Project data
-  @property({required: true})
+  @property({type: 'number', required: true})
   ground_area_before: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   ground_area_after: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   total_area: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   elevator_stops: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   total_floors: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   commercial_units: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   residental_units: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   total_units: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   parking_count: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   house_storage_count: number;
 
   // Districts data
-  @property({required: true})
+  @property({type: 'number', required: true})
   distict_north: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   distict_south: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   distict_east: number;
-  @property({required: true})
+  @property({type: 'number', required: true})
   distict_west: number;
 
   // Building data
-  @property({required: true})
+  @property({type: 'string', required: true})
   building_priority: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   building_type_id: string;
   @property.array(String, {required: true})
   foundation_types: string[];
@@ -228,13 +230,13 @@ export class BuildingProjectSpecification extends Model {
   earth_connection_types: string[];
 
   // Optional data
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   polystyrene: boolean;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   underground: boolean;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   dilapidated: boolean;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   incremental_project: boolean;
 
   /// TODO: SHOULD OPTIMIZE
@@ -242,9 +244,9 @@ export class BuildingProjectSpecification extends Model {
   two_supervisors: boolean;
 
   // Quota
-  @property({})
+  @property({type: 'string'})
   quota_type_id: string;
-  @property({})
+  @property({type: 'string'})
   quota_value: number;
 
   constructor(data?: Partial<BuildingProjectSpecification>) {
@@ -267,6 +269,7 @@ export class BuildingProjectInvoiceInfo extends Model {
 @model()
 export class BuildingProjectInvoice extends TimestampModelWithId {
   @property({
+    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
@@ -287,17 +290,25 @@ export type BuildingProjectInvoices = BuildingProjectInvoice[];
 
 @model()
 export class BuildingProjectJobResult extends TimestampModelWithId {
-  @property({required: true})
+  @property({type: 'date', required: true})
   published_at: Date;
-  @property({required: true})
+  @property({type: 'string', required: true})
   job_id: string;
-  @property({required: true, jsonSchema: {enum: EnumStatusValues}})
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
   job_status: EnumStatus;
-  @property({required: true})
+  @property({type: 'string', required: true})
   schedule_id: string;
-  @property({required: true})
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
   schedule_status: EnumStatus;
-  @property({required: true})
+  @property({type: 'date', required: true})
   schedule_created_at: Date;
   @property({type: 'string', required: false})
   schedule_error?: string | null;
@@ -315,7 +326,11 @@ export class BuildingProjectJob extends TimestampModelWithId {
   job_id: string;
   @property({type: 'string', required: false})
   invoice_id?: string;
-  @property({required: true, jsonSchema: {enum: EnumStatusValues}})
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
   status: EnumStatus;
   @property({required: false})
   result?: BuildingProjectJobResult;
@@ -348,9 +363,9 @@ export class BuildingProject extends Entity {
   })
   status: EnumStatus;
 
-  @property({required: true})
+  @property({type: 'string', required: true})
   case_no: string;
-  @property({required: true})
+  @property({type: 'date', required: true})
   case_date: Date;
   @property({required: true})
   address: BuildingProjectLocationAddress;
