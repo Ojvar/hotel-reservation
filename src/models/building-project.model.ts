@@ -126,9 +126,9 @@ export class BuildingProjectLocationAddress extends Model {
   property_registration_details: BuildingProjectPropertyRegistrationDetails;
 
   // Map geo data
-  @property({})
+  @property({type: 'number'})
   long?: number;
-  @property({})
+  @property({type: 'number'})
   lat?: number;
   @property({type: 'object'})
   geo_info?: object;
@@ -138,16 +138,16 @@ export class BuildingProjectLocationAddress extends Model {
   city_id: string;
   @property({required: true})
   municipality_district_id: string;
-  @property({})
+  @property({type: 'number'})
   area?: number;
 
-  @property({})
+  @property({type: 'string'})
   street?: string;
-  @property({})
+  @property({type: 'string'})
   alley?: string;
-  @property({})
+  @property({type: 'string'})
   plaque?: string;
-  @property({})
+  @property({type: 'number'})
   zip_code?: number;
 
   // // Additional data
@@ -299,7 +299,7 @@ export class BuildingProjectJobResult extends TimestampModelWithId {
   schedule_status: EnumStatus;
   @property({required: true})
   schedule_created_at: Date;
-  @property({required: false})
+  @property({type: 'string', required: false})
   schedule_error?: string | null;
   @property.array(String, {required: false})
   selected_users?: string[];
@@ -313,7 +313,7 @@ export class BuildingProjectJobResult extends TimestampModelWithId {
 export class BuildingProjectJob extends TimestampModelWithId {
   @property({required: true})
   job_id: string;
-  @property({required: false})
+  @property({type: 'string', required: false})
   invoice_id?: string;
   @property({required: true, jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
@@ -336,7 +336,7 @@ export type BuildingProjectJobs = BuildingProjectJob[];
   },
 })
 export class BuildingProject extends Entity {
-  @property({id: true, generated: true})
+  @property({type: 'string', id: true, generated: true})
   id?: string;
   @property({required: true})
   created: ModifyStamp;
@@ -358,7 +358,7 @@ export class BuildingProject extends Entity {
   ownership_type: BuildingProjectOwnershipType;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({})
+  @property({type: 'string'})
   project_usage_description?: string;
   @property({required: true})
   building_site_location: BuildingProjectBuildingSiteLocation;
