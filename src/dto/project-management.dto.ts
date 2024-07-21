@@ -16,10 +16,7 @@ import {
 
 @model()
 export class BuildingProjectFilter extends Model {
-  @property({
-    type: 'number',
-    jsonSchema: {enum: EnumStatusValues},
-  })
+  @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
 
   constructor(data?: Partial<BuildingProjectFilter>) {
@@ -39,10 +36,7 @@ export class UpdateInvoiceRequestDTO extends Model {
   }
 
   toModel(): BuildingProjectInvoiceInfo {
-    return new BuildingProjectInvoiceInfo({
-      meta: this.meta,
-      tags: this.tags,
-    });
+    return new BuildingProjectInvoiceInfo({meta: this.meta, tags: this.tags});
   }
 }
 
@@ -58,13 +52,13 @@ export class BuildingProjectRegistrationCodeDTO extends Model {
 
 @model({})
 export class BuildingProjectPropRegDetailsDTO extends Model {
-  @property({})
+  @property({type: 'string'})
   main: string;
-  @property({})
+  @property({type: 'string'})
   sub: string;
-  @property({})
+  @property({type: 'string'})
   sector: string;
-  @property({})
+  @property({type: 'string'})
   part: string;
 
   constructor(data?: Partial<BuildingProjectPropRegDetailsDTO>) {
@@ -306,14 +300,16 @@ export type BuildingProjectLawyersDTO = BuildingProjectLawyerDTO[];
 
 @model()
 export class BuildingProjectDTO extends Model {
-  @property()
+  @property({type: 'string'})
   id: string;
-  @property()
+  @property({type: 'date'})
   created_at: Date;
-  @property()
+  @property({type: 'date'})
   updated_at: Date;
-  @property()
+  @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
+  @property({type: 'string'})
+  case_no: string;
   @property()
   address: BuildingProjectLocationAddressDTO;
   @property()
@@ -321,7 +317,7 @@ export class BuildingProjectDTO extends Model {
 
   @property.array(String)
   project_usage_types: string[];
-  @property({required: false})
+  @property({type: 'string', required: false})
   project_usage_description?: string;
   @property()
   building_site_location: BuildingProjectBuildingSiteLocationDTO;
@@ -333,11 +329,12 @@ export class BuildingProjectDTO extends Model {
   }
 
   static fromModel(data: BuildingProject): BuildingProjectDTO {
-    const x = new BuildingProjectDTO({
+    return new BuildingProjectDTO({
       id: data.id,
       status: data.status,
       created_at: data.created.at,
       updated_at: data.updated.at,
+      case_no: data.case_no.case_no,
       address: BuildingProjectLocationAddressDTO.fromModel(data.address),
       ownership_type: BuildingProjectOwnershipTypeDTO.fromModel(
         data.ownership_type,
@@ -350,16 +347,15 @@ export class BuildingProjectDTO extends Model {
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
       //// TODO: Add other fields
     });
-    return x;
   }
 }
 export type BuildingProjectsDTO = BuildingProjectDTO[];
 
 @model()
 export class AddNewJobRequestDTO extends Model {
-  @property({required: true})
+  @property({type: 'string', required: true})
   job_id: string;
-  @property({required: false})
+  @property({type: 'string', required: false})
   invoice_id?: string;
 
   constructor(data?: Partial<AddNewJobRequestDTO>) {

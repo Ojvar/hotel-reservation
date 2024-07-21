@@ -16,7 +16,7 @@ import {
 import {AnyObject, Filter, repository} from '@loopback/repository';
 import {BuildingProjectRepository, ProfileRepository} from '../repositories';
 import {VeirificationCodeService} from './veirification-code.service';
-import {adjustMin, adjustRange} from '../helpers';
+import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
   BuildingProject,
   BuildingProjectJobResult,
@@ -50,6 +50,21 @@ export class ProjectManagementService {
     @inject(VeirificationCodeService.BINDING_KEY)
     private verificationCodeService: VeirificationCodeService,
   ) {}
+
+  async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
+    const aggregate = [
+      {$match: {'case_no_new.prefix': prefix}},
+      {$group: {_id: null, max_prefix: {$max: '$case_no_new.prefix'}}},
+    ];
+    const pointer = await this.projectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    let {max_prefix} = await pointer.next();
+    max_prefix = (max_prefix ?? 0) + 1;
+    return `${prefix.toString().padStart(2, '0')}${separator}${max_prefix}`;
+  }
 
   async updateJobData(
     userId: string,
@@ -120,7 +135,8 @@ export class ProjectManagementService {
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
   ): Promise<BuildingProjectDTO> {
-    if (verificationCode && nId) {
+    const shouldVerify = verificationCode && nId;
+    if (shouldVerify) {
       await this.verificationCodeService.checkVerificationCodeByNId(
         nId,
         EnumRegisterProjectType.REG_PROJECT,
@@ -128,9 +144,12 @@ export class ProjectManagementService {
       );
     }
 
+    if (!data.case_no) {
+      const year = +getPersianDateParts()[0].slice(-2);
+      data.case_no = await this.generateNewCaseNo(year);
+    }
     const newProject = await this.projectRepo.create(data.toModel(userId));
-
-    if (verificationCode && nId) {
+    if (shouldVerify) {
       await this.verificationCodeService.removeVerificationCodeByNId(
         nId,
         EnumRegisterProjectType.REG_PROJECT,
@@ -278,6 +297,7 @@ export class ProjectManagementService {
       ...r,
       _id: undefined,
       id: r._id.toString(),
+      case_no: r.case_no.case_no,
       ownership: {
         ...r.ownership,
         owners: r.ownership.owners.map((o: AnyObject) => ({

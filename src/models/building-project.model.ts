@@ -342,11 +342,37 @@ export class BuildingProjectJob extends TimestampModelWithId {
 }
 export type BuildingProjectJobs = BuildingProjectJob[];
 
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectCaseNo extends Model {
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {pattern: /\d{2}-\d{4}/.source},
+  })
+  case_no: string;
+  @property({type: 'number', required: true})
+  prefix: number;
+  @property({type: 'number', required: true})
+  serial: number;
+
+  constructor(data?: Partial<BuildingProjectCaseNo>) {
+    super(data);
+  }
+
+  static fromString(caseNo: string, separator = '-'): BuildingProjectCaseNo {
+    const [prefix, serial] = caseNo.split(separator).map(x => +x);
+    return new BuildingProjectCaseNo({prefix, serial, case_no: caseNo});
+  }
+}
+
 @model({
   name: 'building_projects',
   settings: {
     indexes: [
-      {keys: {case_no: 1}, options: {name: 'case_no_uidx', unique: true}},
+      {
+        keys: {'case_no.prefix': 1, 'case_no.serial': 2},
+        options: {name: 'case_no_uidx', unique: true},
+      },
     ],
   },
 })
@@ -362,9 +388,8 @@ export class BuildingProject extends Entity {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-
-  @property({type: 'string', required: true})
-  case_no: string;
+  @property({required: true})
+  case_no: BuildingProjectCaseNo;
   @property({type: 'date', required: true})
   case_date: Date;
   @property({required: true})

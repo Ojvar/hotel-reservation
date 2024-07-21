@@ -1,10 +1,10 @@
 import {inject} from '@loopback/core';
 import {
+  get,
   Request,
+  response,
   ResponseObject,
   RestBindings,
-  get,
-  response,
 } from '@loopback/rest';
 
 /**
