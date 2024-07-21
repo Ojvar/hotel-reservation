@@ -14,14 +14,20 @@ import {
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
-import {BuildingProjectRepository, ProfileRepository} from '../repositories';
-import {VeirificationCodeService} from './veirification-code.service';
+import {
+  BuildingProjectRepository,
+  OfficeRepository,
+  ProfileRepository,
+} from '../repositories';
+import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
   BuildingProject,
   BuildingProjectJobResult,
+  EnumOfficeMemberRole,
   EnumStatus,
   ModifyStamp,
+  Office,
 } from '../models';
 import {ObjectId} from 'bson';
 
@@ -45,10 +51,11 @@ export class ProjectManagementService {
 
   constructor(
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
+    @repository(OfficeRepository) private officeRepo: OfficeRepository,
     @repository(BuildingProjectRepository)
-    private projectRepo: BuildingProjectRepository,
-    @inject(VeirificationCodeService.BINDING_KEY)
-    private verificationCodeService: VeirificationCodeService,
+    private buildingProjectRepo: BuildingProjectRepository,
+    @inject(VerificationCodeService.BINDING_KEY)
+    private verificationCodeService: VerificationCodeService,
   ) {}
 
   async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
@@ -56,7 +63,7 @@ export class ProjectManagementService {
       {$match: {'case_no_new.prefix': prefix}},
       {$group: {_id: null, max_prefix: {$max: '$case_no_new.prefix'}}},
     ];
-    const pointer = await this.projectRepo.execute(
+    const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
       aggregate,
@@ -70,7 +77,7 @@ export class ProjectManagementService {
     userId: string,
     data: JobCandiateResultDTO,
   ): Promise<void> {
-    const project = await this.projectRepo.findById(data.job.meta.id);
+    const project = await this.buildingProjectRepo.findById(data.job.meta.id);
 
     const now = new ModifyStamp({by: userId});
     project.updateJobOfFail(
@@ -90,7 +97,7 @@ export class ProjectManagementService {
       }),
     );
 
-    await this.projectRepo.update(project);
+    await this.buildingProjectRepo.update(project);
   }
 
   async addNewJob(
@@ -98,9 +105,9 @@ export class ProjectManagementService {
     projectId: string,
     data: AddNewJobRequestDTO,
   ): Promise<void> {
-    const project = await this.projectRepo.findById(projectId);
+    const project = await this.buildingProjectRepo.findById(projectId);
     project.addNewJob(userId, data.job_id, data.invoice_id);
-    await this.projectRepo.update(project);
+    await this.buildingProjectRepo.update(project);
   }
 
   async updateProjectInvoice(
@@ -109,9 +116,9 @@ export class ProjectManagementService {
     invoiceId: string,
     body: UpdateInvoiceRequestDTO,
   ): Promise<void> {
-    const project = await this.projectRepo.findById(projectId);
+    const project = await this.buildingProjectRepo.findById(projectId);
     project.updateInvoice(userId, invoiceId, body.toModel());
-    await this.projectRepo.update(project);
+    await this.buildingProjectRepo.update(project);
   }
 
   async sendProjectRegistrationCode(
@@ -148,7 +155,9 @@ export class ProjectManagementService {
       const year = +getPersianDateParts()[0].slice(-2);
       data.case_no = await this.generateNewCaseNo(year);
     }
-    const newProject = await this.projectRepo.create(data.toModel(userId));
+    const newProject = await this.buildingProjectRepo.create(
+      data.toModel(userId),
+    );
     if (shouldVerify) {
       await this.verificationCodeService.removeVerificationCodeByNId(
         nId,
@@ -174,7 +183,7 @@ export class ProjectManagementService {
         status: where.statue ?? EnumStatus.ACTIVE,
       } as object,
     };
-    const result = await this.projectRepo.find(filter);
+    const result = await this.buildingProjectRepo.find(filter);
     return result.map(BuildingProjectDTO.fromModel);
   }
 
@@ -183,16 +192,16 @@ export class ProjectManagementService {
     id: string,
     data: NewBuildingProjectInvoiceRequestDTO,
   ): Promise<void> {
-    const project = await this.projectRepo.findById(id);
+    const project = await this.buildingProjectRepo.findById(id);
     project.addInvoice(userId, data.toModel(userId));
-    await this.projectRepo.update(project);
+    await this.buildingProjectRepo.update(project);
   }
 
   async getInvoiceById(
     projectId: string,
     invoiceId: string,
   ): Promise<BuildingProjectInvoiceDTO> {
-    const project = await this.projectRepo.findById(projectId);
+    const project = await this.buildingProjectRepo.findById(projectId);
     const invoice = project.getInvoiceByIdOrFail(invoiceId);
     return BuildingProjectInvoiceDTO.fromModel(invoice);
   }
@@ -275,14 +284,13 @@ export class ProjectManagementService {
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
-    const pointer = await this.projectRepo.execute(
+    const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
       aggregate,
     );
     const result = await pointer.toArray();
 
-    // TODO: MOve this conversion into dto
     const getProfile = (userId: string, profiles: AnyObject[]): AnyObject => {
       const profile = profiles.find(x => x.user_id === userId) ?? {};
       return {
@@ -319,6 +327,51 @@ export class ProjectManagementService {
     }));
 
     return output;
-    // return result.map(BuildingProjectInvoicesListDTO.fromModel);
+  }
+
+  async getUserOfficeProjects(userId: string): Promise<BuildingProjectsDTO> {
+    const now = new Date();
+    const aggregate = [
+      {$match: {status: EnumStatus.ACTIVE}},
+      {$unwind: '$members'},
+      {
+        $match: {
+          'members.user_id': userId,
+          'members.membership.role': {
+            $in: [
+              EnumOfficeMemberRole.OWNER,
+              EnumOfficeMemberRole.SECRETARY,
+              EnumOfficeMemberRole.CO_FOUNDER,
+            ],
+          },
+          'members.status': EnumStatus.ACTIVE,
+          'members.membership.status': EnumStatus.ACTIVE,
+          'members.membership.from': {$lte: now},
+          'members.membership.to': {$gte: now},
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          mergedFields: {$mergeObjects: '$$ROOT'},
+          all_members: {$push: '$members'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
+        },
+      },
+      {$set: {members: '$all_members'}},
+      {$unset: ['all_members', 'mergedFields']},
+    ];
+
+    const pointer = await this.officeRepo.execute(
+      Office.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const projects = await pointer.toArray();
+    return projects.map((p: AnyObject) => new BuildingProject(p));
   }
 }

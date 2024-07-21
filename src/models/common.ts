@@ -2,6 +2,7 @@ export {
   AttachmentItem,
   AttachmentRecord,
   Attachments,
+  EnumOfficeMemberRole,
   EnumStatus,
   EnumStatusValues,
   ModelWithId,
@@ -9,6 +10,6 @@ export {
   ModifyStamp,
   ModifyStampWithDescription,
   ModifyStampWithStatus,
-  TimestampModelWithId,
   REMOVE_ID_SETTING,
+  TimestampModelWithId,
 } from '../lib-models/src';

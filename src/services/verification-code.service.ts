@@ -16,9 +16,9 @@ type RedisVerificationCode = {
 };
 
 @injectable({scope: BindingScope.APPLICATION})
-export class VeirificationCodeService {
-  static BINDING_KEY = BindingKey.create<VeirificationCodeService>(
-    `services.${VeirificationCodeService.name}`,
+export class VerificationCodeService {
+  static BINDING_KEY = BindingKey.create<VerificationCodeService>(
+    `services.${VerificationCodeService.name}`,
   );
 
   readonly C_PROJECT_MANAGMENET_SMS_TAG = 'REG_PRJ';
