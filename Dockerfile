@@ -1,4 +1,4 @@
-ARG NODE_BASE_IMAGE=docker.qeng.ir/node:20-slim
+ARG NODE_BASE_IMAGE=docker.qeng.ir/node:22-slim
 
 ## BUILD STAGE
 # Check out https://hub.docker.com/_/node to select a new base image
