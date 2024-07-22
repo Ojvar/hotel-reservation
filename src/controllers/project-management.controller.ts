@@ -49,6 +49,7 @@ export class ProjectManagementController {
       undefined,
       undefined,
       body,
+      {checkOfficeId: false},
     );
   }
 

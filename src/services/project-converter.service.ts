@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {PlanControlProject} from './project.service';
 import {HttpErrors} from '@loopback/rest';
 import {MsSqlService} from './ms-sql.service';
 import basedata from '../basedata.json';
@@ -9,7 +8,11 @@ import {KeycloakAgentService} from '../lib-keycloak/src';
 import {AuthService, AuthServiceProvider} from './auth.service';
 import {AnyObject, repository} from '@loopback/repository';
 import {BuildingProjectRepository} from '../repositories';
-import {BuildingProjectDTO, NewBuildingProjectRequestDTO} from '../dto';
+import {
+  BuildingProjectDTO,
+  NewBuildingProjectRequestDTO,
+  PlanControlProject,
+} from '../dto';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {
@@ -53,7 +56,11 @@ WHERE   CaseNo = '${caseNo}'
 
     // convert project new-style
     const projectObject = await this.toProjectObject(project);
-    const prjDto = new NewBuildingProjectRequestDTO({...projectObject});
+    const prjDto = new NewBuildingProjectRequestDTO({
+      ...projectObject,
+      /// TODO: THIS OFFICE ID IS JUST FOR IMPORT- IT SHOULD BE CHANGED
+      office_id: '669e73dcd5ddef2446357f54',
+    });
     const newBuildingProject = await this.buildingProjectRepo.create(
       prjDto.toModel(userId),
     );

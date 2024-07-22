@@ -15,11 +15,7 @@ export class ProfileRepository extends DefaultCrudRepository<
   }
 
   async findByNIdOrFail(nId: string): Promise<Profile> {
-    const profile = await this.findOne({
-      where: {
-        n_in: nId,
-      },
-    });
+    const profile = await this.findOne({where: {n_in: nId}});
     if (!profile) {
       throw new HttpErrors.NotFound('Profile not found');
     }

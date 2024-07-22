@@ -336,9 +336,11 @@ export class NewBuildingProjectSiteLocationDTO extends Model {
 
 @model()
 export class NewBuildingProjectRequestDTO extends Model {
-  @property({required: false})
+  @property({type: 'string', required: false})
+  office_id: string;
+  @property({type: 'string', required: false})
   case_no?: string;
-  @property({required: true})
+  @property({type: 'date', required: true})
   case_date: Date;
   @property({required: true})
   address: NewBuildingProjectLocationAddressDTO;
@@ -346,13 +348,13 @@ export class NewBuildingProjectRequestDTO extends Model {
   ownership_type: NewBuildingProjectOwnershipTypeDTO;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({required: false})
+  @property({type: 'date', required: false})
   project_usage_description?: string;
   @property({required: true})
   building_site_location: NewBuildingProjectSiteLocationDTO;
   @property.array(NewBuildingProjectOwnerDTO, {required: true})
   owners: NewBuildingProjectOwnersDTO;
-  @property({required: true})
+  @property({type: 'boolean', required: true})
   owners_has_partners: boolean;
   @property({required: false})
   lawyer?: BuildingNewProjectLawyerDTO;
@@ -384,6 +386,7 @@ export class NewBuildingProjectRequestDTO extends Model {
     return new BuildingProject({
       created: now,
       updated: now,
+      office_id: this.office_id,
       case_no: BuildingProjectCaseNo.fromString(this.case_no ?? '00-0000'),
       case_date: this.case_date,
       project_usage_types: this.project_usage_types,

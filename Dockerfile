@@ -30,7 +30,7 @@ COPY --from=stage_env_prepare "/home/node/app/dist" /home/node/app/dist
 COPY --from=stage_env_prepare "/home/node/app/package*.json" "/home/node/app/keycloak.json" /home/node/app
 
 ENV NODE_ENV=production
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+#ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 ENV HOST=0.0.0.0
 ENV PORT=80
 EXPOSE ${PORT}

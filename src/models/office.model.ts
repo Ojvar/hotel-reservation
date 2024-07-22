@@ -18,6 +18,7 @@ export class Office extends BaseOffice {
     super(data);
   }
 }
+export type Offices = Office[];
 
 export interface OfficeRelations {}
 export type OfficeWithRelations = Office & OfficeRelations;

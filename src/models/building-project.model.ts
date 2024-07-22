@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {AnyObject, Entity, Model, model, property} from '@loopback/repository';
+import {
+  AnyObject,
+  belongsTo,
+  Entity,
+  Model,
+  model,
+  property,
+} from '@loopback/repository';
 import {
   EnumStatus,
   EnumStatusValues,
@@ -9,6 +16,7 @@ import {
 } from './common';
 import {Attachment} from '../lib-models/src';
 import {HttpErrors} from '@loopback/rest';
+import {Office} from './office.model';
 
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
@@ -412,6 +420,8 @@ export class BuildingProject extends Entity {
   invoices?: BuildingProjectInvoices;
   @property.array(BuildingProjectJob, {default: []})
   jobs?: BuildingProjectJobs;
+  @belongsTo(() => Office, {name: 'office', keyTo: 'id'})
+  office_id: string;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
@@ -504,5 +514,7 @@ export class BuildingProject extends Entity {
   }
 }
 
-export interface ProjectRelations {}
+export interface ProjectRelations {
+  office?: Office;
+}
 export type ProjectWithRelations = BuildingProject & ProjectRelations;

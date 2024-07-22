@@ -7,7 +7,7 @@ import {
 } from '@loopback/core';
 import sql, {config, ConnectionPool, IResult} from 'mssql';
 
-@lifeCycleObserver('services')
+@lifeCycleObserver('service')
 @injectable({scope: BindingScope.APPLICATION})
 export class MsSqlService {
   static BINDING_KEY = BindingKey.create<MsSqlService>(

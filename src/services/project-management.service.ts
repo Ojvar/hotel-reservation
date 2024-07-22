@@ -30,6 +30,7 @@ import {
   Office,
 } from '../models';
 import {ObjectId} from 'bson';
+import {HttpErrors} from '@loopback/rest';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -41,7 +42,7 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-@injectable({scope: BindingScope.TRANSIENT})
+@injectable({scope: BindingScope.APPLICATION})
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
@@ -141,6 +142,7 @@ export class ProjectManagementService {
     nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
+    options: {checkOfficeId: boolean} = {checkOfficeId: true},
   ): Promise<BuildingProjectDTO> {
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
@@ -151,6 +153,13 @@ export class ProjectManagementService {
       );
     }
 
+    if (options.checkOfficeId) {
+      await this.userIsAllowedToProjectForOffice(userId, data.office_id, [
+        EnumOfficeMemberRole.OWNER,
+        EnumOfficeMemberRole.SECRETARY,
+        EnumOfficeMemberRole.CO_FOUNDER,
+      ]);
+    }
     if (!data.case_no) {
       const year = +getPersianDateParts()[0].slice(-2);
       data.case_no = await this.generateNewCaseNo(year);
@@ -166,6 +175,24 @@ export class ProjectManagementService {
     }
 
     return BuildingProjectDTO.fromModel(newProject);
+  }
+
+  async userIsAllowedToProjectForOffice(
+    userId: string,
+    officeId: string | undefined,
+    allowedRoles: EnumOfficeMemberRole[],
+  ): Promise<void> {
+    if (!officeId) {
+      throw new HttpErrors.UnprocessableEntity('Invalid Office Id');
+    }
+
+    const offices = await this.officeRepo.getOfficesByUserMembership(
+      userId,
+      allowedRoles,
+    );
+    if (!offices) {
+      throw new HttpErrors.NotAcceptable('User access denined to the office');
+    }
   }
 
   async getProjectsList(
