@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
+import { BindingKey, BindingScope, inject, injectable } from '@loopback/core';
 import {
   AddNewJobRequestDTO,
   BuildingProjectDTO,
@@ -13,14 +13,14 @@ import {
   NewBuildingProjectRequestDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
-import {AnyObject, Filter, repository} from '@loopback/repository';
+import { AnyObject, Filter, repository } from '@loopback/repository';
 import {
   BuildingProjectRepository,
   OfficeRepository,
   ProfileRepository,
 } from '../repositories';
-import {VerificationCodeService} from './verification-code.service';
-import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
+import { VerificationCodeService } from './verification-code.service';
+import { adjustMin, adjustRange, getPersianDateParts } from '../helpers';
 import {
   BuildingProject,
   BuildingProjectJobResult,
@@ -29,11 +29,11 @@ import {
   ModifyStamp,
   Office,
 } from '../models';
-import {ObjectId} from 'bson';
+import { ObjectId } from 'bson';
 
 export const ProjectManagementSteps = {
-  REGISTRATION: {code: 0, title: 'ثبت پروژه'},
-  DESIGNER_SPECIFICATION: {code: 1, title: 'تغیین مهندس طراح'},
+  REGISTRATION: { code: 0, title: 'ثبت پروژه' },
+  DESIGNER_SPECIFICATION: { code: 1, title: 'تغیین مهندس طراح' },
 };
 
 export enum EnumRegisterProjectType {
@@ -41,7 +41,7 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-@injectable({scope: BindingScope.TRANSIENT})
+@injectable({ scope: BindingScope.TRANSIENT })
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
@@ -56,21 +56,21 @@ export class ProjectManagementService {
     private buildingProjectRepo: BuildingProjectRepository,
     @inject(VerificationCodeService.BINDING_KEY)
     private verificationCodeService: VerificationCodeService,
-  ) {}
+  ) { }
 
   async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
     const aggregate = [
-      {$match: {'case_no_new.prefix': prefix}},
-      {$group: {_id: null, max_prefix: {$max: '$case_no_new.prefix'}}},
+      { $match: { 'case_no_new.prefix': prefix } },
+      { $group: { _id: null, max_serial: { $max: '$case_no_new.serial' } } },
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
       aggregate,
     );
-    let {max_prefix} = await pointer.next();
-    max_prefix = (max_prefix ?? 0) + 1;
-    return `${prefix.toString().padStart(2, '0')}${separator}${max_prefix}`;
+    let { max_serial } = await pointer.next();
+    max_serial = (max_serial ?? 0) + 1;
+    return `${prefix.toString().padStart(2, '0')}${separator}${max_serial}`;
   }
 
   async updateJobData(
@@ -79,7 +79,7 @@ export class ProjectManagementService {
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(data.job.meta.id);
 
-    const now = new ModifyStamp({by: userId});
+    const now = new ModifyStamp({ by: userId });
     project.updateJobOfFail(
       userId,
       data.job.id,
@@ -218,7 +218,7 @@ export class ProjectManagementService {
     } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
-      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+      ...(invoiceTags ? { 'invoices.invoice.tags': { $in: invoiceTags } } : {}),
     };
     const jobsCondition: AnyObject = {};
     if (jobResult) {
@@ -232,29 +232,29 @@ export class ProjectManagementService {
       {
         $match: {
           status: EnumStatus.ACTIVE,
-          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
+          ...(projectId ? { _id: new ObjectId(projectId) } : {}),
         },
       },
-      {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
+      { $unwind: { path: '$invoices', preserveNullAndEmptyArrays: true } },
       ...(Object.keys(invoicesConditions).length ? [invoicesConditions] : []),
       ...(Object.keys(jobsCondition).length
-        ? [{$match: {jobs: {$elemMatch: jobsCondition}}}]
+        ? [{ $match: { jobs: { $elemMatch: jobsCondition } } }]
         : []),
       {
         $group: {
           _id: '$_id',
-          mergedFields: {$mergeObjects: '$$ROOT'},
-          all_invoices: {$push: '$invoices'},
-          all_states: {$push: '$states'},
+          mergedFields: { $mergeObjects: '$$ROOT' },
+          all_invoices: { $push: '$invoices' },
+          all_states: { $push: '$states' },
         },
       },
       {
         $replaceRoot: {
-          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
+          newRoot: { $mergeObjects: ['$$ROOT', '$mergedFields'] },
         },
       },
-      {$set: {states: '$all_states', invoices: '$all_invoices'}},
-      {$unset: ['all_states', 'all_invoices', 'mergedFields']},
+      { $set: { states: '$all_states', invoices: '$all_invoices' } },
+      { $unset: ['all_states', 'all_invoices', 'mergedFields'] },
       {
         $lookup: {
           from: 'profiles',
@@ -279,10 +279,10 @@ export class ProjectManagementService {
           as: 'ownership_info',
         },
       },
-      {$set: {ownership_info: {$first: '$ownership_info'}}},
-      {$sort: {_id: 1}},
-      {$skip: adjustMin(userFilter.skip ?? 0)},
-      {$limit: adjustRange(userFilter.limit ?? 100)},
+      { $set: { ownership_info: { $first: '$ownership_info' } } },
+      { $sort: { _id: 1 } },
+      { $skip: adjustMin(userFilter.skip ?? 0) },
+      { $limit: adjustRange(userFilter.limit ?? 100) },
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -332,8 +332,8 @@ export class ProjectManagementService {
   async getUserOfficeProjects(userId: string): Promise<BuildingProjectsDTO> {
     const now = new Date();
     const aggregate = [
-      {$match: {status: EnumStatus.ACTIVE}},
-      {$unwind: '$members'},
+      { $match: { status: EnumStatus.ACTIVE } },
+      { $unwind: '$members' },
       {
         $match: {
           'members.user_id': userId,
@@ -346,24 +346,24 @@ export class ProjectManagementService {
           },
           'members.status': EnumStatus.ACTIVE,
           'members.membership.status': EnumStatus.ACTIVE,
-          'members.membership.from': {$lte: now},
-          'members.membership.to': {$gte: now},
+          'members.membership.from': { $lte: now },
+          'members.membership.to': { $gte: now },
         },
       },
       {
         $group: {
           _id: '$_id',
-          mergedFields: {$mergeObjects: '$$ROOT'},
-          all_members: {$push: '$members'},
+          mergedFields: { $mergeObjects: '$$ROOT' },
+          all_members: { $push: '$members' },
         },
       },
       {
         $replaceRoot: {
-          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
+          newRoot: { $mergeObjects: ['$$ROOT', '$mergedFields'] },
         },
       },
-      {$set: {members: '$all_members'}},
-      {$unset: ['all_members', 'mergedFields']},
+      { $set: { members: '$all_members' } },
+      { $unset: ['all_members', 'mergedFields'] },
     ];
 
     const pointer = await this.officeRepo.execute(
