@@ -1,11 +1,16 @@
 import {inject} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {get, getModelSchemaRef} from '@loopback/rest';
-import {BuildingProjectDTO, BuildingProjectsDTO} from '../dto';
+import {get, getModelSchemaRef, param} from '@loopback/rest';
+import {
+  BuildingProjectDTO,
+  BuildingProjectFilter,
+  BuildingProjectsDTO,
+} from '../dto';
 import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {Filter} from '@loopback/repository';
 
-const BASE_ADDR = '/projects/me';
-const tags = ['Projects.Me'];
+const BASE_ADDR = '/offices/me/projects';
+const tags = ['Offices.Me.Projects'];
 
 export class ProjectMeController {
   constructor(
@@ -32,8 +37,10 @@ export class ProjectMeController {
       },
     },
   })
-  async getProjects(): Promise<BuildingProjectsDTO> {
+  async getProjects(
+    @param.filter(BuildingProjectFilter) filter?: Filter<BuildingProjectFilter>,
+  ): Promise<BuildingProjectsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getUserOfficeProjects(userId);
+    return this.projectManagementService.getUserOfficeProjects(userId, filter);
   }
 }

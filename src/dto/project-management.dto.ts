@@ -16,8 +16,14 @@ import {
 
 @model()
 export class BuildingProjectFilter extends Model {
-  @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
   status: EnumStatus;
+  @property({type: 'status', required: true})
+  office_id: EnumStatus;
 
   constructor(data?: Partial<BuildingProjectFilter>) {
     super(data);

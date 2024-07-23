@@ -356,10 +356,21 @@ export class ProjectManagementService {
     return output;
   }
 
-  async getUserOfficeProjects(userId: string): Promise<BuildingProjectsDTO> {
+  async getUserOfficeProjects(
+    userId: string,
+    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+  ): Promise<BuildingProjectsDTO> {
+    const where: AnyObject = filter.where ?? {};
+    const officeId: string = where.office_id ?? '';
+
     const now = new Date();
     const aggregate = [
-      {$match: {status: EnumStatus.ACTIVE}},
+      {
+        $match: {
+          ...(officeId ? {_id: new ObjectId(officeId)} : {}),
+          status: EnumStatus.ACTIVE,
+        },
+      },
       {$unwind: '$members'},
       {
         $match: {
@@ -391,14 +402,29 @@ export class ProjectManagementService {
       },
       {$set: {members: '$all_members'}},
       {$unset: ['all_members', 'mergedFields']},
+      {
+        $lookup: {
+          from: 'building_projects',
+          localField: '_id',
+          foreignField: 'office_id',
+          as: 'projects',
+        },
+      },
+      {$unwind: '$projects'},
+      {$sort: {'projects._id': 1}},
+      {$skip: adjustMin(filter.skip ?? 0)},
+      {$limit: adjustRange(filter.limit)},
+      {$replaceRoot: {newRoot: '$projects'}},
+      {$set: {id: '$_id'}},
     ];
-
     const pointer = await this.officeRepo.execute(
       Office.modelName,
       'aggregate',
       aggregate,
     );
     const projects = await pointer.toArray();
-    return projects.map((p: AnyObject) => new BuildingProject(p));
+    return projects
+      .map((p: AnyObject) => new BuildingProject(p))
+      .map(BuildingProjectDTO.fromModel);
   }
 }

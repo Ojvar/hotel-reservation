@@ -426,9 +426,11 @@ export class BuildingProject extends Entity {
   constructor(data?: Partial<BuildingProject>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
-    this.lawyers = this.lawyers ?? [];
-    this.invoices = this.invoices ?? [];
-    this.jobs = this.jobs ?? [];
+    this.lawyers = (this.lawyers ?? []).map(l => new BuildingProjectLawyer(l));
+    this.invoices = (this.invoices ?? []).map(
+      i => new BuildingProjectInvoice(i),
+    );
+    this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
