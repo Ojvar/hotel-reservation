@@ -12,6 +12,7 @@ import {
   BuildingProjectPropertyRegistrationDetails,
   EnumStatus,
   EnumStatusValues,
+  Profile,
 } from '../models';
 
 @model()
@@ -22,8 +23,10 @@ export class BuildingProjectFilter extends Model {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-  @property({type: 'status', required: true})
-  office_id: EnumStatus;
+  @property({type: 'string', required: true})
+  office_id: string;
+  @property({type: 'string', required: true})
+  user_id: string;
 
   constructor(data?: Partial<BuildingProjectFilter>) {
     super(data);
@@ -209,12 +212,16 @@ export class BuildingProjectOwnerDTO extends Model {
   is_delegate: boolean;
   @property({jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
+  @property({type: 'object', required: false})
+  profile?: Partial<Profile>;
 
   constructor(data?: Partial<BuildingProjectOwnerDTO>) {
     super(data);
   }
 
-  static fromModel(data: BuildingProjectOwner): BuildingProjectOwnerDTO {
+  static fromModel(
+    data: BuildingProjectOwner & {profile?: Profile},
+  ): BuildingProjectOwnerDTO {
     return new BuildingProjectOwnerDTO({
       id: data.id,
       created_at: data.created.at,
@@ -223,6 +230,12 @@ export class BuildingProjectOwnerDTO extends Model {
       address: data.address,
       is_delegate: data.is_delegate,
       status: data.status,
+      profile: {
+        first_name: data.profile?.first_name,
+        last_name: data.profile?.last_name,
+        n_in: data.profile?.n_in,
+        mobile: data.profile?.mobile,
+      },
     });
   }
 }
@@ -281,11 +294,16 @@ export class BuildingProjectLawyerDTO extends Model {
   @property({required: false})
   attachments?: AnyObject;
 
+  @property({type: 'object'})
+  profile: Partial<Profile>;
+
   constructor(data?: Partial<BuildingProjectLawyerDTO>) {
     super(data);
   }
 
-  static fromModel(data: BuildingProjectLawyer): BuildingProjectLawyerDTO {
+  static fromModel(
+    data: BuildingProjectLawyer & {profile?: Profile},
+  ): BuildingProjectLawyerDTO {
     return new BuildingProjectLawyerDTO({
       id: data.id,
       created_at: data.created.at,
@@ -299,6 +317,13 @@ export class BuildingProjectLawyerDTO extends Model {
       description: data.description,
       /// TODO: Get attachments data
       attachments: {},
+
+      profile: {
+        first_name: data.profile?.first_name,
+        last_name: data.profile?.last_name,
+        n_in: data.profile?.n_in,
+        mobile: data.profile?.mobile,
+      },
     });
   }
 }
@@ -329,6 +354,8 @@ export class BuildingProjectDTO extends Model {
   building_site_location: BuildingProjectBuildingSiteLocationDTO;
   @property.array(BuildingProjectLawyerDTO)
   lawyers?: BuildingProjectLawyersDTO;
+  @property()
+  ownership: BuildingProjectOwnershipDTO;
 
   constructor(data?: Partial<BuildingProjectDTO>) {
     super(data);
@@ -351,7 +378,7 @@ export class BuildingProjectDTO extends Model {
         data.building_site_location,
       ),
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
-      //// TODO: Add other fields
+      ownership: BuildingProjectOwnershipDTO.fromModel(data.ownership),
     });
   }
 }

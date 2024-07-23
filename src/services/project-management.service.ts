@@ -196,22 +196,18 @@ export class ProjectManagementService {
   }
 
   async getProjectsList(
-    userFilter: Filter<BuildingProjectFilter> = {},
+    filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
-    const where: AnyObject = userFilter.where ?? {};
-    const filter: Filter<BuildingProject> = {
-      limit: adjustRange(userFilter.limit ?? 100),
-      skip: adjustMin(userFilter.skip ?? 0),
-      offset: adjustMin(userFilter.offset ?? 0),
-      fields: undefined,
-      include: undefined,
-      where: {
-        ...(userFilter.where ?? {}),
-        status: where.statue ?? EnumStatus.ACTIVE,
-      } as object,
-    };
-    const result = await this.buildingProjectRepo.find(filter);
-    return result.map(BuildingProjectDTO.fromModel);
+    const aggregate = this.getProjectsListAggregate(filter);
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const projects = await pointer.toArray();
+    return projects
+      .map((p: AnyObject) => new BuildingProject(p))
+      .map(BuildingProjectDTO.fromModel);
   }
 
   async addNewInvoice(
@@ -360,17 +356,113 @@ export class ProjectManagementService {
     userId: string,
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
   ): Promise<BuildingProjectsDTO> {
+    filter.where = {...filter.where, user_id: userId};
+    const aggregate = this.getProjectsListByUserOfficeAggregate(filter);
+    const pointer = await this.officeRepo.execute(
+      Office.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const projects = await pointer.toArray();
+    return projects
+      .map((p: AnyObject) => new BuildingProject(p))
+      .map(BuildingProjectDTO.fromModel);
+  }
+
+  private projectLookupProfileAggregate = [
+    // Owners
+    {$unwind: '$ownership.owners'},
+    {
+      $lookup: {
+        from: 'profiles',
+        localField: 'ownership.owners.user_id',
+        foreignField: 'user_id',
+        as: 'ownerProfile',
+      },
+    },
+    {
+      $addFields: {
+        'ownership.owners.profile': {$first: '$ownerProfile'},
+      },
+    },
+    {$unset: ['ownerProfile']},
+
+    // Lawyers
+    {$unwind: '$lawyers'},
+    {
+      $lookup: {
+        from: 'profiles',
+        localField: 'lawyers.user_id',
+        foreignField: 'user_id',
+        as: 'lawyerProfile',
+      },
+    },
+    {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
+    {$unset: ['lawyerProfile']},
+
+    // Regroup data
+    {
+      $group: {
+        _id: '$_id',
+        all_owners: {$push: '$ownership.owners'},
+        all_lawyers: {$push: '$lawyers'},
+        other_fields: {$first: '$$ROOT'},
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [
+            '$other_fields',
+            {
+              lawyers: '$all_lawyers',
+              ownership: {
+                $mergeObjects: [
+                  '$other_fields.ownership',
+                  {owners: '$all_owners'},
+                ],
+              },
+            },
+          ],
+        },
+      },
+    },
+  ];
+
+  getProjectsListAggregate(
+    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+  ): AnyObject[] {
+    const where: AnyObject = filter.where ?? {};
+    const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
+
+    return [
+      {$match: {status}},
+      ...this.projectLookupProfileAggregate,
+      {$sort: {'projects._id': 1}},
+      {$skip: adjustMin(filter.skip ?? 0)},
+      {$limit: adjustRange(filter.limit)},
+      {$set: {id: '$_id'}},
+    ];
+  }
+
+  getProjectsListByUserOfficeAggregate(
+    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+  ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const officeId: string = where.office_id ?? '';
-
+    const userId: string = where.user_id ?? '';
+    const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
     const now = new Date();
-    const aggregate = [
+
+    return [
       {
         $match: {
           ...(officeId ? {_id: new ObjectId(officeId)} : {}),
-          status: EnumStatus.ACTIVE,
+          status,
         },
       },
+
+      // Members
       {$unwind: '$members'},
       {
         $match: {
@@ -388,20 +480,8 @@ export class ProjectManagementService {
           'members.membership.to': {$gte: now},
         },
       },
-      {
-        $group: {
-          _id: '$_id',
-          mergedFields: {$mergeObjects: '$$ROOT'},
-          all_members: {$push: '$members'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
-        },
-      },
-      {$set: {members: '$all_members'}},
-      {$unset: ['all_members', 'mergedFields']},
+
+      // Extract Projects
       {
         $lookup: {
           from: 'building_projects',
@@ -411,20 +491,14 @@ export class ProjectManagementService {
         },
       },
       {$unwind: '$projects'},
+      {$replaceRoot: {newRoot: '$projects'}},
+
+      ...this.projectLookupProfileAggregate,
+
       {$sort: {'projects._id': 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
-      {$replaceRoot: {newRoot: '$projects'}},
       {$set: {id: '$_id'}},
     ];
-    const pointer = await this.officeRepo.execute(
-      Office.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const projects = await pointer.toArray();
-    return projects
-      .map((p: AnyObject) => new BuildingProject(p))
-      .map(BuildingProjectDTO.fromModel);
   }
 }

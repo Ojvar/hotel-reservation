@@ -5,6 +5,7 @@ import {
   response,
   ResponseObject,
   RestBindings,
+  tags,
 } from '@loopback/rest';
 
 /**
@@ -42,6 +43,7 @@ export class PingController {
 
   // Map to `GET /ping`
   @get('/ping')
+  @tags('Ping')
   @response(200, PING_RESPONSE)
   ping(): object {
     // Reply with a greeting, the current time, the url, and request headers
