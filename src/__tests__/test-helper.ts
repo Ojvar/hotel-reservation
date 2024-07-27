@@ -1,5 +1,5 @@
 import {Client, createRestAppClient} from '@loopback/testlab';
-import {ProjectsServiceApplication, getApplicationConfig} from '../..';
+import {ProjectsServiceApplication, getApplicationConfig} from '..';
 
 export async function setupApplication(): Promise<AppWithClient> {
   const app = new ProjectsServiceApplication(getApplicationConfig('.env.test'));

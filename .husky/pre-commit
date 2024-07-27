@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 export VER=$(npm pkg get version | xargs echo)
 
 echo "FIX LINTER"
