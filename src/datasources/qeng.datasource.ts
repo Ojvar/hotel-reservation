@@ -48,7 +48,14 @@ export class QengDataSource
   ) {
     super({...dsConfig, ...config});
     this.once('connected', () => {
-      super.autoupdate().then(console.log).catch(console.error);
+      super
+        .autoupdate()
+        .then(() =>
+          console.log(
+            `${QengDataSource.dataSourceName} auto-updated successfully`,
+          ),
+        )
+        .catch(console.error);
     });
     this.on('error', error => {
       console.error(error);

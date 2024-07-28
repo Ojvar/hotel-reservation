@@ -24,6 +24,7 @@ import {
   protect,
 } from '../lib-keycloak/src';
 import {AnyObject, Filter} from '@loopback/repository';
+import {FileTokenResponse} from '../lib-file-service/src';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -162,5 +163,22 @@ export class ProjectOperatorsController {
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.addNewJob(userId, projectId, body);
+  }
+
+  @post(`${BASE_ADDR}/get-token`, {
+    tags,
+    summary: 'Get file token',
+    description: 'Get file token',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
+        },
+      },
+    },
+  })
+  async getFileToken(): Promise<FileTokenResponse> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getFileToken(userId);
   }
 }

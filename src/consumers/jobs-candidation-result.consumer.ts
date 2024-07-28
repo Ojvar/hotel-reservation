@@ -1,13 +1,13 @@
 import {ConsumeMessage, rabbitConsume} from '../loopback-rabbitmq/src';
 import {RMQ_EXCHANGES} from '../helpers';
 import {JobCandiateResultDTO} from '../dto';
-import {inject} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {repository} from '@loopback/repository';
+import {BuildingProjectRepository} from '../repositories';
 
 export class JobCandiateResultConsumer {
   constructor(
-    @inject(ProjectManagementService.BINDING_KEY)
-    private projectManagementService: ProjectManagementService,
+    @repository(BuildingProjectRepository)
+    private buildingProjectRepo: BuildingProjectRepository,
   ) {}
 
   @rabbitConsume({
@@ -15,8 +15,11 @@ export class JobCandiateResultConsumer {
     routingKey: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.routingKey,
     queue: RMQ_EXCHANGES.JOBS.queues.JOBS_CANDIDATION_RESULT.name,
   })
-  async handle(message: JobCandiateResultDTO, _rawMessage: ConsumeMessage) {
-    await this.projectManagementService.updateJobData(
+  handle(
+    message: JobCandiateResultDTO,
+    _rawMessage: ConsumeMessage,
+  ): Promise<void> {
+    return this.buildingProjectRepo.updateJobData(
       'SYSTEM',
       new JobCandiateResultDTO({...message}),
     );

@@ -4,9 +4,6 @@
 [submodule "src/lib-sentry"]
 	path = src/lib-sentry
 	url = git@gitlab.qeng.ir:qeng/libraries/lib-sentry.git
-[submodule "src/lib-redis"]
-	path = src/lib-redis
-	url = git@gitlab.qeng.ir:qeng/libraries/lib-redis.git
 [submodule "src/lib-models"]
 	path = src/lib-models
 	url = git@gitlab.qeng.ir:qeng/libraries/lib-models.git
@@ -16,3 +13,9 @@
 [submodule "src/loopback-rabbitmq"]
 	path = src/loopback-rabbitmq
 	url = git@gitlab.qeng.ir:qeng/libraries/loopback-rabbitmq.git
+[submodule "src/lib-file-service"]
+	path = src/lib-file-service
+	url = git@gitlab.qeng.ir:qeng/libraries/lib-file-service.git
+[submodule "src/lib-redis"]
+	path = src/lib-redis
+	url = git@gitlab.qeng.ir:qeng/libraries/lib-redis.git

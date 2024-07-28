@@ -68,8 +68,9 @@
     "keycloak-connect": "^22.0.3",
     "loopback-connector-mongodb": "^6.2.0",
     "loopback-connector-rest": "^5.0.1",
-    "mime": "^4.0.3",
+    "mime": "^4.0.4",
     "mssql": "^10.0.1",
+    "redis": "^4.6.15",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

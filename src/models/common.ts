@@ -1,7 +1,4 @@
 export {
-  AttachmentItem,
-  AttachmentRecord,
-  Attachments,
   EnumOfficeMemberRole,
   EnumStatus,
   EnumStatusValues,

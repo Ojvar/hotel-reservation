@@ -104,6 +104,7 @@ export function getApplicationConfig(
         host: process.env.REDIS_SOCKET_HOST ?? 'localhost',
       },
     },
+    fileServiceBaseURL: process.env.FILE_SERVCIE_BASE_URL,
     authDataSourceConfig: {baseURL: process.env.AUTH_SERVICE_BASE_URL},
     pofileDataSourceConfig: {baseURL: process.env.PROFILE_SERVICE_BASE_URL},
     qengDataSourceConfig: {

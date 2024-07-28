@@ -42,6 +42,10 @@ import {
   QengDataSourceConfig,
 } from './datasources';
 import * as sentry from '@sentry/node';
+import {
+  FileServiceComponent,
+  FileServiceDataSource,
+} from './lib-file-service/src';
 
 export {ApplicationConfig};
 
@@ -57,6 +61,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   rabbitmqConfig: RabbitmqComponentConfig;
   pofileDataSourceConfig: ProfileDataSourceConfig;
   authDataSourceConfig: AuthDataSourceConfig;
+  fileServiceBaseURL: string;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -139,5 +144,11 @@ export class ProjectsServiceApplication extends BootMixin(
     this.component(RabbitmqComponent);
     this.booters(ConsumersBooter);
     this.component(QueueComponent);
+
+    // FileService
+    this.bind(FileServiceDataSource.CONFIG_BINDING_KEY).to({
+      baseURL: options.fileServiceBaseURL,
+    });
+    this.component(FileServiceComponent);
   }
 }

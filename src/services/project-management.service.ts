@@ -31,6 +31,8 @@ import {
 } from '../models';
 import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
+import {FileTokenResponse} from '../lib-file-service/src';
+import {FileServiceAgentService} from './file-agent.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -42,11 +44,27 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-@injectable({scope: BindingScope.APPLICATION})
+@injectable({scope: BindingScope.REQUEST})
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
   );
+
+  static ALLOWED_FILES = [
+    'STRUCTURE_MAP',
+    'STRUCTURE_CALCULATION',
+    'ARCHITECTURAL_MAP',
+    'ELECTRICAL_MAP',
+    'MECHANIC_MAP',
+    'MAP_PREPERATION_INSTRUCTION',
+    'AERIAL_MAP',
+    'ELEVATOR_MAP',
+    'BUILDING_SKETCH',
+  ]
+    .map(item =>
+      Array.apply(null, Array(4)).map((_i, index) => `${item}_${index + 1}`),
+    )
+    .flatMap(x => x);
 
   readonly C_PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
 
@@ -57,7 +75,17 @@ export class ProjectManagementService {
     private buildingProjectRepo: BuildingProjectRepository,
     @inject(VerificationCodeService.BINDING_KEY)
     private verificationCodeService: VerificationCodeService,
+    @inject(FileServiceAgentService.BINDING_KEY)
+    private fileServiceAgent: FileServiceAgentService,
   ) {}
+
+  async getFileToken(allowedUser: string): Promise<FileTokenResponse> {
+    const allowedFiles = ProjectManagementService.ALLOWED_FILES.map(x =>
+      FileServiceAgentService.generateAllowedFile(x),
+    );
+    console.log(allowedFiles);
+    return this.fileServiceAgent.getFileToken(allowedFiles, allowedUser);
+  }
 
   async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
     const aggregate = [
@@ -74,31 +102,8 @@ export class ProjectManagementService {
     return `${prefix.toString().padStart(2, '0')}${separator}${max_serial}`;
   }
 
-  async updateJobData(
-    userId: string,
-    data: JobCandiateResultDTO,
-  ): Promise<void> {
-    const project = await this.buildingProjectRepo.findById(data.job.meta.id);
-
-    const now = new ModifyStamp({by: userId});
-    project.updateJobOfFail(
-      userId,
-      data.job.id,
-      new BuildingProjectJobResult({
-        created: now,
-        updated: now,
-        published_at: data.published_at,
-        job_id: data.job.id,
-        job_status: data.job.status,
-        schedule_error: data.schedule.result.meta.error,
-        selected_users: data.schedule.result.meta.data?.users,
-        schedule_id: data.schedule.id,
-        schedule_status: data.schedule.status,
-        schedule_created_at: data.schedule.result.created_at,
-      }),
-    );
-
-    await this.buildingProjectRepo.update(project);
+  updateJobData(userId: string, data: JobCandiateResultDTO): Promise<void> {
+    return this.buildingProjectRepo.updateJobData(userId, data);
   }
 
   async addNewJob(
@@ -106,9 +111,7 @@ export class ProjectManagementService {
     projectId: string,
     data: AddNewJobRequestDTO,
   ): Promise<void> {
-    const project = await this.buildingProjectRepo.findById(projectId);
-    project.addNewJob(userId, data.job_id, data.invoice_id);
-    await this.buildingProjectRepo.update(project);
+    return this.buildingProjectRepo.addNewJob(userId, projectId, data);
   }
 
   async updateProjectInvoice(
