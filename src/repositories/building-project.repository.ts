@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {Getter, inject} from '@loopback/core';
 import {
   BelongsToAccessor,

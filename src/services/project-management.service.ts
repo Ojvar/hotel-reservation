@@ -22,17 +22,17 @@ import {
 import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
+  Attachments,
   BuildingProject,
-  BuildingProjectJobResult,
   EnumOfficeMemberRole,
   EnumStatus,
-  ModifyStamp,
   Office,
 } from '../models';
 import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
+import {Credential} from '../lib-models/src';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -56,14 +56,13 @@ export class ProjectManagementService {
     'ARCHITECTURAL_MAP',
     'ELECTRICAL_MAP',
     'MECHANIC_MAP',
-    'MAP_PREPERATION_INSTRUCTION',
     'AERIAL_MAP',
     'ELEVATOR_MAP',
+    'ELEVATOR_CONTRACT',
+    'ELEVATOR_DETAILS',
     'BUILDING_SKETCH',
   ]
-    .map(item =>
-      Array.apply(null, Array(4)).map((_i, index) => `${item}_${index + 1}`),
-    )
+    .map(item => Array.from({length: 4}, (_, index) => `${item}_${index + 1}`))
     .flatMap(x => x);
 
   readonly C_PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
@@ -79,11 +78,38 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
   ) {}
 
-  async getFileToken(allowedUser: string): Promise<FileTokenResponse> {
-    const allowedFiles = ProjectManagementService.ALLOWED_FILES.map(x =>
-      FileServiceAgentService.generateAllowedFile(x),
-    );
-    console.log(allowedFiles);
+  async commitUploadedFiles(userId: string, fileToken: string): Promise<void> {
+    const [attachments]: [Attachments, Credential | null] = fileToken
+      ? await this.fileServiceAgent.getAttachmentsLocal(fileToken)
+      : [{}, null];
+
+    console.log(JSON.stringify(attachments, null, 1));
+
+    // Add attachments to body
+    // Object.entries(attachments).forEach(([k, v]) => {
+    //   const oldData = data.body.find(x => x.key === k);
+    //   if (oldData) {
+    //     oldData.value = v.id;
+    //   } else {
+    //     data.body.push(new ChangeRequestBodyItem({key: k, value: v.id}));
+    //   }
+    // });
+    // Get uploaded files data
+    // if (fileToken) {
+    //     await this.fileServiceAgent.commit(userId, fileToken);
+    //   }
+  }
+
+  async getFileToken(
+    allowedUser: string,
+    fields: string[] = [],
+  ): Promise<FileTokenResponse> {
+    const allowedFiles = ProjectManagementService.ALLOWED_FILES.filter(file =>
+      fields.includes(file),
+    ).map(x => FileServiceAgentService.generateAllowedFile(x));
+    if (!allowedFiles.length) {
+      throw new HttpErrors.UnprocessableEntity('Invalid field(s)');
+    }
     return this.fileServiceAgent.getFileToken(allowedFiles, allowedUser);
   }
 

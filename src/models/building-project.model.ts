@@ -18,6 +18,12 @@ import {Attachment} from '../lib-models/src';
 import {HttpErrors} from '@loopback/rest';
 import {Office} from './office.model';
 
+export enum EnumProgressStatus {
+  OFFICE_REGISTRATION_DATA = 0,
+  OFFICE_FILE_UPLOAD = 1,
+}
+export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
+
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
   @property({type: 'string', required: true})
@@ -396,6 +402,11 @@ export class BuildingProject extends Entity {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
+  @property({
+    required: true,
+    jsonSchema: {enum: EnumProgressStatusValues},
+  })
+  prgress_status: EnumProgressStatus;
   @property({required: true})
   case_no: BuildingProjectCaseNo;
   @property({type: 'date', required: true})
@@ -425,6 +436,8 @@ export class BuildingProject extends Entity {
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
+    this.prgress_status =
+      this.prgress_status ?? EnumProgressStatus.OFFICE_REGISTRATION_DATA;
     this.status = this.status ?? EnumStatus.ACTIVE;
     this.lawyers = (this.lawyers ?? []).map(l => new BuildingProjectLawyer(l));
     this.invoices = (this.invoices ?? []).map(

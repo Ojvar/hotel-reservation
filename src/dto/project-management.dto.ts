@@ -10,10 +10,25 @@ import {
   BuildingProjectOwnership,
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
+  EnumProgressStatus,
+  EnumProgressStatusValues,
   EnumStatus,
   EnumStatusValues,
   Profile,
 } from '../models';
+
+@model()
+export class FileTokenRequestDTO extends Model {
+  @property.array(String, {
+    required: true,
+    jsonSchema: {minLength: 1, maxLength: 30},
+  })
+  allowed_files: string[];
+
+  constructor(data?: Partial<FileTokenRequestDTO>) {
+    super(data);
+  }
+}
 
 @model()
 export class BuildingProjectFilter extends Model {
@@ -339,6 +354,8 @@ export class BuildingProjectDTO extends Model {
   updated_at: Date;
   @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
+  @property({type: 'number', jsonSchema: {enum: EnumProgressStatusValues}})
+  progress_status: EnumProgressStatus;
   @property({type: 'string'})
   case_no: string;
   @property()
@@ -365,6 +382,7 @@ export class BuildingProjectDTO extends Model {
     return new BuildingProjectDTO({
       id: data.id,
       status: data.status,
+      progress_status: data.prgress_status,
       created_at: data.created.at,
       updated_at: data.updated.at,
       case_no: data.case_no.case_no,

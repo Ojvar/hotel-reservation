@@ -13,6 +13,7 @@ import {
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
+  FileTokenRequestDTO,
   NewBuildingProjectRequestDTO,
   ProjectSummaryEngineerDTO,
   UpdateInvoiceRequestDTO,
@@ -165,20 +166,39 @@ export class ProjectOperatorsController {
     await this.projectManagementService.addNewJob(userId, projectId, body);
   }
 
-  @post(`${BASE_ADDR}/get-token`, {
+  @post(`${BASE_ADDR}/file-token`, {
     tags,
-    summary: 'Get file token',
-    description: 'Get file token',
+    summary: 'Generate file-upload token',
+    description: 'Generate a file-upload token',
     responses: {
       200: {
+        description: 'Get an upload file token',
         content: {
           'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
         },
       },
     },
   })
-  async getFileToken(): Promise<FileTokenResponse> {
+  async getFileToken(
+    @requestBody() body: FileTokenRequestDTO,
+  ): Promise<FileTokenResponse> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getFileToken(userId);
+    return this.projectManagementService.getFileToken(
+      userId,
+      body.allowed_files ?? [],
+    );
+  }
+
+  @patch(`${BASE_ADDR}/attachments/commit`, {
+    tags,
+    summary: 'Save uploaded files',
+    description: 'Save uploaded files',
+    responses: {204: {}},
+  })
+  async saveAttachments(
+    @param.header.string('file-token') fileToken = '',
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.commitUploadedFiles(userId, fileToken);
   }
 }
