@@ -2,6 +2,7 @@
 import {AnyObject, Model, model, property} from '@loopback/repository';
 import {
   BuildingProject,
+  BuildingProjectAttachmentItem,
   BuildingProjectBuildingSiteLocation,
   BuildingProjectInvoiceInfo,
   BuildingProjectLawyer,
@@ -16,6 +17,7 @@ import {
   EnumStatusValues,
   Profile,
 } from '../models';
+import {FileInfoDTO} from '../lib-file-service/src';
 
 @model()
 export class FileTokenRequestDTO extends Model {
@@ -407,3 +409,45 @@ export class AddNewJobRequestDTO extends Model {
     super(data);
   }
 }
+
+@model()
+export class BuildingProjectAttachmentDTO extends Model {
+  @property({type: 'string'})
+  id: string;
+  @property({type: 'string'})
+  file_id: string;
+  @property({type: 'date'})
+  created_at: Date;
+  @property({type: 'string'})
+  field: string;
+  @property({type: 'string'})
+  file_name: string;
+  @property({type: 'number'})
+  file_size: number;
+  @property({type: 'string'})
+  access_token: string;
+  @property({type: 'string'})
+  access_url: string;
+  @property({type: 'string'})
+  mime: string;
+
+  constructor(data?: Partial<BuildingProjectAttachmentDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectAttachmentItem & {fileInfo: FileInfoDTO | undefined},
+  ): BuildingProjectAttachmentDTO {
+    return new BuildingProjectAttachmentDTO({
+      id: data.id,
+      file_id: data.file_id,
+      field: data.field,
+      file_name: data.fileInfo?.original_name,
+      file_size: data.fileInfo?.size,
+      mime: data.fileInfo?.mime,
+      access_url: data.fileInfo?.access_url,
+      access_token: data.fileInfo?.access_token,
+    });
+  }
+}
+export type BuildingProjectAttachmentsDTO = BuildingProjectAttachmentDTO[];

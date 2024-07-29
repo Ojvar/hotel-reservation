@@ -25,7 +25,7 @@ export enum EnumProgressStatus {
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
 @model({...REMOVE_ID_SETTING})
-export class AttachmentItem extends Model {
+export class BuildingProjectAttachmentItem extends Model {
   @property({type: 'string', required: true})
   id: string;
   @property({type: 'string', required: true})
@@ -43,13 +43,13 @@ export class AttachmentItem extends Model {
   })
   status: EnumStatus;
 
-  constructor(data?: Partial<AttachmentItem>) {
+  constructor(data?: Partial<BuildingProjectAttachmentItem>) {
     super(data);
     this.id = this.id ?? new ObjectId();
     this.status = this.status ?? EnumStatus.ACTIVE;
   }
 }
-export type AttachmentItems = AttachmentItem[];
+export type BuildingProjectAttachmentItems = BuildingProjectAttachmentItem[];
 
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
@@ -450,8 +450,8 @@ export class BuildingProject extends Entity {
   jobs?: BuildingProjectJobs;
   @belongsTo(() => Office, {name: 'office', keyTo: 'id'})
   office_id: string;
-  @property.array(AttachmentItem, {false: true})
-  attachments: AttachmentItems;
+  @property.array(BuildingProjectAttachmentItem, {false: true})
+  attachments: BuildingProjectAttachmentItems;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
@@ -562,7 +562,7 @@ export class BuildingProject extends Entity {
         oldAttachment.status = EnumStatus.DEACTIVE;
       }
       this.attachments.push(
-        new AttachmentItem({
+        new BuildingProjectAttachmentItem({
           field: attachment.field,
           file_id: attachment.fileId,
           created: now,

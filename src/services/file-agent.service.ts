@@ -28,7 +28,7 @@ export class FileServiceAgentService {
 
   constructor(
     @inject(FileServiceProvider.BINDING_KEY) private fileService: FileService,
-    @inject(FileServiceDataSource.BINDING_KEY)
+    @inject(FileServiceDataSource.CONFIG_BINDING_KEY)
     private fileServiceDataSourceConfig: FileServiceDataSourceConfig,
     @inject(KeycloakAgentService.BINDING_KEY)
     private keycloakAgentService: KeycloakAgentService,

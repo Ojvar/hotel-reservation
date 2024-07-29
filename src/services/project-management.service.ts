@@ -2,6 +2,8 @@
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {
   AddNewJobRequestDTO,
+  BuildingProjectAttachmentDTO,
+  BuildingProjectAttachmentsDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
@@ -23,13 +25,14 @@ import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
   BuildingProject,
+  BuildingProjectAttachmentItem,
   EnumOfficeMemberRole,
   EnumStatus,
   Office,
 } from '../models';
 import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
-import {FileTokenResponse} from '../lib-file-service/src';
+import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
 import {ModifyStamp} from '../lib-models/src';
 
@@ -77,6 +80,30 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
   ) {}
 
+  async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
+    const project = await this.buildingProjectRepo.findById(id);
+    const attachments = project.attachments.filter(
+      a => a.status === EnumStatus.ACTIVE,
+    );
+
+    // Get files info
+    const filesList = attachments.map(a => a.file_id);
+    const filesInfo =
+      await this.fileServiceAgent.getFilesInformation(filesList);
+
+    // Merge info
+    const mergedData = attachments.map(a => {
+      const fileInfo = filesInfo.find(
+        f => f.id.toString() === a.file_id.toString(),
+      );
+      return {...a, fileInfo} as BuildingProjectAttachmentItem & {
+        fileInfo: FileInfoDTO | undefined;
+      };
+    });
+
+    return mergedData.map(BuildingProjectAttachmentDTO.fromModel);
+  }
+
   async commitUploadedFiles(
     userId: string,
     id: string,
@@ -98,8 +125,6 @@ export class ProjectManagementService {
       fileId: f.id,
       field: f.fieldname,
     }));
-
-    console.log(JSON.stringify({newAttachments, uploadedFiles}, null, 1));
 
     project.updateAttachments(userId, newAttachments);
     project.updated = new ModifyStamp({by: userId});

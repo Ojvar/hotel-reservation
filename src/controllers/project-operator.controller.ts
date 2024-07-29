@@ -206,4 +206,22 @@ export class ProjectOperatorsController {
       fileToken,
     );
   }
+
+  @get(`${BASE_ADDR}/{id}/files`, {
+    tags,
+    summary: 'Get projects uploaded files',
+    description: 'Get projects uploaded files',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {type: 'array', items: getModelSchemaRef(Object)},
+          },
+        },
+      },
+    },
+  })
+  getUploadedFiles(@param.path.string('id') id: string): Promise<object> {
+    return this.projectManagementService.getFilesList(id);
+  }
 }
