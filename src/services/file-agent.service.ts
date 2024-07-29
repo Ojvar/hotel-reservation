@@ -12,16 +12,13 @@ import {
   FileServiceProvider,
   FileTokenResponse,
 } from '../lib-file-service/src';
-import {
-  KeycloakAgentService,
-  KeycloakSecurity,
-  KeycloakSecurityProvider,
-} from '../lib-keycloak/src';
-import {AttachmentItem, Attachments} from '../models';
+import {KeycloakAgentService} from '../lib-keycloak/src';
 
 export const EXPIRE_TIME = 600; // 10 Minutes
 export const MAX_SIZE = 16777216; // 2MB -> 2 * 1024 * 1024 * 8;
 export const MIME_TYPE = 'image/*';
+
+export type AttachmentItems = Record<string, string>;
 
 @injectable({scope: BindingScope.REQUEST})
 export class FileServiceAgentService {
@@ -33,8 +30,6 @@ export class FileServiceAgentService {
     @inject(FileServiceProvider.BINDING_KEY) private fileService: FileService,
     @inject(FileServiceDataSource.BINDING_KEY)
     private fileServiceDataSourceConfig: FileServiceDataSourceConfig,
-    @inject(KeycloakSecurityProvider.BINDING_KEY)
-    private keycloakSecurity: KeycloakSecurity,
     @inject(KeycloakAgentService.BINDING_KEY)
     private keycloakAgentService: KeycloakAgentService,
   ) {}
@@ -95,27 +90,25 @@ export class FileServiceAgentService {
     return this.fileService.getUploadInfo(access_token, userId, fileToken);
   }
 
-  async getAttachmentsLocal(
-    fileToken: string,
-    attachments?: Credential,
-  ): Promise<[Attachments, Credential | null]> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    const uploadedFiles =
-      attachments ?? (await this.getAttachments(userId, fileToken));
-
-    if (!uploadedFiles) {
-      return [{}, null];
-    }
-
-    const localAttachments = uploadedFiles.uploaded_files.reduce<Attachments>(
-      (result, item) => ({
-        ...result,
-        [item.fieldname]: AttachmentItem.fromObject(item),
-      }),
-      {},
-    );
-    return [localAttachments, uploadedFiles];
-  }
+  // async getAttachmentsLocal(
+  //   fileToken: string,
+  //   attachments?: Credential,
+  // ): Promise<[AttachmentItems, Credential | null]> {
+  //   const { sub: userId } = await this.keycloakSecurity.getUserInfo();
+  //   const uploadedFiles =
+  //     attachments ?? (await this.getAttachments(userId, fileToken));
+  //
+  //   if (!uploadedFiles) {
+  //     return [{}, null];
+  //   }
+  //
+  //   const localAttachments =
+  //     uploadedFiles.uploaded_files.reduce<AttachmentItems>(
+  //       (result, item) => ({ ...result, [item.fieldname]: item.id }),
+  //       {},
+  //     );
+  //   return [localAttachments, uploadedFiles];
+  // }
 
   async commit(userId: string, fileToken: string): Promise<void> {
     const {access_token} = await this.keycloakAgentService.getAdminToken();

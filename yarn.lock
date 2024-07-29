@@ -304,9 +304,9 @@
     "@babel/types" "^7.25.0"
 
 "@babel/traverse@^7.24.7", "@babel/traverse@^7.24.8", "@babel/traverse@^7.25.0":
-  version "7.25.0"
-  resolved "https://registry.yarnpkg.com/@babel/traverse/-/traverse-7.25.0.tgz#e8533c0a57ed97921d1e5b20dd3db63d3efaebf5"
-  integrity sha512-ubALThHQy4GCf6mbb+5ZRNmLLCI7bJ3f8Q6LHBSRlSKSWj5a7dSUzJBLv3VuIhFrFPgjF4IzPF567YG/HSCdZA==
+  version "7.25.1"
+  resolved "https://registry.yarnpkg.com/@babel/traverse/-/traverse-7.25.1.tgz#64dbc31effc5f3fa3cf10d19df0e6310214743f5"
+  integrity sha512-LrHHoWq08ZpmmFqBAzN+hUdWwy5zt7FGa/hVwMcOqW6OVtwqaoD5utfuGYU87JYxdZgLUvktAsn37j/sYR9siA==
   dependencies:
     "@babel/code-frame" "^7.24.7"
     "@babel/generator" "^7.25.0"
@@ -2733,9 +2733,9 @@ eslint-plugin-eslint-plugin@^5.5.1:
     estraverse "^5.3.0"
 
 eslint-plugin-mocha@^10.4.3:
-  version "10.4.3"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-mocha/-/eslint-plugin-mocha-10.4.3.tgz#bf641379d9f1c7d6a84646a3fc1a0baa50da8bfd"
-  integrity sha512-emc4TVjq5Ht0/upR+psftuz6IBG5q279p+1dSRDeHf+NS9aaerBi3lXKo1SEzwC29hFIW21gO89CEWSvRsi8IQ==
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-mocha/-/eslint-plugin-mocha-10.5.0.tgz#0aca8d709e7cddef566e0dc252f6b02e307a2b7e"
+  integrity sha512-F2ALmQVPT1GoP27O1JTZGrV9Pqg8k79OeIuvw63UxMtQKREZtmkK1NFgkZQ2TW7L2JSSFKHFPTtHu5z8R9QNRw==
   dependencies:
     eslint-utils "^3.0.0"
     globals "^13.24.0"

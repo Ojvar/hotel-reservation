@@ -245,12 +245,12 @@ export class BuildingProjectOwnerDTO extends Model {
       address: data.address,
       is_delegate: data.is_delegate,
       status: data.status,
-      profile: {
+      profile: new Profile({
         first_name: data.profile?.first_name,
         last_name: data.profile?.last_name,
         n_in: data.profile?.n_in,
         mobile: data.profile?.mobile,
-      },
+      }),
     });
   }
 }
@@ -263,10 +263,6 @@ export class BuildingProjectOwnershipDTO extends Model {
   @property({})
   has_partners: boolean;
 
-  /// TODO: change file type
-  @property({required: false})
-  attachments: AnyObject;
-
   constructor(data?: Partial<BuildingProjectOwnershipDTO>) {
     super(data);
   }
@@ -277,8 +273,6 @@ export class BuildingProjectOwnershipDTO extends Model {
     return new BuildingProjectOwnershipDTO({
       owners: data.owners.map(BuildingProjectOwnerDTO.fromModel),
       has_partners: data.has_partners,
-      //// TODO: Attachments should be files info list
-      attachments: data.attachments,
     });
   }
 }

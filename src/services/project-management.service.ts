@@ -22,7 +22,6 @@ import {
 import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
-  Attachments,
   BuildingProject,
   EnumOfficeMemberRole,
   EnumStatus,
@@ -32,7 +31,7 @@ import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
-import {Credential} from '../lib-models/src';
+import {ModifyStamp} from '../lib-models/src';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -78,26 +77,36 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
   ) {}
 
-  async commitUploadedFiles(userId: string, fileToken: string): Promise<void> {
-    const [attachments]: [Attachments, Credential | null] = fileToken
-      ? await this.fileServiceAgent.getAttachmentsLocal(fileToken)
-      : [{}, null];
+  async commitUploadedFiles(
+    userId: string,
+    id: string,
+    fileToken: string,
+  ): Promise<void> {
+    if (!fileToken) {
+      return;
+    }
 
-    console.log(JSON.stringify(attachments, null, 1));
+    // Get uploaded files info
+    const attachments = fileToken
+      ? await this.fileServiceAgent.getAttachments(userId, fileToken)
+      : null;
+    const {uploaded_files: uploadedFiles} = attachments ?? {uploaded_files: []};
 
-    // Add attachments to body
-    // Object.entries(attachments).forEach(([k, v]) => {
-    //   const oldData = data.body.find(x => x.key === k);
-    //   if (oldData) {
-    //     oldData.value = v.id;
-    //   } else {
-    //     data.body.push(new ChangeRequestBodyItem({key: k, value: v.id}));
-    //   }
-    // });
-    // Get uploaded files data
-    // if (fileToken) {
-    //     await this.fileServiceAgent.commit(userId, fileToken);
-    //   }
+    // Update project
+    const project = await this.buildingProjectRepo.findById(id);
+    const newAttachments = uploadedFiles.map(f => ({
+      fileId: f.id,
+      field: f.fieldname,
+    }));
+
+    console.log(JSON.stringify({newAttachments, uploadedFiles}, null, 1));
+
+    project.updateAttachments(userId, newAttachments);
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+
+    // Commit uploaded files
+    await this.fileServiceAgent.commit(userId, fileToken);
   }
 
   async getFileToken(

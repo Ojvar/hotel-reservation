@@ -189,16 +189,21 @@ export class ProjectOperatorsController {
     );
   }
 
-  @patch(`${BASE_ADDR}/attachments/commit`, {
+  @patch(`${BASE_ADDR}/{id}/attachments/commit`, {
     tags,
     summary: 'Save uploaded files',
     description: 'Save uploaded files',
     responses: {204: {}},
   })
   async saveAttachments(
+    @param.path.string('id') id: string,
     @param.header.string('file-token') fileToken = '',
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.commitUploadedFiles(userId, fileToken);
+    return this.projectManagementService.commitUploadedFiles(
+      userId,
+      id,
+      fileToken,
+    );
   }
 }

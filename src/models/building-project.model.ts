@@ -14,15 +14,42 @@ import {
   REMOVE_ID_SETTING,
   TimestampModelWithId,
 } from './common';
-import {Attachment} from '../lib-models/src';
 import {HttpErrors} from '@loopback/rest';
 import {Office} from './office.model';
+import {ObjectId} from 'bson';
 
 export enum EnumProgressStatus {
   OFFICE_REGISTRATION_DATA = 0,
   OFFICE_FILE_UPLOAD = 1,
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
+
+@model({...REMOVE_ID_SETTING})
+export class AttachmentItem extends Model {
+  @property({type: 'string', required: true})
+  id: string;
+  @property({type: 'string', required: true})
+  field: string;
+  @property({type: 'string', required: true})
+  file_id: string;
+  @property({required: true})
+  created: ModifyStamp;
+  @property({required: true})
+  updated: ModifyStamp;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+
+  constructor(data?: Partial<AttachmentItem>) {
+    super(data);
+    this.id = this.id ?? new ObjectId();
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type AttachmentItems = AttachmentItem[];
 
 @model({})
 export class BuildingProjectLawyer extends TimestampModelWithId {
@@ -40,8 +67,6 @@ export class BuildingProjectLawyer extends TimestampModelWithId {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-  @property({})
-  attachments?: Attachment;
 
   constructor(data?: Partial<BuildingProjectLawyer>) {
     super(data);
@@ -79,8 +104,6 @@ export class BuildingProjectOwnership extends Model {
   owners: BuildingProjectOwners;
   @property({type: 'boolean', required: true})
   has_partners: boolean;
-  @property({type: 'object', required: false})
-  attachments?: Attachment;
 
   constructor(data?: Partial<BuildingProjectOwnership>) {
     super(data);
@@ -397,15 +420,9 @@ export class BuildingProject extends Entity {
   created: ModifyStamp;
   @property({required: true})
   updated: ModifyStamp;
-  @property({
-    required: true,
-    jsonSchema: {enum: EnumStatusValues},
-  })
+  @property({required: true, jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
-  @property({
-    required: true,
-    jsonSchema: {enum: EnumProgressStatusValues},
-  })
+  @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
   prgress_status: EnumProgressStatus;
   @property({required: true})
   case_no: BuildingProjectCaseNo;
@@ -433,6 +450,8 @@ export class BuildingProject extends Entity {
   jobs?: BuildingProjectJobs;
   @belongsTo(() => Office, {name: 'office', keyTo: 'id'})
   office_id: string;
+  @property.array(AttachmentItem, {false: true})
+  attachments: AttachmentItems;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
@@ -444,6 +463,7 @@ export class BuildingProject extends Entity {
       i => new BuildingProjectInvoice(i),
     );
     this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
+    this.attachments = this.attachments ?? [];
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
@@ -526,6 +546,30 @@ export class BuildingProject extends Entity {
       result,
     });
     this.jobs = jobs;
+  }
+
+  updateAttachments(
+    userId: string,
+    newAttachments: {fileId: string; field: string}[],
+  ): void {
+    const now = new ModifyStamp({by: userId});
+    for (const attachment of newAttachments) {
+      const oldAttachment = this.attachments.find(
+        a => a.field === attachment.field && a.status === EnumStatus.ACTIVE,
+      );
+      if (oldAttachment) {
+        oldAttachment.updated = now;
+        oldAttachment.status = EnumStatus.DEACTIVE;
+      }
+      this.attachments.push(
+        new AttachmentItem({
+          field: attachment.field,
+          file_id: attachment.fileId,
+          created: now,
+          updated: now,
+        }),
+      );
+    }
   }
 }
 
