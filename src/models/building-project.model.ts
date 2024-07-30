@@ -571,6 +571,17 @@ export class BuildingProject extends Entity {
       );
     }
   }
+
+  removeUploadedFile(userId: string, fileId: string): void {
+    const file = this.attachments.find(
+      a => a.id.toString() === fileId && a.status === EnumStatus.ACTIVE,
+    );
+    if (!file) {
+      throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
+    }
+    file.status = EnumStatus.DEACTIVE;
+    file.updated = new ModifyStamp({by: userId});
+  }
 }
 
 export interface ProjectRelations {

@@ -80,6 +80,17 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
   ) {}
 
+  async removeUploadedFile(
+    userId: string,
+    projectId: string,
+    fileId: string,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    project.removeUploadedFile(userId, fileId);
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+  }
+
   async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
     const project = await this.buildingProjectRepo.findById(id);
     const attachments = project.attachments.filter(
