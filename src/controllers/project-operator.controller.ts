@@ -1,6 +1,7 @@
 import {inject, intercept} from '@loopback/context';
 import {ProjectConverterService, ProjectManagementService} from '../services';
 import {
+  del,
   get,
   getModelSchemaRef,
   param,
@@ -26,6 +27,7 @@ import {
 } from '../lib-keycloak/src';
 import {AnyObject, Filter} from '@loopback/repository';
 import {FileTokenResponse} from '../lib-file-service/src';
+import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -223,5 +225,23 @@ export class ProjectOperatorsController {
   })
   getUploadedFiles(@param.path.string('id') id: string): Promise<object> {
     return this.projectManagementService.getFilesList(id);
+  }
+
+  @del(`${BASE_ADDR}/{id}/files/{file_id}`, {
+    tags,
+    summary: 'Remove an uploaed file',
+    description: 'Remove an uploaed file',
+    responses: {204: {}},
+  })
+  async removeUploadedFile(
+    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    id: string,
+    @param.path.string('file_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    fileId: string,
+  ) {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.removeUploadedFile(userId, id, fileId);
   }
 }
