@@ -11,6 +11,7 @@ import {
   BuildingProjectOwnership,
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
+  BuildingProjectSpecification,
   EnumProgressStatus,
   EnumProgressStatusValues,
   EnumStatus,
@@ -161,17 +162,17 @@ export class BuildingProjectLocationAddressDTO extends Model {
 
 @model({})
 export class BuildingProjectOwnershipTypeDTO extends Model {
-  @property({})
+  @property({type: 'string'})
   ownership_type_id: string;
-  @property({required: false})
+  @property({type: 'string', required: false})
   description?: string;
-  @property({})
+  @property({type: 'string'})
   form_number: string;
-  @property({})
+  @property({type: 'string'})
   issue_date: string;
-  @property({})
+  @property({type: 'string'})
   renewal_code: string;
-  @property({})
+  @property({type: 'string'})
   building_density: number;
 
   constructor(data?: Partial<BuildingProjectOwnershipTypeDTO>) {
@@ -281,32 +282,28 @@ export class BuildingProjectOwnershipDTO extends Model {
 
 @model({})
 export class BuildingProjectLawyerDTO extends Model {
+  @property({type: 'string'})
   id: string;
+  @property({type: 'date'})
   created_at: Date;
+  @property({type: 'date'})
   updated_at: Date;
   @property({required: true})
   user_id: string;
-  /// TODO: get user information
-  @property({})
-  user_profile: AnyObject;
-
   @property({required: true})
   power_of_attorney_number: string;
   @property({type: 'date', required: false})
   power_of_attorney_date?: Date;
-  @property({required: false})
+  @property({type: 'string', required: false})
   description?: string;
   @property({
+    type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-  /// TODO: SET type
-  @property({required: false})
-  attachments?: AnyObject;
-
-  @property({type: 'object'})
-  profile: Partial<Profile>;
+  @property({})
+  profile: Profile;
 
   constructor(data?: Partial<BuildingProjectLawyerDTO>) {
     super(data);
@@ -321,24 +318,154 @@ export class BuildingProjectLawyerDTO extends Model {
       updated_at: data.updated.at,
       status: data.status,
       user_id: data.user_id,
-      /// TODO: Get user profile data
-      user_profile: {},
       power_of_attorney_date: data.power_of_attorney_date,
       power_of_attorney_number: data.power_of_attorney_number,
       description: data.description,
-      /// TODO: Get attachments data
-      attachments: {},
-
-      profile: {
+      profile: new Profile({
         first_name: data.profile?.first_name,
         last_name: data.profile?.last_name,
         n_in: data.profile?.n_in,
         mobile: data.profile?.mobile,
-      },
+      }),
     });
   }
 }
 export type BuildingProjectLawyersDTO = BuildingProjectLawyerDTO[];
+
+@model({})
+export class BuildingProjectSpecificationDTO extends Model {
+  // Keep all descriptions for all fields
+  @property({type: 'object', items: 'string', required: true})
+  descriptions: Record<string, string>;
+
+  // Meta data
+  @property({type: 'object'})
+  meta?: Record<string, string | number>;
+
+  // Project data
+  @property({type: 'number', required: true})
+  ground_area_before: number;
+  @property({type: 'number', required: true})
+  ground_area_after: number;
+  @property({type: 'number', required: true})
+  total_area: number;
+  @property({type: 'number', required: true})
+  elevator_stops: number;
+  @property({type: 'number', required: true})
+  total_floors: number;
+  @property({type: 'number', required: true})
+  commercial_units: number;
+  @property({type: 'number', required: true})
+  residental_units: number;
+  @property({type: 'number', required: true})
+  total_units: number;
+  @property({type: 'number', required: true})
+  parking_count: number;
+  @property({type: 'number', required: true})
+  house_storage_count: number;
+
+  // Districts data
+  @property({type: 'number', required: true})
+  distict_north: number;
+  @property({type: 'number', required: true})
+  distict_south: number;
+  @property({type: 'number', required: true})
+  distict_east: number;
+  @property({type: 'number', required: true})
+  distict_west: number;
+
+  // Building data
+  @property({type: 'string', required: true})
+  building_priority: string;
+  @property({type: 'string', required: true})
+  building_type_id: string;
+  @property.array(String, {required: true})
+  foundation_types: string[];
+  @property.array(String, {required: true})
+  root_types: string[];
+  @property.array(String, {required: true})
+  floor_access_systems: string[];
+  @property.array(String, {required: true})
+  building_frontages: string[];
+  @property.array(String, {required: true})
+  roof_cover_types: string[];
+  @property.array(String, {required: true})
+  window_types: string[];
+  @property.array(String, {required: true})
+  cooling_system_types: string[];
+  @property.array(String, {required: true})
+  heating_system_types: string[];
+  @property.array(String, {required: true})
+  sewage_disposals: string[];
+  @property.array(String, {required: true})
+  earth_connection_types: string[];
+
+  // Optional data
+  @property({type: 'boolean', required: true})
+  polystyrene: boolean;
+  @property({type: 'boolean', required: true})
+  underground: boolean;
+  @property({type: 'boolean', required: true})
+  dilapidated: boolean;
+  @property({type: 'boolean', required: true})
+  incremental_project: boolean;
+
+  /// TODO: SHOULD OPTIMIZE
+  @property({type: 'boolean', required: true})
+  two_supervisors: boolean;
+
+  // Quota
+  @property({type: 'string'})
+  quota_type_id: string;
+  @property({type: 'string'})
+  quota_value: number;
+
+  constructor(data?: Partial<BuildingProjectSpecification>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectSpecification,
+  ): BuildingProjectSpecificationDTO {
+    return new BuildingProjectSpecificationDTO({
+      descriptions: data.descriptions,
+      meta: data.meta,
+      ground_area_before: data.ground_area_before,
+      ground_area_after: data.ground_area_after,
+      total_area: data.total_area,
+      elevator_stops: data.elevator_stops,
+      total_floors: data.total_floors,
+      commercial_units: data.commercial_units,
+      residental_units: data.residental_units,
+      total_units: data.total_units,
+      parking_count: data.parking_count,
+      house_storage_count: data.house_storage_count,
+      distict_north: data.distict_north,
+      distict_south: data.distict_south,
+      distict_east: data.distict_east,
+      distict_west: data.distict_west,
+      building_priority: data.building_priority,
+      building_type_id: data.building_type_id,
+      foundation_types: data.foundation_types,
+      root_types: data.root_types,
+      floor_access_systems: data.floor_access_systems,
+      building_frontages: data.building_frontages,
+      roof_cover_types: data.roof_cover_types,
+      window_types: data.window_types,
+      cooling_system_types: data.cooling_system_types,
+      heating_system_types: data.heating_system_types,
+      sewage_disposals: data.sewage_disposals,
+      earth_connection_types: data.earth_connection_types,
+      polystyrene: data.polystyrene,
+      underground: data.underground,
+      dilapidated: data.dilapidated,
+      incremental_project: data.incremental_project,
+      two_supervisors: data.two_supervisors,
+      quota_type_id: data.quota_type_id,
+      quota_value: data.quota_value,
+    });
+  }
+}
 
 @model()
 export class BuildingProjectDTO extends Model {
@@ -354,6 +481,8 @@ export class BuildingProjectDTO extends Model {
   progress_status: EnumProgressStatus;
   @property({type: 'string'})
   case_no: string;
+  @property({type: 'date'})
+  case_date: Date;
   @property()
   address: BuildingProjectLocationAddressDTO;
   @property()
@@ -369,6 +498,8 @@ export class BuildingProjectDTO extends Model {
   lawyers?: BuildingProjectLawyersDTO;
   @property()
   ownership: BuildingProjectOwnershipDTO;
+  @property()
+  specification: BuildingProjectSpecificationDTO;
 
   constructor(data?: Partial<BuildingProjectDTO>) {
     super(data);
@@ -382,17 +513,21 @@ export class BuildingProjectDTO extends Model {
       created_at: data.created.at,
       updated_at: data.updated.at,
       case_no: data.case_no.case_no,
+      case_date: data.case_date,
       address: BuildingProjectLocationAddressDTO.fromModel(data.address),
       ownership_type: BuildingProjectOwnershipTypeDTO.fromModel(
         data.ownership_type,
       ),
-      project_usage_description: data.project_usage_description,
-      project_usage_types: data.project_usage_types,
       building_site_location: BuildingProjectBuildingSiteLocationDTO.fromModel(
         data.building_site_location,
       ),
+      project_usage_description: data.project_usage_description,
+      project_usage_types: data.project_usage_types,
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
       ownership: BuildingProjectOwnershipDTO.fromModel(data.ownership),
+      specification: BuildingProjectSpecificationDTO.fromModel(
+        data.specification,
+      ),
     });
   }
 }

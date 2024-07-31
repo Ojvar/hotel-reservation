@@ -189,10 +189,6 @@ export class BuildingProjectLocationAddress extends Model {
   @property({type: 'number'})
   zip_code?: number;
 
-  // // Additional data
-  // @property({  required: true })
-  // type: string;
-
   constructor(data?: Partial<BuildingProjectLocationAddress>) {
     super(data);
   }

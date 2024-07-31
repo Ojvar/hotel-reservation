@@ -284,6 +284,19 @@ export class ProjectManagementService {
       .map(BuildingProjectDTO.fromModel);
   }
 
+  async getProjectByUserId(
+    userId: string,
+    id: string,
+  ): Promise<BuildingProjectDTO> {
+    const project = await this.buildingProjectRepo.findById(id, {
+      include: ['office'],
+    });
+    if (!project.office?.checkUserAccess(userId)) {
+      throw new HttpErrors.NotAcceptable('Insufficcent access level');
+    }
+    return BuildingProjectDTO.fromModel(project);
+  }
+
   async addNewInvoice(
     userId: string,
     id: string,

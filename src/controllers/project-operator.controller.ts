@@ -43,6 +43,29 @@ export class ProjectOperatorsController {
     private projectConverterService: ProjectConverterService,
   ) {}
 
+  @post(`${BASE_ADDR}/file-token`, {
+    tags,
+    summary: 'Generate file-upload token',
+    description: 'Generate a file-upload token',
+    responses: {
+      200: {
+        description: 'Get an upload file token',
+        content: {
+          'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
+        },
+      },
+    },
+  })
+  async getFileToken(
+    @requestBody() body: FileTokenRequestDTO,
+  ): Promise<FileTokenResponse> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getFileToken(
+      userId,
+      body.allowed_files ?? [],
+    );
+  }
+
   @get(`${BASE_ADDR}/project/verification-code/{n_id}`, {
     tags,
     summary: 'Get validation code to registrating new project',
@@ -134,7 +157,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getAllInvoices(undefined, filter);
   }
 
-  @patch(`${BASE_ADDR}/invoices/{project_id}/{invoice_id}`, {
+  @patch(`${BASE_ADDR}/{id}/invoices/{invoice_id}`, {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
@@ -142,19 +165,19 @@ export class ProjectOperatorsController {
   })
   async updateInvoice(
     @requestBody() body: UpdateInvoiceRequestDTO,
-    @param.path.string('project_id') projectId: string,
+    @param.path.string('id') id: string,
     @param.path.string('invoice_id') invoiceId: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.updateProjectInvoice(
       userId,
-      projectId,
+      id,
       invoiceId,
       new UpdateInvoiceRequestDTO(body),
     );
   }
 
-  @post(`${BASE_ADDR}/jobs/{project_id}`, {
+  @post(`${BASE_ADDR}/{id}/jobs`, {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
@@ -162,33 +185,10 @@ export class ProjectOperatorsController {
   })
   async addNewJob(
     @requestBody() body: AddNewJobRequestDTO,
-    @param.path.string('project_id') projectId: string,
+    @param.path.string('id') id: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.addNewJob(userId, projectId, body);
-  }
-
-  @post(`${BASE_ADDR}/file-token`, {
-    tags,
-    summary: 'Generate file-upload token',
-    description: 'Generate a file-upload token',
-    responses: {
-      200: {
-        description: 'Get an upload file token',
-        content: {
-          'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
-        },
-      },
-    },
-  })
-  async getFileToken(
-    @requestBody() body: FileTokenRequestDTO,
-  ): Promise<FileTokenResponse> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getFileToken(
-      userId,
-      body.allowed_files ?? [],
-    );
+    await this.projectManagementService.addNewJob(userId, id, body);
   }
 
   @patch(`${BASE_ADDR}/{id}/attachments/commit`, {
@@ -243,5 +243,24 @@ export class ProjectOperatorsController {
   ) {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.removeUploadedFile(userId, id, fileId);
+  }
+
+  @get(`${BASE_ADDR}/{id}`, {
+    tags,
+    summary: 'Get Project details',
+    description: 'Get Project details',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async getProjectDetails(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectByUserId(userId, id);
   }
 }
