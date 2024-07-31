@@ -28,13 +28,13 @@ import {
   BuildingProjectAttachmentItem,
   EnumOfficeMemberRole,
   EnumStatus,
+  ModifyStamp,
   Office,
 } from '../models';
 import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
 import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
-import {ModifyStamp} from '../lib-models/src';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -288,13 +288,105 @@ export class ProjectManagementService {
     userId: string,
     id: string,
   ): Promise<BuildingProjectDTO> {
-    const project = await this.buildingProjectRepo.findById(id, {
-      include: ['office'],
-    });
-    if (!project.office?.checkUserAccess(userId)) {
-      throw new HttpErrors.NotAcceptable('Insufficcent access level');
+    const aggregate = [
+      {$match: {_id: new ObjectId(id)}},
+
+      // Check user access
+      {
+        $lookup: {
+          from: 'offices',
+          localField: 'office_id',
+          foreignField: '_id',
+          as: 'office',
+        },
+      },
+      {$set: {office: {$first: '$office'}}},
+      {$unwind: '$office.members'},
+      {
+        $match: {
+          'office.members.user_id': userId,
+          'office.members.status': EnumStatus.ACTIVE,
+          'office.members.membership.from': {$lte: new Date()},
+          'office.members.membership.to': {$gte: new Date()},
+          'office.members.membership.role': {
+            $in: [
+              EnumOfficeMemberRole.OWNER,
+              EnumOfficeMemberRole.SECRETARY,
+              EnumOfficeMemberRole.CO_FOUNDER,
+            ],
+          },
+        },
+      },
+      {$unset: ['office']},
+
+      // Get profiles
+      {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
+      {
+        $unwind: {
+          path: '$ownership.owners',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'lawyers.user_id',
+          foreignField: 'user_id',
+          as: 'lawyers.profile',
+        },
+      },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'ownership.owners.user_id',
+          foreignField: 'user_id',
+          as: 'ownership.owners.profile',
+        },
+      },
+      {
+        $set: {
+          'ownership.owners.profile': {$first: '$ownership.owners.profile'},
+          'lawyers.profile': {$first: '$lawyers.profile'},
+        },
+      },
+
+      {
+        $group: {
+          _id: '$_id',
+          owners: {$push: '$ownership.owners'},
+          lawyers: {$push: '$lawyers'},
+          other_fields: {$first: '$$ROOT'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$other_fields',
+              {
+                ownership: '$ownership',
+                lawyers: '$lawyers',
+                owners: '$owners',
+              },
+            ],
+          },
+        },
+      },
+      {$set: {'ownership.owners': '$owners', id: '$_id'}},
+      {$unset: ['owners']},
+    ];
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const project = await pointer.next();
+    if (!project) {
+      throw new HttpErrors.UnprocessableEntity(
+        'Project not found or access was denied',
+      );
     }
-    return BuildingProjectDTO.fromModel(project);
+    return BuildingProjectDTO.fromModel(new BuildingProject(project));
   }
 
   async addNewInvoice(

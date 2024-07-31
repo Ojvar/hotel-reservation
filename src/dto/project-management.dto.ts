@@ -216,7 +216,7 @@ export class BuildingProjectBuildingSiteLocationDTO extends Model {
 
 @model({})
 export class BuildingProjectOwnerDTO extends Model {
-  @property({})
+  @property({type: 'string'})
   id: string;
   @property({})
   created_at: Date;
@@ -509,7 +509,7 @@ export class BuildingProjectDTO extends Model {
     return new BuildingProjectDTO({
       id: data.id,
       status: data.status,
-      progress_status: data.prgress_status,
+      progress_status: data.progress_status,
       created_at: data.created.at,
       updated_at: data.updated.at,
       case_no: data.case_no.case_no,

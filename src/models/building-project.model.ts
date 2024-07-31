@@ -419,7 +419,7 @@ export class BuildingProject extends Entity {
   @property({required: true, jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
   @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
-  prgress_status: EnumProgressStatus;
+  progress_status: EnumProgressStatus;
   @property({required: true})
   case_no: BuildingProjectCaseNo;
   @property({type: 'date', required: true})
@@ -451,8 +451,8 @@ export class BuildingProject extends Entity {
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
-    this.prgress_status =
-      this.prgress_status ?? EnumProgressStatus.OFFICE_REGISTRATION_DATA;
+    this.progress_status =
+      this.progress_status ?? EnumProgressStatus.OFFICE_REGISTRATION_DATA;
     this.status = this.status ?? EnumStatus.ACTIVE;
     this.lawyers = (this.lawyers ?? []).map(l => new BuildingProjectLawyer(l));
     this.invoices = (this.invoices ?? []).map(
