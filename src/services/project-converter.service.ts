@@ -243,7 +243,7 @@ WHERE   CaseNo = '${caseNo}'
         foundation_types: basedata.foundations
           .filter(x => data[x.field] === true)
           .map(x => x.id),
-        root_types: basedata.roof_types
+        roof_types: basedata.roof_types
           .filter(x => data[x.field] === true)
           .map(x => x.id),
         floor_access_systems: basedata.floor_access_types

@@ -62,7 +62,7 @@ export class NewBuildingProjectSpecificationDTO extends Model {
   @property.array(String, {required: true})
   foundation_types: string[];
   @property.array(String, {required: true})
-  root_types: string[];
+  roof_types: string[];
   @property.array(String, {required: true})
   floor_access_systems: string[];
   @property.array(String, {required: true})
@@ -125,7 +125,7 @@ export class NewBuildingProjectSpecificationDTO extends Model {
       building_priority: this.building_priority,
       building_type_id: this.building_type_id,
       foundation_types: this.foundation_types,
-      root_types: this.root_types,
+      roof_types: this.roof_types,
       floor_access_systems: this.floor_access_systems,
       building_frontages: this.building_frontages,
       roof_cover_types: this.roof_cover_types,

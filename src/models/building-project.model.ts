@@ -244,7 +244,7 @@ export class BuildingProjectSpecification extends Model {
   @property.array(String, {required: true})
   foundation_types: string[];
   @property.array(String, {required: true})
-  root_types: string[];
+  roof_types: string[];
   @property.array(String, {required: true})
   floor_access_systems: string[];
   @property.array(String, {required: true})
