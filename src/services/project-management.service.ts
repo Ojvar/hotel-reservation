@@ -674,7 +674,7 @@ export class ProjectManagementService {
 
       ...this.projectLookupProfileAggregate,
 
-      {$sort: {'projects._id': 1}},
+      {$sort: {_id: 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
