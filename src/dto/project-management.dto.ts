@@ -260,8 +260,8 @@ export class BuildingProjectOwnershipTypeDTO extends Model {
   description?: string;
   @property({type: 'string'})
   form_number: string;
-  @property({type: 'string'})
-  issue_date: string;
+  @property({type: 'date'})
+  issue_date: Date;
   @property({type: 'string'})
   renewal_code: string;
   @property({type: 'string'})

@@ -286,17 +286,17 @@ export class NewBuildingProjectLocationAddressDTO extends Model {
 
 @model({})
 export class NewBuildingProjectOwnershipTypeDTO extends Model {
-  @property({required: true})
+  @property({type: 'string', required: true})
   ownership_type_id: string;
-  @property({required: false})
+  @property({type: 'string', required: false})
   description?: string;
-  @property({required: true})
+  @property({type: 'string', required: true})
   form_number: string;
-  @property({required: true})
-  issue_date: string;
-  @property({required: true})
+  @property({type: 'date', required: true})
+  issue_date: Date;
+  @property({type: 'string', required: true})
   renewal_code: string;
-  @property({required: true})
+  @property({type: 'number', required: true})
   building_density: number;
 
   constructor(data?: Partial<NewBuildingProjectOwnershipTypeDTO>) {

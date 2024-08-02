@@ -125,6 +125,7 @@ export class ProjectManagementService {
 
       // Unwind over staff
       {$unwind: '$staff'},
+      {$match: {'staff.status': EnumStatus.ACTIVE}},
 
       // Lookup over profiles
       {
@@ -174,10 +175,9 @@ export class ProjectManagementService {
       aggregate,
     );
     const project = await pointer.next();
-    if (!project) {
-      throw new HttpErrors.NotFound('Building Project not found');
-    }
-    return project.staff.map(BuildingProjectStaffItemDTO.fromModel);
+    return !project
+      ? []
+      : project.staff.map(BuildingProjectStaffItemDTO.fromModel);
   }
 
   async addProjectStaff(

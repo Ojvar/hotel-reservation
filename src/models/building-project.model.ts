@@ -24,12 +24,13 @@ export enum EnumProgressStatus {
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
+@model()
 export class BuildingProjectStaffItem extends TimestampModelWithId {
   @property({type: 'string', required: true})
   user_id: string;
   @property({type: 'string', required: true})
   field_id: string;
-  @property({type: 'string', required: true})
+  @property({type: 'number', required: true})
   status: EnumStatus;
 
   constructor(data?: Partial<BuildingProjectStaffItem>) {
@@ -150,8 +151,8 @@ export class BuildingProjectOwnershipType extends Model {
   description?: string;
   @property({type: 'string', required: true})
   form_number: string;
-  @property({type: 'string', required: true})
-  issue_date: string;
+  @property({type: 'date', required: true})
+  issue_date: Date;
   @property({type: 'string', required: true})
   renewal_code: string;
   @property({type: 'number', required: true})
@@ -491,7 +492,9 @@ export class BuildingProject extends Entity {
 
   removeStaff(userId: string, staffId: string): void {
     const staffItem = this.staff?.find(
-      s => s.id?.toString() === staffId && s.status === EnumStatus.ACTIVE,
+      s =>
+        s.id?.toString() === staffId.toString() &&
+        s.status === EnumStatus.ACTIVE,
     );
     if (!staffItem) {
       throw new HttpErrors.NotFound('Staff item not found');
