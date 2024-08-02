@@ -10,9 +10,12 @@ import {
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectsDTO,
+  BuildingProjectStaffItemDTO,
+  BuildingProjectStaffItemsDTO,
   JobCandiateResultDTO,
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
+  NewProjectStaffRequestDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
@@ -79,6 +82,125 @@ export class ProjectManagementService {
     @inject(FileServiceAgentService.BINDING_KEY)
     private fileServiceAgent: FileServiceAgentService,
   ) {}
+
+  async getProjectStaffList(
+    userId: string,
+    id: string,
+    staffStatuses = [EnumStatus.ACTIVE],
+  ): Promise<BuildingProjectStaffItemsDTO> {
+    const now = new Date();
+    const aggregate = [
+      {$match: {_id: new ObjectId(id)}},
+
+      // Office
+      {
+        $lookup: {
+          from: 'offices',
+          localField: 'office_id',
+          foreignField: '_id',
+          as: 'office',
+        },
+      },
+      {$set: {office: {$first: '$office'}}},
+
+      {
+        $match: {
+          'office.members': {
+            $elemMatch: {
+              user_id: userId,
+              status: {$in: staffStatuses},
+              'membership.role': {
+                $in: [
+                  EnumOfficeMemberRole.OWNER,
+                  EnumOfficeMemberRole.SECRETARY,
+                  EnumOfficeMemberRole.CO_FOUNDER,
+                ],
+              },
+              'membership.from': {$lte: now},
+              'membership.to': {$gte: now},
+            },
+          },
+        },
+      },
+
+      // Unwind over staff
+      {$unwind: '$staff'},
+
+      // Lookup over profiles
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'staff.user_id',
+          foreignField: 'user_id',
+          as: 'staff.profile',
+        },
+      },
+      // Lookup over basedata
+      {
+        $lookup: {
+          from: 'basedata',
+          localField: 'staff.field_id',
+          foreignField: '_id',
+          as: 'staff.field',
+        },
+      },
+      {
+        $set: {
+          'staff.field': {$first: '$staff.field.value'},
+          'staff.profile': {$first: '$staff.profile'},
+        },
+      },
+
+      // Group
+      {
+        $group: {
+          _id: '$_id',
+          staff: {$push: '$staff'},
+          other_fields: {$first: '$$ROOT'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
+          },
+        },
+      },
+    ];
+
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const project = await pointer.next();
+    if (!project) {
+      throw new HttpErrors.NotFound('Building Project not found');
+    }
+    return project.staff.map(BuildingProjectStaffItemDTO.fromModel);
+  }
+
+  async addProjectStaff(
+    userId: string,
+    id: string,
+    data: NewProjectStaffRequestDTO,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(id);
+    project.addStaff(data.toModel(userId));
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async removeProjectStaff(
+    userId: string,
+    id: string,
+    staffId: string,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(id);
+    project.removeStaff(userId, staffId);
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+  }
 
   async removeUploadedFile(
     userId: string,
@@ -559,11 +681,7 @@ export class ProjectManagementService {
         as: 'ownerProfile',
       },
     },
-    {
-      $addFields: {
-        'ownership.owners.profile': {$first: '$ownerProfile'},
-      },
-    },
+    {$addFields: {'ownership.owners.profile': {$first: '$ownerProfile'}}},
     {$unset: ['ownerProfile']},
 
     // Lawyers
@@ -606,6 +724,7 @@ export class ProjectManagementService {
         },
       },
     },
+    {$sort: {_id: -1}},
   ];
 
   getProjectsListAggregate(
@@ -617,7 +736,7 @@ export class ProjectManagementService {
     return [
       {$match: {status}},
       ...this.projectLookupProfileAggregate,
-      {$sort: {'projects._id': 1}},
+      {$sort: {_id: 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
@@ -673,8 +792,6 @@ export class ProjectManagementService {
       {$replaceRoot: {newRoot: '$projects'}},
 
       ...this.projectLookupProfileAggregate,
-
-      {$sort: {_id: 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},

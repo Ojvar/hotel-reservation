@@ -12,13 +12,105 @@ import {
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
   BuildingProjectSpecification,
+  BuildingProjectStaffItem,
+  BuildingProjectStaffItems,
   EnumProgressStatus,
   EnumProgressStatusValues,
   EnumStatus,
   EnumStatusValues,
+  ModifyStamp,
+  MONGO_ID_REGEX,
   Profile,
 } from '../models';
 import {FileInfoDTO} from '../lib-file-service/src';
+import {KEYCLOAK_ID_REGEX} from '../lib-models/src';
+
+@model()
+export class BuildingProjectStaffItemDTO extends Model {
+  @property({type: 'string'})
+  id: string;
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({type: 'string', required: true})
+  field_id: string;
+  @property({required: false})
+  profile?: Profile;
+  @property({type: 'string'})
+  field?: string;
+  @property({type: 'date'})
+  created_at: Date;
+  @property({type: 'date'})
+  updated_at: Date;
+
+  constructor(data?: Partial<BuildingProjectStaffItemDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectStaffItem & {profile?: Profile; field?: string},
+  ): BuildingProjectStaffItemDTO {
+    return new BuildingProjectStaffItemDTO({
+      id: data.id,
+      created_at: data.created.at,
+      updated_at: data.updated.at,
+      field_id: data.field_id,
+      user_id: data.user_id,
+      profile: new Profile({
+        user_id: data.profile?.user_id,
+        first_name: data.profile?.first_name,
+        last_name: data.profile?.last_name,
+        n_in: data.profile?.n_in,
+        mobile: data.profile?.mobile,
+      }),
+      field: data.field,
+    });
+  }
+}
+export type BuildingProjectStaffItemsDTO = BuildingProjectStaffItemDTO[];
+
+@model()
+export class NewProjectStaffItemDTO extends Model {
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {pattern: KEYCLOAK_ID_REGEX.source},
+  })
+  user_id: string;
+  @property({
+    type: 'string',
+    required: true,
+    jsonSchema: {pattern: MONGO_ID_REGEX.source},
+  })
+  field_id: string;
+
+  constructor(data?: Partial<NewProjectStaffItemDTO>) {
+    super(data);
+  }
+}
+export type NewProjectStaffItemsDTO = NewProjectStaffItemDTO[];
+
+@model()
+export class NewProjectStaffRequestDTO extends Model {
+  @property.array(NewProjectStaffItemDTO, {required: true})
+  staff: NewProjectStaffItemsDTO;
+
+  constructor(data?: Partial<NewProjectStaffRequestDTO>) {
+    super(data);
+  }
+
+  toModel(userId: string): BuildingProjectStaffItems {
+    const now = new ModifyStamp({by: userId});
+    return this.staff.map(
+      s =>
+        new BuildingProjectStaffItem({
+          created: now,
+          updated: now,
+          user_id: s.user_id,
+          field_id: s.field_id,
+        }),
+    );
+  }
+}
 
 @model()
 export class FileTokenRequestDTO extends Model {

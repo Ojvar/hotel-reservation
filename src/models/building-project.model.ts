@@ -24,6 +24,26 @@ export enum EnumProgressStatus {
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
+export class BuildingProjectStaffItem extends TimestampModelWithId {
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({type: 'string', required: true})
+  field_id: string;
+  @property({type: 'string', required: true})
+  status: EnumStatus;
+
+  constructor(data?: Partial<BuildingProjectStaffItem>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+
+  markAsRemoved(userId: string) {
+    this.updated = new ModifyStamp({by: userId});
+    this.status = EnumStatus.DEACTIVE;
+  }
+}
+export type BuildingProjectStaffItems = BuildingProjectStaffItem[];
+
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectAttachmentItem extends Model {
   @property({type: 'string', required: true})
@@ -448,6 +468,8 @@ export class BuildingProject extends Entity {
   office_id: string;
   @property.array(BuildingProjectAttachmentItem, {false: true})
   attachments: BuildingProjectAttachmentItems;
+  @property.array(BuildingProjectStaffItem, {required: false})
+  staff?: BuildingProjectStaffItems;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
@@ -460,6 +482,22 @@ export class BuildingProject extends Entity {
     );
     this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
     this.attachments = this.attachments ?? [];
+    this.staff = this.staff?.map(s => new BuildingProjectStaffItem(s));
+  }
+
+  addStaff(staffItems: BuildingProjectStaffItems): void {
+    this.staff = [...(this.staff ?? []), ...staffItems];
+  }
+
+  removeStaff(userId: string, staffId: string): void {
+    const staffItem = this.staff?.find(
+      s => s.id?.toString() === staffId && s.status === EnumStatus.ACTIVE,
+    );
+    if (!staffItem) {
+      throw new HttpErrors.NotFound('Staff item not found');
+    }
+    staffItem.markAsRemoved(userId);
+    this.updated = new ModifyStamp({by: userId});
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {

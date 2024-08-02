@@ -14,8 +14,11 @@ import {
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
+  BuildingProjectStaffItemDTO,
+  BuildingProjectStaffItemsDTO,
   FileTokenRequestDTO,
   NewBuildingProjectRequestDTO,
+  NewProjectStaffRequestDTO,
   ProjectSummaryEngineerDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
@@ -262,5 +265,69 @@ export class ProjectOperatorsController {
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getProjectByUserId(userId, id);
+  }
+
+  @get(`${BASE_ADDR}/{id}/staff`, {
+    tags,
+    summary: 'Get staff list',
+    description: 'Get staff list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectStaffItemDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getStaffList(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectStaffItemsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectStaffList(userId, id);
+  }
+
+  @post(`${BASE_ADDR}/{id}/staff`, {
+    tags,
+    summary: 'Add new staff',
+    description: 'Add new staff',
+    responses: {204: {}},
+  })
+  async addStaff(
+    @requestBody() body: NewProjectStaffRequestDTO,
+    @param.path.string('id') id: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addProjectStaff(
+      userId,
+      id,
+      new NewProjectStaffRequestDTO(body),
+    );
+  }
+
+  @del(`${BASE_ADDR}/{id}/staff/{staff_id}`, {
+    tags,
+    summary: 'Remove staff item',
+    description: 'Remove staff item',
+    responses: {204: {}},
+  })
+  async removeStaff(
+    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    id: string,
+    @param.path.string('staff_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    staffId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeProjectStaff(
+      userId,
+      id,
+      staffId,
+    );
   }
 }
