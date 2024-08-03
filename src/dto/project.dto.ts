@@ -381,7 +381,10 @@ export class NewBuildingProjectRequestDTO extends Model {
     );
   }
 
-  toModel(userId: string): BuildingProject {
+  toModel(
+    userId: string,
+    overidedData: Partial<BuildingProject> = {},
+  ): BuildingProject {
     const now = new ModifyStamp({by: userId});
     return new BuildingProject({
       created: now,
@@ -400,6 +403,7 @@ export class NewBuildingProjectRequestDTO extends Model {
       }),
       lawyers: this.lawyer ? [this.lawyer?.toModel(userId)] : [],
       specification: this.specification.toModel(),
+      ...overidedData,
     });
   }
 }

@@ -352,6 +352,44 @@ export class ProjectManagementService {
     });
   }
 
+  async updateProject(
+    userId: string,
+    id: string,
+    data: NewBuildingProjectRequestDTO,
+    options: {checkOfficeId: boolean} = {checkOfficeId: true},
+    allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
+  ): Promise<BuildingProjectDTO> {
+    if (options.checkOfficeId) {
+      await this.userIsAllowedToProjectForOffice(userId, data.office_id, [
+        EnumOfficeMemberRole.OWNER,
+        EnumOfficeMemberRole.SECRETARY,
+        EnumOfficeMemberRole.CO_FOUNDER,
+      ]);
+    }
+    const oldProject = await this.buildingProjectRepo.findById(id);
+    if (!allowedStatus.includes(oldProject.progress_status)) {
+      throw new HttpErrors.UnprocessableEntity(
+        'Invalid project progress status',
+      );
+    }
+    const newProject = await this.buildingProjectRepo.create(
+      data.toModel(
+        userId,
+        new BuildingProject({
+          id: oldProject.id,
+          created: oldProject.created,
+          updated: new ModifyStamp({by: userId}),
+          attachments: oldProject.attachments,
+          status: oldProject.status,
+          case_no: oldProject.case_no,
+          progress_status: oldProject.progress_status,
+          progress_status_history: oldProject.progress_status_history,
+        }),
+      ),
+    );
+    return BuildingProjectDTO.fromModel(newProject);
+  }
+
   async createNewProject(
     userId: string,
     nId: string | undefined,

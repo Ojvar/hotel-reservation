@@ -93,6 +93,27 @@ export class ProjectOperatorsController {
     return this.projectManagementService.sendProjectRegistrationCode(nId);
   }
 
+  @patch(`${BASE_ADDR}/project/{id}`, {
+    tags,
+    summary: 'Update project',
+    description: 'Update project',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async updateProject(
+    @requestBody() body: NewBuildingProjectRequestDTO,
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    body = new NewBuildingProjectRequestDTO(body);
+    return this.projectManagementService.updateProject(userId, id, body);
+  }
+
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',
