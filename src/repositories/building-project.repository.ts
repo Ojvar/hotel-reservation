@@ -44,9 +44,8 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
     data: JobCandiateResultDTO,
   ): Promise<void> {
     const project = await this.findById(data.job.meta.id);
-
     const now = new ModifyStamp({by: userId});
-    project.updateJobOfFail(
+    project.updateJobOrFail(
       userId,
       data.job.id,
       new BuildingProjectJobResult({
@@ -62,7 +61,6 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
         schedule_created_at: data.schedule.result.created_at,
       }),
     );
-
     await this.update(project);
   }
 

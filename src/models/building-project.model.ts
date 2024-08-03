@@ -565,7 +565,7 @@ export class BuildingProject extends Entity {
     this.jobs = jobs;
   }
 
-  updateJobOfFail(
+  updateJobOrFail(
     userId: string,
     jobId: string,
     result: BuildingProjectJobResult,
