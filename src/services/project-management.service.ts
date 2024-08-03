@@ -30,6 +30,7 @@ import {
   BuildingProject,
   BuildingProjectAttachmentItem,
   EnumOfficeMemberRole,
+  EnumProgressStatus,
   EnumStatus,
   ModifyStamp,
   Office,
@@ -55,7 +56,7 @@ export class ProjectManagementService {
     `services.${ProjectManagementService.name}`,
   );
 
-  static ALLOWED_FILES = [
+  static readonly ALLOWED_FILES = [
     'STRUCTURE_MAP',
     'STRUCTURE_CALCULATION',
     'ARCHITECTURAL_MAP',
@@ -70,7 +71,7 @@ export class ProjectManagementService {
     .map(item => Array.from({length: 4}, (_, index) => `${item}_${index + 1}`))
     .flatMap(x => x);
 
-  readonly C_PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
+  readonly PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
 
   constructor(
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
@@ -82,6 +83,24 @@ export class ProjectManagementService {
     @inject(FileServiceAgentService.BINDING_KEY)
     private fileServiceAgent: FileServiceAgentService,
   ) {}
+
+  async commitState(
+    userId: string,
+    id: string,
+    state: EnumProgressStatus,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(id, {
+      include: ['office'],
+    });
+    if (!project.office?.checkUserAccess(userId)) {
+      throw new HttpErrors.Unauthorized('Insufficent access level');
+    }
+    project.commitState(userId, state);
+    project.updated = new ModifyStamp({by: userId});
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {office, ...updatedProject} = project;
+    await this.buildingProjectRepo.update(new BuildingProject(updatedProject));
+  }
 
   async getProjectStaffList(
     userId: string,
@@ -324,7 +343,7 @@ export class ProjectManagementService {
     const userProfile = await this.profileRepo.findByNIdOrFail(nId);
     const trackingCode =
       await this.verificationCodeService.generateAndStoreCode(
-        this.C_PROJECT_REGISTRATION_TITLE,
+        this.PROJECT_REGISTRATION_TITLE,
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
       );

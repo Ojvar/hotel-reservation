@@ -30,7 +30,11 @@ import {
 } from '../lib-keycloak/src';
 import {AnyObject, Filter} from '@loopback/repository';
 import {FileTokenResponse} from '../lib-file-service/src';
-import {MONGO_ID_REGEX} from '../models';
+import {
+  EnumProgressStatus,
+  EnumProgressStatusValues,
+  MONGO_ID_REGEX,
+} from '../models';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -329,5 +333,23 @@ export class ProjectOperatorsController {
       id,
       staffId,
     );
+  }
+
+  @patch(`${BASE_ADDR}/{id}/state/commit/{state}`, {
+    tags,
+    summary: 'Commit project state',
+    description: 'Commit project state',
+    responses: {204: {}},
+  })
+  async commitProjectState(
+    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    id: string,
+    @param.path.number('state', {
+      schema: {enum: EnumProgressStatusValues},
+    })
+    state: EnumProgressStatus,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.commitState(userId, id, state);
   }
 }

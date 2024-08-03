@@ -19,8 +19,8 @@ import {Office} from './office.model';
 import {ObjectId} from 'bson';
 
 export enum EnumProgressStatus {
-  OFFICE_REGISTRATION_DATA = 0,
-  OFFICE_FILE_UPLOAD = 1,
+  OFFICE_DATA_ENTRY = 0,
+  OFFICE_DATA_CONFIRMED = 1,
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
@@ -419,6 +419,28 @@ export class BuildingProjectCaseNo extends Model {
   }
 }
 
+@model()
+export class ProgressStatusItem extends TimestampModelWithId {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumProgressStatusValues},
+  })
+  progress_status: EnumProgressStatus;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+
+  constructor(data?: Partial<ProgressStatusItem>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type ProgressStatusItems = ProgressStatusItem[];
+
 @model({
   name: 'building_projects',
   settings: {
@@ -441,6 +463,8 @@ export class BuildingProject extends Entity {
   status: EnumStatus;
   @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
   progress_status: EnumProgressStatus;
+  @property.array(ProgressStatusItem)
+  progress_status_history: ProgressStatusItems;
   @property({required: true})
   case_no: BuildingProjectCaseNo;
   @property({type: 'date', required: true})
@@ -475,7 +499,7 @@ export class BuildingProject extends Entity {
   constructor(data?: Partial<BuildingProject>) {
     super(data);
     this.progress_status =
-      this.progress_status ?? EnumProgressStatus.OFFICE_REGISTRATION_DATA;
+      this.progress_status ?? EnumProgressStatus.OFFICE_DATA_ENTRY;
     this.status = this.status ?? EnumStatus.ACTIVE;
     this.lawyers = (this.lawyers ?? []).map(l => new BuildingProjectLawyer(l));
     this.invoices = (this.invoices ?? []).map(
@@ -484,6 +508,9 @@ export class BuildingProject extends Entity {
     this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
     this.attachments = this.attachments ?? [];
     this.staff = this.staff?.map(s => new BuildingProjectStaffItem(s));
+    this.progress_status_history =
+      this.progress_status_history?.map(item => new ProgressStatusItem(item)) ??
+      [];
   }
 
   addStaff(staffItems: BuildingProjectStaffItems): void {
@@ -618,6 +645,29 @@ export class BuildingProject extends Entity {
     }
     file.status = EnumStatus.DEACTIVE;
     file.updated = new ModifyStamp({by: userId});
+  }
+
+  commitState(userId: string, newState: EnumProgressStatus): void {
+    const commitSequence = {
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]: [],
+      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: [
+        EnumProgressStatus.OFFICE_DATA_ENTRY,
+      ],
+    };
+    const prevState: EnumProgressStatus[] = commitSequence[newState] ?? [];
+    if (!prevState.includes(this.progress_status)) {
+      throw new HttpErrors.UnprocessableEntity('Commit not acceptable');
+    }
+    const now = new ModifyStamp({by: userId});
+    this.progress_status = newState;
+    this.progress_status_history = [
+      ...this.progress_status_history,
+      new ProgressStatusItem({
+        created: now,
+        updated: now,
+        progress_status: newState,
+      }),
+    ];
   }
 }
 
