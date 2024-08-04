@@ -201,14 +201,16 @@ export class BuildingProjectLocationAddress extends Model {
   @property({type: 'number'})
   area?: number;
 
-  @property({type: 'string'})
+  @property({type: 'string', required: false})
   street?: string;
-  @property({type: 'string'})
+  @property({type: 'string', required: false})
   alley?: string;
-  @property({type: 'string'})
+  @property({type: 'string', required: false})
   plaque?: string;
-  @property({type: 'number'})
+  @property({type: 'number', required: false})
   zip_code?: number;
+  @property({type: 'boolean', required: false})
+  is_village?: boolean;
 
   constructor(data?: Partial<BuildingProjectLocationAddress>) {
     super(data);

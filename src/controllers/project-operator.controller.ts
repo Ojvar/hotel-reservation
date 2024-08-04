@@ -132,12 +132,11 @@ export class ProjectOperatorsController {
     @param.path.string('verification_code') verificationCode: number,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    body = new NewBuildingProjectRequestDTO(body);
     return this.projectManagementService.createNewProject(
       userId,
       nId,
       verificationCode,
-      body,
+      new NewBuildingProjectRequestDTO(body),
     );
   }
 

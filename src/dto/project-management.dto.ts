@@ -226,6 +226,8 @@ export class BuildingProjectLocationAddressDTO extends Model {
   plaque: string;
   @property({type: 'number'})
   zip_code: number;
+  @property({type: 'boolean', required: false})
+  is_village?: boolean;
 
   constructor(data?: Partial<BuildingProjectLocationAddressDTO>) {
     super(data);
@@ -248,6 +250,7 @@ export class BuildingProjectLocationAddressDTO extends Model {
       alley: data.alley,
       plaque: data.plaque,
       zip_code: data.zip_code,
+      is_village: data.is_village,
     });
   }
 }

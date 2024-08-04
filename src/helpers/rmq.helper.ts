@@ -19,10 +19,21 @@ export const RMQ_EXCHANGES = {
   MESSAGE: {
     name: 'message',
     type: 'topic',
-    routingKey: '',
     options: {durable: true},
     queues: {
       SMS: {name: 'sms', routingKey: 'sms', options: {durable: true}},
+    },
+  },
+  BUILDING_PROJECTS: {
+    name: 'building-projects',
+    type: 'fanout',
+    options: {durable: true, alternateExchange: 'handler'},
+    queues: {
+      BUILDING_PROJECTS: {
+        name: 'building-projects',
+        routingKey: '',
+        options: {durable: true},
+      },
     },
   },
 };

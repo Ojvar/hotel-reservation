@@ -8,3 +8,4 @@ export * from './project-converter.service';
 export * from './profile.service';
 export * from './auth.service';
 export * from './file-agent.service';
+export * from './building-project-rmq-agent.service';

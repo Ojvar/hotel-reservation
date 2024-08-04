@@ -39,6 +39,7 @@ import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
 import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
+import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -78,6 +79,8 @@ export class ProjectManagementService {
     @repository(OfficeRepository) private officeRepo: OfficeRepository,
     @repository(BuildingProjectRepository)
     private buildingProjectRepo: BuildingProjectRepository,
+    @inject(BuildingProjectRmqAgentService.BINDING_KEY)
+    private buildingProjectRmqAgentService: BuildingProjectRmqAgentService,
     @inject(VerificationCodeService.BINDING_KEY)
     private verificationCodeService: VerificationCodeService,
     @inject(FileServiceAgentService.BINDING_KEY)
@@ -100,6 +103,9 @@ export class ProjectManagementService {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const {office, ...updatedProject} = project;
     await this.buildingProjectRepo.update(new BuildingProject(updatedProject));
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
   }
 
   async getProjectStaffList(
