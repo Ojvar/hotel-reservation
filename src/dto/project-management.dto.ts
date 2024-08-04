@@ -408,19 +408,19 @@ export class BuildingProjectLawyerDTO extends Model {
     data: BuildingProjectLawyer & {profile?: Profile},
   ): BuildingProjectLawyerDTO {
     return new BuildingProjectLawyerDTO({
-      id: data.id,
-      created_at: data.created.at,
-      updated_at: data.updated.at,
-      status: data.status,
-      user_id: data.user_id,
-      power_of_attorney_date: data.power_of_attorney_date,
-      power_of_attorney_number: data.power_of_attorney_number,
-      description: data.description,
+      id: data?.id,
+      created_at: data.created?.at ?? new Date(),
+      updated_at: data.updated?.at ?? new Date(),
+      status: data?.status,
+      user_id: data?.user_id,
+      power_of_attorney_date: data?.power_of_attorney_date,
+      power_of_attorney_number: data?.power_of_attorney_number,
+      description: data?.description,
       profile: new Profile({
-        first_name: data.profile?.first_name,
-        last_name: data.profile?.last_name,
-        n_in: data.profile?.n_in,
-        mobile: data.profile?.mobile,
+        first_name: data?.profile?.first_name,
+        last_name: data?.profile?.last_name,
+        n_in: data?.profile?.n_in,
+        mobile: data?.profile?.mobile,
       }),
     });
   }

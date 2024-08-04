@@ -500,6 +500,10 @@ export class BuildingProject extends Entity {
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
+
+    // it's because of mongodb-aggregation result
+    this.lawyers = this.lawyers?.filter(l => !!l.id);
+
     this.progress_status =
       this.progress_status ?? EnumProgressStatus.OFFICE_DATA_ENTRY;
     this.status = this.status ?? EnumStatus.ACTIVE;

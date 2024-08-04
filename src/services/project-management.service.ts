@@ -307,15 +307,16 @@ export class ProjectManagementService {
 
   async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
     const aggregate = [
-      {$match: {'case_no_new.prefix': prefix}},
-      {$group: {_id: null, max_serial: {$max: '$case_no_new.serial'}}},
+      {$match: {'case_no.prefix': prefix}},
+      {$group: {_id: null, max_serial: {$max: '$case_no.serial'}}},
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
       aggregate,
     );
-    let {max_serial} = await pointer.next();
+
+    let {max_serial} = (await pointer.next()) ?? {max_serial: 0};
     max_serial = (max_serial ?? 0) + 1;
     return `${prefix.toString().padStart(2, '0')}${separator}${max_serial}`;
   }
@@ -748,7 +749,7 @@ export class ProjectManagementService {
     {$unset: ['ownerProfile']},
 
     // Lawyers
-    {$unwind: '$lawyers'},
+    {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
     {
       $lookup: {
         from: 'profiles',
@@ -851,9 +852,8 @@ export class ProjectManagementService {
           as: 'projects',
         },
       },
-      {$unwind: '$projects'},
+      {$unwind: {path: '$projects', preserveNullAndEmptyArrays: true}},
       {$replaceRoot: {newRoot: '$projects'}},
-
       ...this.projectLookupProfileAggregate,
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
