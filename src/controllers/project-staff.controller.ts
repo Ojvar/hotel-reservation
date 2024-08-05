@@ -1,7 +1,17 @@
 import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {param, patch, requestBody} from '@loopback/rest';
-import {SetBuildingProjectStaffResponseDTO} from '../dto';
+import {
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  requestBody,
+} from '@loopback/rest';
+import {
+  BuildingProjectDTO,
+  BuildingProjectsDTO,
+  SetBuildingProjectStaffResponseDTO,
+} from '../dto';
 import {
   EnumRoles,
   KeycloakSecurity,
@@ -45,5 +55,27 @@ export class ProjectStaffController {
       body,
       true,
     );
+  }
+
+  @get(`${BASE_ADDR}/requests`, {
+    tags,
+    summary: 'Get staff requests list',
+    description: 'Get Staff requests list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getStaffRequestList(): Promise<BuildingProjectsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getStaffRequestsListByUserId(userId);
   }
 }

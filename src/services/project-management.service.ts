@@ -92,6 +92,34 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
 
+  async getStaffRequestsListByUserId(
+    userId: string,
+    userFilter: Filter<BuildingProjectFilter> = {},
+  ): Promise<BuildingProjectsDTO> {
+    const filter: Filter<BuildingProjectFilter> = {
+      limit: adjustRange(userFilter.limit),
+      skip: adjustMin(userFilter.skip),
+      offset: adjustMin(userFilter.offset),
+    };
+    const aggregate = this.getProjectsListAggregate(filter, {
+      status: EnumStatus.ACTIVE,
+      staff: {
+        $elemMatch: {
+          user_id: userId,
+          status: EnumStatus.ACTIVE,
+          response: null,
+        },
+      },
+    });
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const projects = await pointer.toArray();
+    return projects.map(BuildingProjectDTO.fromModel);
+  }
+
   async setStaffResponse(
     userId: string,
     projectId: string,
@@ -450,6 +478,7 @@ Please Accept or Reject this assgiment
         }),
       ),
     );
+    /// TODO: GET DATA by using getProjectsData
     return BuildingProjectDTO.fromModel(newProject);
   }
 
@@ -849,12 +878,13 @@ Please Accept or Reject this assgiment
 
   getProjectsListAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+    matchClause: AnyObject = {},
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
 
     return [
-      {$match: {status}},
+      {$match: {status, ...matchClause}},
       ...this.projectLookupProfileAggregate,
       {$sort: {_id: 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
@@ -865,6 +895,7 @@ Please Accept or Reject this assgiment
 
   getProjectsListByUserOfficeAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+    matchClause: AnyObject = {},
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const officeId: string = where.office_id ?? '';
@@ -877,6 +908,7 @@ Please Accept or Reject this assgiment
         $match: {
           ...(officeId ? {_id: new ObjectId(officeId)} : {}),
           status,
+          ...matchClause,
         },
       },
 
