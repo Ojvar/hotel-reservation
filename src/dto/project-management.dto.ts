@@ -611,6 +611,8 @@ export class BuildingProjectDTO extends Model {
   ownership: BuildingProjectOwnershipDTO;
   @property()
   specification: BuildingProjectSpecificationDTO;
+  @property.array(BuildingProjectStaffItemDTO, {required: false})
+  staff: BuildingProjectStaffItemsDTO;
 
   constructor(data?: Partial<BuildingProjectDTO>) {
     super(data);
@@ -639,6 +641,7 @@ export class BuildingProjectDTO extends Model {
       specification: BuildingProjectSpecificationDTO.fromModel(
         data.specification,
       ),
+      staff: data.staff?.map(BuildingProjectStaffItemDTO.fromModel),
     });
   }
 }

@@ -95,6 +95,7 @@ export class ProjectManagementService {
   async getStaffRequestsListByUserId(
     userId: string,
     userFilter: Filter<BuildingProjectFilter> = {},
+    showUsersRequests = true,
   ): Promise<BuildingProjectsDTO> {
     const filter: Filter<BuildingProjectFilter> = {
       limit: adjustRange(userFilter.limit),
@@ -117,6 +118,13 @@ export class ProjectManagementService {
       aggregate,
     );
     const projects = await pointer.toArray();
+    if (showUsersRequests) {
+      for (const project of projects) {
+        project.staff = project.staff?.filter(
+          (staff: AnyObject) => staff.user_id === userId,
+        );
+      }
+    }
     return projects.map(BuildingProjectDTO.fromModel);
   }
 
@@ -846,12 +854,42 @@ Please Accept or Reject this assgiment
     {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
     {$unset: ['lawyerProfile']},
 
+    // Unwind over staff
+    {$unwind: {path: '$staff', preserveNullAndEmptyArrays: true}},
+    {$match: {'staff.status': EnumStatus.ACTIVE}},
+
+    // Lookup over profiles
+    {
+      $lookup: {
+        from: 'profiles',
+        localField: 'staff.user_id',
+        foreignField: 'user_id',
+        as: 'staff.profile',
+      },
+    },
+    // Lookup over basedata
+    {
+      $lookup: {
+        from: 'basedata',
+        localField: 'staff.field_id',
+        foreignField: '_id',
+        as: 'staff.field',
+      },
+    },
+    {
+      $set: {
+        'staff.field': {$first: '$staff.field.value'},
+        'staff.profile': {$first: '$staff.profile'},
+      },
+    },
+
     // Regroup data
     {
       $group: {
         _id: '$_id',
         all_owners: {$push: '$ownership.owners'},
         all_lawyers: {$push: '$lawyers'},
+        all_staff: {$push: '$staff'},
         other_fields: {$first: '$$ROOT'},
       },
     },
@@ -862,6 +900,7 @@ Please Accept or Reject this assgiment
             '$other_fields',
             {
               lawyers: '$all_lawyers',
+              staff: '$all_staff',
               ownership: {
                 $mergeObjects: [
                   '$other_fields.ownership',
