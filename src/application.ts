@@ -46,6 +46,11 @@ import {
   FileServiceComponent,
   FileServiceDataSource,
 } from './lib-file-service/src';
+import {
+  PushNotificationDataSource,
+  PushNotificationDataSourceConfig,
+  PushNotificationServiceComponent,
+} from './lib-push-notification-service/src';
 
 export {ApplicationConfig};
 
@@ -62,6 +67,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   pofileDataSourceConfig: ProfileDataSourceConfig;
   authDataSourceConfig: AuthDataSourceConfig;
   fileServiceBaseURL: string;
+  pushNotificationDataSourceConfig: PushNotificationDataSourceConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -133,6 +139,12 @@ export class ProjectsServiceApplication extends BootMixin(
     );
     this.bind(AuthDataSource.CONFIG_BINDING_KEY).to(
       options.authDataSourceConfig,
+    );
+
+    // Push Notification
+    this.component(PushNotificationServiceComponent);
+    this.bind(PushNotificationDataSource.CONFIG_BINDING_KEY).to(
+      options.pushNotificationDataSourceConfig,
     );
 
     // Redis

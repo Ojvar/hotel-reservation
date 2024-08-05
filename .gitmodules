@@ -19,3 +19,6 @@
 [submodule "src/lib-redis"]
 	path = src/lib-redis
 	url = git@gitlab.qeng.ir:qeng/libraries/lib-redis.git
+[submodule "src/lib-push-notification-service"]
+	path = src/lib-push-notification-service
+	url = git@gitlab.qeng.ir:qeng/libraries/lib-push-notification-service.git

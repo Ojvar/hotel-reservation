@@ -49,5 +49,6 @@ declare namespace NodeJS {
     PROFILE_SERVICE_BASE_URL: string;
     AUTH_SERVICE_BASE_URL: string;
     FILE_SERVICE_BASE_URL: string;
+    PUSH_NOTIFICATION_SERVICE_BASE_URL: string;
   }
 }

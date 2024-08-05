@@ -25,6 +25,24 @@ export enum EnumProgressStatus {
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
 @model()
+export class BuildingProjectStaffResponse extends Model {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({required: true})
+  responsed: ModifyStamp;
+  @property({type: 'string', required: false})
+  description: string;
+
+  constructor(data?: Partial<BuildingProjectStaffResponse>) {
+    super(data);
+  }
+}
+
+@model()
 export class BuildingProjectStaffItem extends TimestampModelWithId {
   @property({type: 'string', required: true})
   user_id: string;
@@ -32,15 +50,29 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
   field_id: string;
   @property({type: 'number', required: true})
   status: EnumStatus;
+  @property({required: false})
+  response?: BuildingProjectStaffResponse;
 
   constructor(data?: Partial<BuildingProjectStaffItem>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
+    this.response = this.response
+      ? new BuildingProjectStaffResponse(this.response)
+      : undefined;
   }
 
   markAsRemoved(userId: string) {
     this.updated = new ModifyStamp({by: userId});
     this.status = EnumStatus.DEACTIVE;
+  }
+
+  setResponse(userId: string, status: EnumStatus, description?: string) {
+    this.response = new BuildingProjectStaffResponse({
+      responsed: new ModifyStamp({by: userId}),
+      description,
+      status,
+    });
+    this.updated = new ModifyStamp({by: userId});
   }
 }
 export type BuildingProjectStaffItems = BuildingProjectStaffItem[];
@@ -520,6 +552,21 @@ export class BuildingProject extends Entity {
   }
 
   addStaff(staffItems: BuildingProjectStaffItems): void {
+    const requestedUsers = staffItems.reduce<Record<string, string>>(
+      (res, item) => ({...res, [item.user_id]: item.field_id.toString()}),
+      {},
+    );
+    // Find active or pending staff requests of the user
+    const hasConflict = this.staff?.some(
+      staff =>
+        staff.status === EnumStatus.ACTIVE &&
+        requestedUsers[staff.user_id] === staff.field_id.toString(),
+    );
+    if (hasConflict) {
+      throw new HttpErrors.UnprocessableEntity(
+        'Some requests has already exists',
+      );
+    }
     this.staff = [...(this.staff ?? []), ...staffItems];
   }
 
@@ -674,6 +721,21 @@ export class BuildingProject extends Entity {
         progress_status: newState,
       }),
     ];
+  }
+
+  setStaffResponse(
+    userId: string,
+    staffId: string,
+    status: EnumStatus,
+    description?: string,
+  ): void {
+    const staff = this.staff?.find(
+      s => s.id?.toString() === staffId && s.status === EnumStatus.ACTIVE,
+    );
+    if (!staff) {
+      throw new HttpErrors.NotFound(`Staff request not found, id: ${staffId}`);
+    }
+    staff.setResponse(userId, status, description);
   }
 }
 

@@ -20,6 +20,7 @@ import {
   NewBuildingProjectRequestDTO,
   NewProjectStaffRequestDTO,
   ProjectSummaryEngineerDTO,
+  SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {
@@ -371,5 +372,29 @@ export class ProjectOperatorsController {
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.commitState(userId, id, state);
+  }
+
+  @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
+    tags,
+    summary: 'Set staff response',
+    description: 'Set staff response',
+    responses: {204: {}},
+  })
+  async setStaffResponse(
+    @requestBody() body: SetBuildingProjectStaffResponseDTO,
+    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    id: string,
+    @param.path.string('staff_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    staffId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.setStaffResponse(
+      userId,
+      id,
+      staffId,
+      body,
+    );
   }
 }

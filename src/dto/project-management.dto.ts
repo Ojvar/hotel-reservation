@@ -26,6 +26,22 @@ import {FileInfoDTO} from '../lib-file-service/src';
 import {KEYCLOAK_ID_REGEX} from '../lib-models/src';
 
 @model()
+export class SetBuildingProjectStaffResponseDTO extends Model {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: [EnumStatus.ACCEPTED, EnumStatus.REJECTED]},
+  })
+  status: EnumStatus;
+  @property({type: 'string', required: false})
+  description?: string;
+
+  constructor(data?: Partial<SetBuildingProjectStaffResponseDTO>) {
+    super(data);
+  }
+}
+
+@model()
 export class BuildingProjectStaffItemDTO extends Model {
   @property({type: 'string'})
   id: string;

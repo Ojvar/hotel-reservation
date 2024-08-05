@@ -16,6 +16,7 @@ import {
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
   NewProjectStaffRequestDTO,
+  SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
@@ -40,6 +41,8 @@ import {HttpErrors} from '@loopback/rest';
 import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
 import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
+import {PushNotificationAgentService} from './push-notification-agent.service';
+import {EnumTargetType} from '../lib-push-notification-service/src';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -85,7 +88,20 @@ export class ProjectManagementService {
     private verificationCodeService: VerificationCodeService,
     @inject(FileServiceAgentService.BINDING_KEY)
     private fileServiceAgent: FileServiceAgentService,
+    @inject(PushNotificationAgentService.BINDING_KEY)
+    private pushNotifAgent: PushNotificationAgentService,
   ) {}
+
+  async setStaffResponse(
+    userId: string,
+    projectId: string,
+    staffId: string,
+    data: SetBuildingProjectStaffResponseDTO,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    project.setStaffResponse(userId, staffId, data.status, data.description);
+    await this.buildingProjectRepo.update(project);
+  }
 
   async commitState(
     userId: string,
@@ -214,6 +230,39 @@ export class ProjectManagementService {
     project.addStaff(data.toModel(userId));
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
+
+    await this.sendEngineerRequestPushNotif(project, data);
+  }
+
+  async sendEngineerRequestPushNotif(
+    project: BuildingProject,
+    data: NewProjectStaffRequestDTO,
+  ): Promise<void> {
+    // Get users
+    const targetsUserId = data.staff.map(x => x.user_id.toString());
+    const profiles = await this.profileRepo.find({
+      where: {user_id: {inq: targetsUserId}},
+    });
+
+    // Send push message
+    const msg = `Dear Engineer,
+You are assigned as  Desginer engineer to the Project ${project.case_no.case_no}
+Please Accept or Reject this assgiment
+`;
+    const tags = ['PROJECT_SERVICE', 'STAFF_ASSIGNMENT'];
+    const targets = Array.from(new Set(profiles.map(x => x.n_in)));
+    const title = 'Project Designer Assignment';
+    await this.pushNotifAgent.publish(
+      EnumTargetType.USERS,
+      title,
+      msg,
+      targets,
+      tags,
+      'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
+      'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
+      'https://qeng.ir',
+      true,
+    );
   }
 
   async removeProjectStaff(
