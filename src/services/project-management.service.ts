@@ -856,7 +856,16 @@ Please Accept or Reject this assgiment
 
     // Unwind over staff
     {$unwind: {path: '$staff', preserveNullAndEmptyArrays: true}},
-    {$match: {'staff.status': EnumStatus.ACTIVE}},
+    {
+      $match: {
+        $or: [
+          {staff: {$exists: false}},
+          {
+            'staff.status': EnumStatus.ACTIVE,
+          },
+        ],
+      },
+    },
 
     // Lookup over profiles
     {

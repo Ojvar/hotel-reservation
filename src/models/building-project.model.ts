@@ -548,7 +548,9 @@ export class BuildingProject extends Entity {
     );
     this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
     this.attachments = this.attachments ?? [];
-    this.staff = this.staff?.map(s => new BuildingProjectStaffItem(s));
+    this.staff = this.staff
+      ?.filter(x => !!x.id)
+      .map(s => new BuildingProjectStaffItem(s));
     this.progress_status_history =
       this.progress_status_history?.map(item => new ProgressStatusItem(item)) ??
       [];
