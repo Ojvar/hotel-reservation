@@ -376,8 +376,8 @@ export class ProjectOperatorsController {
 
   @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
     tags,
-    summary: 'Set staff response',
-    description: 'Set staff response',
+    summary: 'Set staff response (operator level)',
+    description: 'Set staff response (operator level)',
     responses: {204: {}},
   })
   async setStaffResponse(
@@ -395,6 +395,7 @@ export class ProjectOperatorsController {
       id,
       staffId,
       body,
+      false,
     );
   }
 }

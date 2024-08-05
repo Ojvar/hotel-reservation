@@ -67,6 +67,9 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
   }
 
   setResponse(userId: string, status: EnumStatus, description?: string) {
+    if (this.response?.status) {
+      throw new HttpErrors.UnprocessableEntity('Response already registered');
+    }
     this.response = new BuildingProjectStaffResponse({
       responsed: new ModifyStamp({by: userId}),
       description,
@@ -728,10 +731,16 @@ export class BuildingProject extends Entity {
     staffId: string,
     status: EnumStatus,
     description?: string,
+    validateUser = true,
   ): void {
     const staff = this.staff?.find(
       s => s.id?.toString() === staffId && s.status === EnumStatus.ACTIVE,
     );
+    if (validateUser && userId !== staff?.user_id) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Operation failed to the user, ${userId}`,
+      );
+    }
     if (!staff) {
       throw new HttpErrors.NotFound(`Staff request not found, id: ${staffId}`);
     }

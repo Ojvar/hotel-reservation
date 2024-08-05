@@ -97,9 +97,16 @@ export class ProjectManagementService {
     projectId: string,
     staffId: string,
     data: SetBuildingProjectStaffResponseDTO,
+    validateUser: boolean,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
-    project.setStaffResponse(userId, staffId, data.status, data.description);
+    project.setStaffResponse(
+      userId,
+      staffId,
+      data.status,
+      data.description,
+      validateUser,
+    );
     await this.buildingProjectRepo.update(project);
   }
 
