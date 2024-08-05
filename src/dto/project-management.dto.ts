@@ -71,13 +71,15 @@ export class BuildingProjectStaffItemDTO extends Model {
       updated_at: data.updated.at,
       field_id: data.field_id,
       user_id: data.user_id,
-      profile: new Profile({
-        user_id: data.profile?.user_id,
-        first_name: data.profile?.first_name,
-        last_name: data.profile?.last_name,
-        n_in: data.profile?.n_in,
-        mobile: data.profile?.mobile,
-      }),
+      profile: data.profile
+        ? new Profile({
+            user_id: data.profile?.user_id,
+            first_name: data.profile?.first_name,
+            last_name: data.profile?.last_name,
+            n_in: data.profile?.n_in,
+            mobile: data.profile?.mobile,
+          })
+        : undefined,
       field: data.field,
     });
   }
@@ -359,12 +361,14 @@ export class BuildingProjectOwnerDTO extends Model {
       address: data.address,
       is_delegate: data.is_delegate,
       status: data.status,
-      profile: new Profile({
-        first_name: data.profile?.first_name,
-        last_name: data.profile?.last_name,
-        n_in: data.profile?.n_in,
-        mobile: data.profile?.mobile,
-      }),
+      profile: data.profile
+        ? new Profile({
+            first_name: data.profile?.first_name,
+            last_name: data.profile?.last_name,
+            n_in: data.profile?.n_in,
+            mobile: data.profile?.mobile,
+          })
+        : undefined,
     });
   }
 }
@@ -432,12 +436,14 @@ export class BuildingProjectLawyerDTO extends Model {
       power_of_attorney_date: data?.power_of_attorney_date,
       power_of_attorney_number: data?.power_of_attorney_number,
       description: data?.description,
-      profile: new Profile({
-        first_name: data?.profile?.first_name,
-        last_name: data?.profile?.last_name,
-        n_in: data?.profile?.n_in,
-        mobile: data?.profile?.mobile,
-      }),
+      profile: data.profile
+        ? new Profile({
+            first_name: data?.profile?.first_name,
+            last_name: data?.profile?.last_name,
+            n_in: data?.profile?.n_in,
+            mobile: data?.profile?.mobile,
+          })
+        : undefined,
     });
   }
 }

@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {RabbitmqBindings, RabbitmqProducer} from '../loopback-rabbitmq/src';
 import {BuildingProject, EnumProgressStatus} from '../models';
 import {RMQ_EXCHANGES} from '../helpers';
+import {BuildingProjectStaffItemDTO, RmqStaffAcceptDTO} from '../dto';
 
 export enum EnumBuildingProjectRmqMessageType {
   OPERATOR_CONFORM = 'project_confirmed',
+  STAFF_ACCEPT = 'staff_accept',
 }
 
 @injectable({scope: BindingScope.APPLICATION})
@@ -18,6 +21,26 @@ export class BuildingProjectRmqAgentService {
     @inject(RabbitmqBindings.RABBITMQ_PRODUCER)
     private rmqProducer: RabbitmqProducer,
   ) {}
+
+  publishStaffUpdate(project: BuildingProject, staffId: string): Promise<void> {
+    const staff = project.staff?.find(x => x.id?.toString() === staffId);
+    if (!staff) {
+      return Promise.resolve();
+    }
+
+    const data = {
+      type: EnumBuildingProjectRmqMessageType.STAFF_ACCEPT,
+      data: new RmqStaffAcceptDTO({
+        staff: BuildingProjectStaffItemDTO.fromModel(staff),
+        project_id: project.id?.toString(),
+      }),
+    };
+    return this.rmqProducer.publish(
+      RMQ_EXCHANGES.BUILDING_PROJECTS.name,
+      RMQ_EXCHANGES.BUILDING_PROJECTS.queues.BUILDING_PROJECTS.routingKey,
+      Buffer.from(JSON.stringify(data)),
+    );
+  }
 
   publishProjectUpdates(project: BuildingProject): Promise<void> {
     switch (project.progress_status) {

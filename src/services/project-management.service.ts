@@ -144,6 +144,12 @@ export class ProjectManagementService {
       validateUser,
     );
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishStaffUpdate(
+      project,
+      staffId,
+    );
   }
 
   async commitState(
