@@ -866,9 +866,8 @@ Please Accept or Reject this assgiment
       $match: {
         $or: [
           {staff: {$exists: false}},
-          {
-            'staff.status': EnumStatus.ACTIVE,
-          },
+          {staff: null},
+          {'staff.status': EnumStatus.ACTIVE},
         ],
       },
     },
