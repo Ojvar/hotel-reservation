@@ -14,6 +14,7 @@ import {
   BuildingProjectSpecification,
   BuildingProjectStaffItem,
   BuildingProjectStaffItems,
+  BuildingProjectStaffResponse,
   EnumProgressStatus,
   EnumProgressStatusValues,
   EnumStatus,
@@ -42,6 +43,34 @@ export class SetBuildingProjectStaffResponseDTO extends Model {
 }
 
 @model()
+export class BuildingProjectStaffResponseDTO extends Model {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({type: 'date', required: true})
+  responsed_at: Date;
+  @property({type: 'string', required: false})
+  description: string;
+
+  constructor(data?: Partial<BuildingProjectStaffResponseDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectStaffResponse,
+  ): BuildingProjectStaffResponseDTO {
+    return new BuildingProjectStaffResponseDTO({
+      responsed_at: data.responsed.at,
+      status: data.status,
+      description: data.description,
+    });
+  }
+}
+
+@model()
 export class BuildingProjectStaffItemDTO extends Model {
   @property({type: 'string'})
   id: string;
@@ -57,6 +86,10 @@ export class BuildingProjectStaffItemDTO extends Model {
   created_at: Date;
   @property({type: 'date'})
   updated_at: Date;
+  @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
+  status: EnumStatus;
+  @property({})
+  response?: BuildingProjectStaffResponseDTO;
 
   constructor(data?: Partial<BuildingProjectStaffItemDTO>) {
     super(data);
@@ -69,6 +102,7 @@ export class BuildingProjectStaffItemDTO extends Model {
       id: data.id,
       created_at: data.created.at,
       updated_at: data.updated.at,
+      status: data.status,
       field_id: data.field_id,
       user_id: data.user_id,
       profile: data.profile
@@ -81,6 +115,9 @@ export class BuildingProjectStaffItemDTO extends Model {
           })
         : undefined,
       field: data.field,
+      response: data.response
+        ? BuildingProjectStaffResponseDTO.fromModel(data.response)
+        : undefined,
     });
   }
 }

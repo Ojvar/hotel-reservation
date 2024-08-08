@@ -40,7 +40,6 @@ import {
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
 export class ProjectOperatorsController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
@@ -51,6 +50,7 @@ export class ProjectOperatorsController {
     private projectConverterService: ProjectConverterService,
   ) {}
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/file-token`, {
     tags,
     summary: 'Generate file-upload token',
@@ -74,6 +74,9 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(
+    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
+  )
   @get(`${BASE_ADDR}/project/verification-code/{n_id}`, {
     tags,
     summary: 'Get validation code to registrating new project',
@@ -94,6 +97,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.sendProjectRegistrationCode(nId);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/project/{id}`, {
     tags,
     summary: 'Update project',
@@ -115,6 +119,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.updateProject(userId, id, body);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',
@@ -141,6 +146,7 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/import/{case_no}`, {
     tags,
     summary: 'Import specified project',
@@ -160,6 +166,9 @@ export class ProjectOperatorsController {
     return this.projectConverterService.importProject(userId, caseNo);
   }
 
+  @intercept(
+    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
+  )
   @get(`${BASE_ADDR}/invoices-list`, {
     tags,
     summary: 'Get all invioces of projects',
@@ -185,6 +194,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getAllInvoices(undefined, filter);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/{id}/invoices/{invoice_id}`, {
     tags,
     summary: 'Update an invoice',
@@ -205,6 +215,7 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/{id}/jobs`, {
     tags,
     summary: 'Update an invoice',
@@ -219,6 +230,7 @@ export class ProjectOperatorsController {
     await this.projectManagementService.addNewJob(userId, id, body);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/{id}/attachments/commit`, {
     tags,
     summary: 'Save uploaded files',
@@ -237,6 +249,9 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(
+    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
+  )
   @get(`${BASE_ADDR}/{id}/files`, {
     tags,
     summary: 'Get projects uploaded files',
@@ -255,6 +270,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getFilesList(id);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @del(`${BASE_ADDR}/{id}/files/{file_id}`, {
     tags,
     summary: 'Remove an uploaed file',
@@ -273,6 +289,9 @@ export class ProjectOperatorsController {
     await this.projectManagementService.removeUploadedFile(userId, id, fileId);
   }
 
+  @intercept(
+    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
+  )
   @get(`${BASE_ADDR}/{id}`, {
     tags,
     summary: 'Get Project details',
@@ -292,6 +311,9 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getProjectByUserId(userId, id);
   }
 
+  @intercept(
+    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
+  )
   @get(`${BASE_ADDR}/{id}/staff`, {
     tags,
     summary: 'Get staff list',
@@ -316,6 +338,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getProjectStaffList(userId, id);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/{id}/staff`, {
     tags,
     summary: 'Add new staff',
@@ -334,6 +357,7 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @del(`${BASE_ADDR}/{id}/staff/{staff_id}`, {
     tags,
     summary: 'Remove staff item',
@@ -356,6 +380,7 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/{id}/state/commit/{state}`, {
     tags,
     summary: 'Commit project state',
@@ -374,6 +399,7 @@ export class ProjectOperatorsController {
     await this.projectManagementService.commitState(userId, id, state);
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
     tags,
     summary: 'Set staff response (operator level)',
