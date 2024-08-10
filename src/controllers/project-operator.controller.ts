@@ -1,5 +1,5 @@
-import {inject, intercept} from '@loopback/context';
-import {ProjectConverterService, ProjectManagementService} from '../services';
+import { inject, intercept } from '@loopback/context';
+import { ProjectConverterService, ProjectManagementService } from '../services';
 import {
   del,
   get,
@@ -29,8 +29,8 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {AnyObject, Filter} from '@loopback/repository';
-import {FileTokenResponse} from '../lib-file-service/src';
+import { AnyObject, Filter } from '@loopback/repository';
+import { FileTokenResponse } from '../lib-file-service/src';
 import {
   EnumProgressStatus,
   EnumProgressStatusValues,
@@ -48,7 +48,7 @@ export class ProjectOperatorsController {
     private keycloakSecurity: KeycloakSecurity,
     @inject(ProjectConverterService.BINDING_KEY)
     private projectConverterService: ProjectConverterService,
-  ) {}
+  ) { }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @post(`${BASE_ADDR}/file-token`, {
@@ -59,7 +59,7 @@ export class ProjectOperatorsController {
       200: {
         description: 'Get an upload file token',
         content: {
-          'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
+          'application/json': { schema: getModelSchemaRef(FileTokenResponse) },
         },
       },
     },
@@ -67,7 +67,7 @@ export class ProjectOperatorsController {
   async getFileToken(
     @requestBody() body: FileTokenRequestDTO,
   ): Promise<FileTokenResponse> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getFileToken(
       userId,
       body.allowed_files ?? [],
@@ -105,7 +105,7 @@ export class ProjectOperatorsController {
     responses: {
       200: {
         content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
         },
       },
     },
@@ -114,7 +114,7 @@ export class ProjectOperatorsController {
     @requestBody() body: NewBuildingProjectRequestDTO,
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
     return this.projectManagementService.updateProject(userId, id, body);
   }
@@ -127,7 +127,7 @@ export class ProjectOperatorsController {
     responses: {
       200: {
         content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
         },
       },
     },
@@ -137,7 +137,7 @@ export class ProjectOperatorsController {
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
   ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.createNewProject(
       userId,
       nId,
@@ -154,7 +154,7 @@ export class ProjectOperatorsController {
     responses: {
       200: {
         content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
         },
       },
     },
@@ -162,7 +162,7 @@ export class ProjectOperatorsController {
   async importProject(
     @param.path.string('case_no') caseNo: string,
   ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectConverterService.importProject(userId, caseNo);
   }
 
@@ -199,14 +199,14 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async updateInvoice(
     @requestBody() body: UpdateInvoiceRequestDTO,
     @param.path.string('id') id: string,
     @param.path.string('invoice_id') invoiceId: string,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.updateProjectInvoice(
       userId,
       id,
@@ -220,13 +220,13 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async addNewJob(
     @requestBody() body: AddNewJobRequestDTO,
     @param.path.string('id') id: string,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.addNewJob(userId, id, body);
   }
 
@@ -235,13 +235,13 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Save uploaded files',
     description: 'Save uploaded files',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async saveAttachments(
     @param.path.string('id') id: string,
     @param.header.string('file-token') fileToken = '',
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.commitUploadedFiles(
       userId,
       id,
@@ -260,7 +260,7 @@ export class ProjectOperatorsController {
       200: {
         content: {
           'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(Object)},
+            schema: { type: 'array', items: getModelSchemaRef(Object) },
           },
         },
       },
@@ -275,17 +275,17 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Remove an uploaed file',
     description: 'Remove an uploaed file',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async removeUploadedFile(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    @param.path.string('id', { schema: { pattern: MONGO_ID_REGEX.source } })
     id: string,
     @param.path.string('file_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
+      schema: { pattern: MONGO_ID_REGEX.source },
     })
     fileId: string,
   ) {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.removeUploadedFile(userId, id, fileId);
   }
 
@@ -299,7 +299,7 @@ export class ProjectOperatorsController {
     responses: {
       200: {
         content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+          'application/json': { schema: getModelSchemaRef(BuildingProjectDTO) },
         },
       },
     },
@@ -307,7 +307,7 @@ export class ProjectOperatorsController {
   async getProjectDetails(
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getProjectByUserId(userId, id);
   }
 
@@ -334,7 +334,7 @@ export class ProjectOperatorsController {
   async getStaffList(
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectStaffItemsDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getProjectStaffList(userId, id);
   }
 
@@ -343,13 +343,13 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Add new staff',
     description: 'Add new staff',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async addStaff(
     @requestBody() body: NewProjectStaffRequestDTO,
     @param.path.string('id') id: string,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.addProjectStaff(
       userId,
       id,
@@ -362,17 +362,17 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Remove staff item',
     description: 'Remove staff item',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async removeStaff(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    @param.path.string('id', { schema: { pattern: MONGO_ID_REGEX.source } })
     id: string,
     @param.path.string('staff_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
+      schema: { pattern: MONGO_ID_REGEX.source },
     })
     staffId: string,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.removeProjectStaff(
       userId,
       id,
@@ -385,17 +385,17 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Commit project state',
     description: 'Commit project state',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async commitProjectState(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    @param.path.string('id', { schema: { pattern: MONGO_ID_REGEX.source } })
     id: string,
     @param.path.number('state', {
-      schema: {enum: EnumProgressStatusValues},
+      schema: { enum: EnumProgressStatusValues },
     })
     state: EnumProgressStatus,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.commitState(userId, id, state);
   }
 
@@ -404,18 +404,18 @@ export class ProjectOperatorsController {
     tags,
     summary: 'Set staff response (operator level)',
     description: 'Set staff response (operator level)',
-    responses: {204: {}},
+    responses: { 204: {} },
   })
   async setStaffResponse(
     @requestBody() body: SetBuildingProjectStaffResponseDTO,
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    @param.path.string('id', { schema: { pattern: MONGO_ID_REGEX.source } })
     id: string,
     @param.path.string('staff_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
+      schema: { pattern: MONGO_ID_REGEX.source },
     })
     staffId: string,
   ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    const { sub: userId } = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.setStaffResponse(
       userId,
       id,

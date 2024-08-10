@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
+import { BindingKey, BindingScope, inject, injectable } from '@loopback/core';
 import {
   AddNewJobRequestDTO,
   BuildingProjectAttachmentDTO,
@@ -19,14 +19,14 @@ import {
   SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
-import {AnyObject, Filter, repository} from '@loopback/repository';
+import { AnyObject, Filter, repository } from '@loopback/repository';
 import {
   BuildingProjectRepository,
   OfficeRepository,
   ProfileRepository,
 } from '../repositories';
-import {VerificationCodeService} from './verification-code.service';
-import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
+import { VerificationCodeService } from './verification-code.service';
+import { adjustMin, adjustRange, getPersianDateParts } from '../helpers';
 import {
   BuildingProject,
   BuildingProjectAttachmentItem,
@@ -36,17 +36,17 @@ import {
   ModifyStamp,
   Office,
 } from '../models';
-import {ObjectId} from 'bson';
-import {HttpErrors} from '@loopback/rest';
-import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
-import {FileServiceAgentService} from './file-agent.service';
-import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
-import {PushNotificationAgentService} from './push-notification-agent.service';
-import {EnumTargetType} from '../lib-push-notification-service/src';
+import { ObjectId } from 'bson';
+import { HttpErrors } from '@loopback/rest';
+import { FileInfoDTO, FileTokenResponse } from '../lib-file-service/src';
+import { FileServiceAgentService } from './file-agent.service';
+import { BuildingProjectRmqAgentService } from './building-project-rmq-agent.service';
+import { PushNotificationAgentService } from './push-notification-agent.service';
+import { EnumTargetType } from '../lib-push-notification-service/src';
 
 export const ProjectManagementSteps = {
-  REGISTRATION: {code: 0, title: 'ثبت پروژه'},
-  DESIGNER_SPECIFICATION: {code: 1, title: 'تغیین مهندس طراح'},
+  REGISTRATION: { code: 0, title: 'ثبت پروژه' },
+  DESIGNER_SPECIFICATION: { code: 1, title: 'تغیین مهندس طراح' },
 };
 
 export enum EnumRegisterProjectType {
@@ -54,7 +54,7 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-@injectable({scope: BindingScope.REQUEST})
+@injectable({ scope: BindingScope.REQUEST })
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
@@ -72,7 +72,7 @@ export class ProjectManagementService {
     'ELEVATOR_DETAILS',
     'BUILDING_SKETCH',
   ]
-    .map(item => Array.from({length: 4}, (_, index) => `${item}_${index + 1}`))
+    .map(item => Array.from({ length: 4 }, (_, index) => `${item}_${index + 1}`))
     .flatMap(x => x);
 
   readonly PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
@@ -90,7 +90,14 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
     @inject(PushNotificationAgentService.BINDING_KEY)
     private pushNotifAgent: PushNotificationAgentService,
-  ) {}
+  ) { }
+  //
+  // async getBuildingGroupConditionByProject(
+  //   userId: string,
+  //   projectId: string,
+  // ): Promise<void> {
+  //   /////// TODO
+  // }
 
   async getStaffRequestsListByUserId(
     userId: string,
@@ -164,9 +171,9 @@ export class ProjectManagementService {
       throw new HttpErrors.Unauthorized('Insufficent access level');
     }
     project.commitState(userId, state);
-    project.updated = new ModifyStamp({by: userId});
+    project.updated = new ModifyStamp({ by: userId });
     /* eslint-disable @typescript-eslint/no-unused-vars */
-    const {office, ...updatedProject} = project;
+    const { office, ...updatedProject } = project;
     await this.buildingProjectRepo.update(new BuildingProject(updatedProject));
 
     // Send RMQ Message
@@ -180,7 +187,7 @@ export class ProjectManagementService {
   ): Promise<BuildingProjectStaffItemsDTO> {
     const now = new Date();
     const aggregate = [
-      {$match: {_id: new ObjectId(id)}},
+      { $match: { _id: new ObjectId(id) } },
 
       // Office
       {
@@ -191,14 +198,14 @@ export class ProjectManagementService {
           as: 'office',
         },
       },
-      {$set: {office: {$first: '$office'}}},
+      { $set: { office: { $first: '$office' } } },
 
       {
         $match: {
           'office.members': {
             $elemMatch: {
               user_id: userId,
-              status: {$in: staffStatuses},
+              status: { $in: staffStatuses },
               'membership.role': {
                 $in: [
                   EnumOfficeMemberRole.OWNER,
@@ -206,16 +213,16 @@ export class ProjectManagementService {
                   EnumOfficeMemberRole.CO_FOUNDER,
                 ],
               },
-              'membership.from': {$lte: now},
-              'membership.to': {$gte: now},
+              'membership.from': { $lte: now },
+              'membership.to': { $gte: now },
             },
           },
         },
       },
 
       // Unwind over staff
-      {$unwind: '$staff'},
-      {$match: {'staff.status': EnumStatus.ACTIVE}},
+      { $unwind: '$staff' },
+      { $match: { 'staff.status': EnumStatus.ACTIVE } },
 
       // Lookup over profiles
       {
@@ -237,8 +244,8 @@ export class ProjectManagementService {
       },
       {
         $set: {
-          'staff.field': {$first: '$staff.field.value'},
-          'staff.profile': {$first: '$staff.profile'},
+          'staff.field': { $first: '$staff.field.value' },
+          'staff.profile': { $first: '$staff.profile' },
         },
       },
 
@@ -246,14 +253,14 @@ export class ProjectManagementService {
       {
         $group: {
           _id: '$_id',
-          staff: {$push: '$staff'},
-          other_fields: {$first: '$$ROOT'},
+          staff: { $push: '$staff' },
+          other_fields: { $first: '$$ROOT' },
         },
       },
       {
         $replaceRoot: {
           newRoot: {
-            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
+            $mergeObjects: ['$other_fields', { id: '$_id', staff: '$staff' }],
           },
         },
       },
@@ -277,7 +284,7 @@ export class ProjectManagementService {
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(id);
     project.addStaff(data.toModel(userId));
-    project.updated = new ModifyStamp({by: userId});
+    project.updated = new ModifyStamp({ by: userId });
     await this.buildingProjectRepo.update(project);
 
     await this.sendEngineerRequestPushNotif(project, data);
@@ -290,7 +297,7 @@ export class ProjectManagementService {
     // Get users
     const targetsUserId = data.staff.map(x => x.user_id.toString());
     const profiles = await this.profileRepo.find({
-      where: {user_id: {inq: targetsUserId}},
+      where: { user_id: { inq: targetsUserId } },
     });
 
     // Send push message
@@ -321,7 +328,7 @@ Please Accept or Reject this assgiment
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(id);
     project.removeStaff(userId, staffId);
-    project.updated = new ModifyStamp({by: userId});
+    project.updated = new ModifyStamp({ by: userId });
     await this.buildingProjectRepo.update(project);
   }
 
@@ -332,7 +339,7 @@ Please Accept or Reject this assgiment
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
     project.removeUploadedFile(userId, fileId);
-    project.updated = new ModifyStamp({by: userId});
+    project.updated = new ModifyStamp({ by: userId });
     await this.buildingProjectRepo.update(project);
   }
 
@@ -344,15 +351,16 @@ Please Accept or Reject this assgiment
 
     // Get files info
     const filesList = attachments.map(a => a.file_id);
-    const filesInfo =
-      await this.fileServiceAgent.getFilesInformation(filesList);
+    const filesInfo = await this.fileServiceAgent.getFilesInformation(
+      filesList,
+    );
 
     // Merge info
     const mergedData = attachments.map(a => {
       const fileInfo = filesInfo.find(
         f => f.id.toString() === a.file_id.toString(),
       );
-      return {...a, fileInfo} as BuildingProjectAttachmentItem & {
+      return { ...a, fileInfo } as BuildingProjectAttachmentItem & {
         fileInfo: FileInfoDTO | undefined;
       };
     });
@@ -373,7 +381,7 @@ Please Accept or Reject this assgiment
     const attachments = fileToken
       ? await this.fileServiceAgent.getAttachments(userId, fileToken)
       : null;
-    const {uploaded_files: uploadedFiles} = attachments ?? {uploaded_files: []};
+    const { uploaded_files: uploadedFiles } = attachments ?? { uploaded_files: [] };
 
     // Update project
     const project = await this.buildingProjectRepo.findById(id);
@@ -383,7 +391,7 @@ Please Accept or Reject this assgiment
     }));
 
     project.updateAttachments(userId, newAttachments);
-    project.updated = new ModifyStamp({by: userId});
+    project.updated = new ModifyStamp({ by: userId });
     await this.buildingProjectRepo.update(project);
 
     // Commit uploaded files
@@ -405,8 +413,8 @@ Please Accept or Reject this assgiment
 
   async generateNewCaseNo(prefix: number, separator = '-'): Promise<string> {
     const aggregate = [
-      {$match: {'case_no.prefix': prefix}},
-      {$group: {_id: null, max_serial: {$max: '$case_no.serial'}}},
+      { $match: { 'case_no.prefix': prefix } },
+      { $group: { _id: null, max_serial: { $max: '$case_no.serial' } } },
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -414,7 +422,7 @@ Please Accept or Reject this assgiment
       aggregate,
     );
 
-    let {max_serial} = (await pointer.next()) ?? {max_serial: 0};
+    let { max_serial } = (await pointer.next()) ?? { max_serial: 0 };
     max_serial = (max_serial ?? 0) + 1;
     return `${prefix.toString().padStart(2, '0')}${separator}${max_serial}`;
   }
@@ -461,7 +469,7 @@ Please Accept or Reject this assgiment
     userId: string,
     id: string,
     data: NewBuildingProjectRequestDTO,
-    options: {checkOfficeId: boolean} = {checkOfficeId: true},
+    options: { checkOfficeId: boolean } = { checkOfficeId: true },
     allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
     if (options.checkOfficeId) {
@@ -483,7 +491,7 @@ Please Accept or Reject this assgiment
         new BuildingProject({
           id: oldProject.id,
           created: oldProject.created,
-          updated: new ModifyStamp({by: userId}),
+          updated: new ModifyStamp({ by: userId }),
           attachments: oldProject.attachments,
           status: oldProject.status,
           case_no: oldProject.case_no,
@@ -501,7 +509,7 @@ Please Accept or Reject this assgiment
     nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
-    options: {checkOfficeId: boolean} = {checkOfficeId: true},
+    options: { checkOfficeId: boolean } = { checkOfficeId: true },
   ): Promise<BuildingProjectDTO> {
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
@@ -574,7 +582,7 @@ Please Accept or Reject this assgiment
     id: string,
   ): Promise<BuildingProjectDTO> {
     const aggregate = [
-      {$match: {_id: new ObjectId(id)}},
+      { $match: { _id: new ObjectId(id) } },
 
       // Check user access
       {
@@ -585,14 +593,14 @@ Please Accept or Reject this assgiment
           as: 'office',
         },
       },
-      {$set: {office: {$first: '$office'}}},
-      {$unwind: '$office.members'},
+      { $set: { office: { $first: '$office' } } },
+      { $unwind: '$office.members' },
       {
         $match: {
           'office.members.user_id': userId,
           'office.members.status': EnumStatus.ACTIVE,
-          'office.members.membership.from': {$lte: new Date()},
-          'office.members.membership.to': {$gte: new Date()},
+          'office.members.membership.from': { $lte: new Date() },
+          'office.members.membership.to': { $gte: new Date() },
           'office.members.membership.role': {
             $in: [
               EnumOfficeMemberRole.OWNER,
@@ -602,10 +610,10 @@ Please Accept or Reject this assgiment
           },
         },
       },
-      {$unset: ['office']},
+      { $unset: ['office'] },
 
       // Get profiles
-      {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
+      { $unwind: { path: '$lawyers', preserveNullAndEmptyArrays: true } },
       {
         $unwind: {
           path: '$ownership.owners',
@@ -630,17 +638,17 @@ Please Accept or Reject this assgiment
       },
       {
         $set: {
-          'ownership.owners.profile': {$first: '$ownership.owners.profile'},
-          'lawyers.profile': {$first: '$lawyers.profile'},
+          'ownership.owners.profile': { $first: '$ownership.owners.profile' },
+          'lawyers.profile': { $first: '$lawyers.profile' },
         },
       },
 
       {
         $group: {
           _id: '$_id',
-          owners: {$push: '$ownership.owners'},
-          lawyers: {$push: '$lawyers'},
-          other_fields: {$first: '$$ROOT'},
+          owners: { $push: '$ownership.owners' },
+          lawyers: { $push: '$lawyers' },
+          other_fields: { $first: '$$ROOT' },
         },
       },
       {
@@ -657,8 +665,8 @@ Please Accept or Reject this assgiment
           },
         },
       },
-      {$set: {'ownership.owners': '$owners', id: '$_id'}},
-      {$unset: ['owners']},
+      { $set: { 'ownership.owners': '$owners', id: '$_id' } },
+      { $unset: ['owners'] },
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -705,7 +713,7 @@ Please Accept or Reject this assgiment
     } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
-      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+      ...(invoiceTags ? { 'invoices.invoice.tags': { $in: invoiceTags } } : {}),
     };
     const jobsCondition: AnyObject = {};
     if (jobResult) {
@@ -719,29 +727,29 @@ Please Accept or Reject this assgiment
       {
         $match: {
           status: EnumStatus.ACTIVE,
-          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
+          ...(projectId ? { _id: new ObjectId(projectId) } : {}),
         },
       },
-      {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
+      { $unwind: { path: '$invoices', preserveNullAndEmptyArrays: true } },
       ...(Object.keys(invoicesConditions).length ? [invoicesConditions] : []),
       ...(Object.keys(jobsCondition).length
-        ? [{$match: {jobs: {$elemMatch: jobsCondition}}}]
+        ? [{ $match: { jobs: { $elemMatch: jobsCondition } } }]
         : []),
       {
         $group: {
           _id: '$_id',
-          mergedFields: {$mergeObjects: '$$ROOT'},
-          all_invoices: {$push: '$invoices'},
-          all_states: {$push: '$states'},
+          mergedFields: { $mergeObjects: '$$ROOT' },
+          all_invoices: { $push: '$invoices' },
+          all_states: { $push: '$states' },
         },
       },
       {
         $replaceRoot: {
-          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
+          newRoot: { $mergeObjects: ['$$ROOT', '$mergedFields'] },
         },
       },
-      {$set: {states: '$all_states', invoices: '$all_invoices'}},
-      {$unset: ['all_states', 'all_invoices', 'mergedFields']},
+      { $set: { states: '$all_states', invoices: '$all_invoices' } },
+      { $unset: ['all_states', 'all_invoices', 'mergedFields'] },
       {
         $lookup: {
           from: 'profiles',
@@ -766,10 +774,10 @@ Please Accept or Reject this assgiment
           as: 'ownership_info',
         },
       },
-      {$set: {ownership_info: {$first: '$ownership_info'}}},
-      {$sort: {_id: 1}},
-      {$skip: adjustMin(userFilter.skip ?? 0)},
-      {$limit: adjustRange(userFilter.limit ?? 100)},
+      { $set: { ownership_info: { $first: '$ownership_info' } } },
+      { $sort: { _id: 1 } },
+      { $skip: adjustMin(userFilter.skip ?? 0) },
+      { $limit: adjustRange(userFilter.limit ?? 100) },
     ];
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -818,9 +826,9 @@ Please Accept or Reject this assgiment
 
   async getUserOfficeProjects(
     userId: string,
-    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+    filter: Filter<BuildingProjectFilter> = { skip: 0, limit: 100, where: {} },
   ): Promise<BuildingProjectsDTO> {
-    filter.where = {...filter.where, user_id: userId};
+    filter.where = { ...filter.where, user_id: userId };
     const aggregate = this.getProjectsListByUserOfficeAggregate(filter);
     const pointer = await this.officeRepo.execute(
       Office.modelName,
@@ -835,7 +843,7 @@ Please Accept or Reject this assgiment
 
   private projectLookupProfileAggregate = [
     // Owners
-    {$unwind: '$ownership.owners'},
+    { $unwind: '$ownership.owners' },
     {
       $lookup: {
         from: 'profiles',
@@ -844,11 +852,11 @@ Please Accept or Reject this assgiment
         as: 'ownerProfile',
       },
     },
-    {$addFields: {'ownership.owners.profile': {$first: '$ownerProfile'}}},
-    {$unset: ['ownerProfile']},
+    { $addFields: { 'ownership.owners.profile': { $first: '$ownerProfile' } } },
+    { $unset: ['ownerProfile'] },
 
     // Lawyers
-    {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
+    { $unwind: { path: '$lawyers', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: 'profiles',
@@ -857,17 +865,17 @@ Please Accept or Reject this assgiment
         as: 'lawyerProfile',
       },
     },
-    {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
-    {$unset: ['lawyerProfile']},
+    { $addFields: { 'lawyers.profile': { $first: '$lawyerProfile' } } },
+    { $unset: ['lawyerProfile'] },
 
     // Unwind over staff
-    {$unwind: {path: '$staff', preserveNullAndEmptyArrays: true}},
+    { $unwind: { path: '$staff', preserveNullAndEmptyArrays: true } },
     {
       $match: {
         $or: [
-          {staff: {$exists: false}},
-          {staff: null},
-          {'staff.status': EnumStatus.ACTIVE},
+          { staff: { $exists: false } },
+          { staff: null },
+          { 'staff.status': EnumStatus.ACTIVE },
         ],
       },
     },
@@ -892,8 +900,8 @@ Please Accept or Reject this assgiment
     },
     {
       $set: {
-        'staff.field': {$first: '$staff.field.value'},
-        'staff.profile': {$first: '$staff.profile'},
+        'staff.field': { $first: '$staff.field.value' },
+        'staff.profile': { $first: '$staff.profile' },
       },
     },
 
@@ -901,10 +909,10 @@ Please Accept or Reject this assgiment
     {
       $group: {
         _id: '$_id',
-        all_owners: {$push: '$ownership.owners'},
-        all_lawyers: {$push: '$lawyers'},
-        all_staff: {$push: '$staff'},
-        other_fields: {$first: '$$ROOT'},
+        all_owners: { $push: '$ownership.owners' },
+        all_lawyers: { $push: '$lawyers' },
+        all_staff: { $push: '$staff' },
+        other_fields: { $first: '$$ROOT' },
       },
     },
     {
@@ -918,7 +926,7 @@ Please Accept or Reject this assgiment
               ownership: {
                 $mergeObjects: [
                   '$other_fields.ownership',
-                  {owners: '$all_owners'},
+                  { owners: '$all_owners' },
                 ],
               },
             },
@@ -926,28 +934,28 @@ Please Accept or Reject this assgiment
         },
       },
     },
-    {$sort: {_id: -1}},
+    { $sort: { _id: -1 } },
   ];
 
   getProjectsListAggregate(
-    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+    filter: Filter<BuildingProjectFilter> = { skip: 0, limit: 100, where: {} },
     matchClause: AnyObject = {},
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
 
     return [
-      {$match: {status, ...matchClause}},
+      { $match: { status, ...matchClause } },
       ...this.projectLookupProfileAggregate,
-      {$sort: {_id: 1}},
-      {$skip: adjustMin(filter.skip ?? 0)},
-      {$limit: adjustRange(filter.limit)},
-      {$set: {id: '$_id'}},
+      { $sort: { _id: 1 } },
+      { $skip: adjustMin(filter.skip ?? 0) },
+      { $limit: adjustRange(filter.limit) },
+      { $set: { id: '$_id' } },
     ];
   }
 
   getProjectsListByUserOfficeAggregate(
-    filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
+    filter: Filter<BuildingProjectFilter> = { skip: 0, limit: 100, where: {} },
     matchClause: AnyObject = {},
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
@@ -959,14 +967,14 @@ Please Accept or Reject this assgiment
     return [
       {
         $match: {
-          ...(officeId ? {_id: new ObjectId(officeId)} : {}),
+          ...(officeId ? { _id: new ObjectId(officeId) } : {}),
           status,
           ...matchClause,
         },
       },
 
       // Members
-      {$unwind: '$members'},
+      { $unwind: '$members' },
       {
         $match: {
           'members.user_id': userId,
@@ -979,8 +987,8 @@ Please Accept or Reject this assgiment
           },
           'members.status': EnumStatus.ACTIVE,
           'members.membership.status': EnumStatus.ACTIVE,
-          'members.membership.from': {$lte: now},
-          'members.membership.to': {$gte: now},
+          'members.membership.from': { $lte: now },
+          'members.membership.to': { $gte: now },
         },
       },
 
@@ -993,12 +1001,12 @@ Please Accept or Reject this assgiment
           as: 'projects',
         },
       },
-      {$unwind: {path: '$projects', preserveNullAndEmptyArrays: true}},
-      {$replaceRoot: {newRoot: '$projects'}},
+      { $unwind: { path: '$projects', preserveNullAndEmptyArrays: true } },
+      { $replaceRoot: { newRoot: '$projects' } },
       ...this.projectLookupProfileAggregate,
-      {$skip: adjustMin(filter.skip ?? 0)},
-      {$limit: adjustRange(filter.limit)},
-      {$set: {id: '$_id'}},
+      { $skip: adjustMin(filter.skip ?? 0) },
+      { $limit: adjustRange(filter.limit) },
+      { $set: { id: '$_id' } },
     ];
   }
 }
