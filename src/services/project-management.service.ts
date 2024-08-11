@@ -536,6 +536,14 @@ Please Accept or Reject this assgiment
         'Invalid project progress status',
       );
     }
+
+    // Get main owner
+    const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
+    const newMainOwner = data.owners.find(x => x.is_delegate);
+    if (mainOwner?.user_id !== newMainOwner) {
+      throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
+    }
+
     const newProject = await this.buildingProjectRepo.create(
       data.toModel(
         userId,
