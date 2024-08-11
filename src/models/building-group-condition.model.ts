@@ -1,5 +1,7 @@
-import { model } from '@loopback/repository';
-import { BuildingGroupCondition as BaseBuildingGroupCondition } from '../lib-models/src';
+import {model} from '@loopback/repository';
+import {BuildingGroupCondition as BaseBuildingGroupCondition} from '../lib-models/src';
+
+export {Condition, CONDITION_OPERATORS} from '../lib-models/src';
 
 // TODO: THIS MODEL SHOULD BE CHANGED
 @model({
@@ -14,6 +16,6 @@ export class BuildingGroupCondition extends BaseBuildingGroupCondition {
   }
 }
 
-export interface BuildingGroupConditionRelations { }
+export interface BuildingGroupConditionRelations {}
 export type BuildingGroupConditionWithRelations = BuildingGroupCondition &
   BuildingGroupConditionRelations;

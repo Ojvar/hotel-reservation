@@ -28,7 +28,7 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
 
   constructor(
     @inject(QengDataSource.BINDING_KEY) dataSource: QengDataSource,
-    @repository.getter('OfficeRepository')
+    @repository.getter(OfficeRepository.name)
     protected officeRepositoryGetter: Getter<OfficeRepository>,
   ) {
     super(BuildingProject, dataSource);
