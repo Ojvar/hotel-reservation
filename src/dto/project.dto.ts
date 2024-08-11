@@ -351,7 +351,7 @@ export class NewBuildingProjectRequestDTO extends Model {
   ownership_type: NewBuildingProjectOwnershipTypeDTO;
   @property.array(String, {required: true})
   project_usage_types: string[];
-  @property({type: 'date', required: false})
+  @property({type: 'string', required: false})
   project_usage_description?: string;
   @property({required: true})
   building_site_location: NewBuildingProjectSiteLocationDTO;

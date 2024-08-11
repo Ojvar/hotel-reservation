@@ -536,23 +536,28 @@ Please Accept or Reject this assgiment
         'Invalid project progress status',
       );
     }
-    const newProject = await this.buildingProjectRepo.create(
-      data.toModel(
-        userId,
-        new BuildingProject({
-          id: oldProject.id,
-          created: oldProject.created,
-          updated: new ModifyStamp({by: userId}),
-          attachments: oldProject.attachments,
-          status: oldProject.status,
-          case_no: oldProject.case_no,
-          progress_status: oldProject.progress_status,
-          progress_status_history: oldProject.progress_status_history,
-        }),
-      ),
+
+    // Get main owner
+    const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
+    const newMainOwner = data.owners.find(x => x.is_delegate);
+    if (mainOwner?.user_id !== newMainOwner?.user_id) {
+      throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
+    }
+    const updatedProject = data.toModel(
+      userId,
+      new BuildingProject({
+        id: oldProject.id,
+        created: oldProject.created,
+        updated: new ModifyStamp({by: userId}),
+        attachments: oldProject.attachments,
+        status: oldProject.status,
+        case_no: oldProject.case_no,
+        progress_status: oldProject.progress_status,
+        progress_status_history: oldProject.progress_status_history,
+      }),
     );
-    /// TODO: GET DATA by using getProjectsData
-    return BuildingProjectDTO.fromModel(newProject);
+    await this.buildingProjectRepo.update(updatedProject);
+    return BuildingProjectDTO.fromModel(updatedProject);
   }
 
   async createNewProject(
