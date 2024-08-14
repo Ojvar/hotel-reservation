@@ -638,8 +638,16 @@ Please Accept or Reject this assgiment
   async getProjectsList(
     filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
-    const aggregate = this.getProjectsListAggregate(filter);
-    console.debug(JSON.stringify(filter, null, 1));
+    const {user_id = ''} = (filter.where ?? {}) as AnyObject;
+    const aggregate = this.getProjectsListAggregate(filter, {
+      staff: {
+        $elemMatch: {
+          status: EnumStatus.ACTIVE,
+          user_id,
+          'response.status': EnumStatus.ACCEPTED,
+        },
+      },
+    });
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
