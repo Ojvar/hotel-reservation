@@ -14,7 +14,7 @@ import {BuildingGroup, MONGO_ID_REGEX} from '../models';
 const BASE_ADDR = '/offices/me/projects';
 const tags = ['Offices.Me.Projects'];
 
-export class ProjectMeController {
+export class OfficeMeProjectController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
     private projectManagementService: ProjectManagementService,
