@@ -608,7 +608,6 @@ Please Accept or Reject this assgiment
     if (!officeId) {
       throw new HttpErrors.UnprocessableEntity('Invalid Office Id');
     }
-
     const offices = await this.officeRepo.getOfficesByUserMembership(
       userId,
       allowedRoles,
@@ -618,10 +617,37 @@ Please Accept or Reject this assgiment
     }
   }
 
+  getProjectsListByUserId(
+    userId: string,
+    filter: Filter<BuildingProjectFilter> = {},
+  ): Promise<BuildingProjectsDTO> {
+    filter.where = {
+      ...filter.where,
+      status: EnumStatus.ACTIVE,
+      staff: {
+        elemMatch: {
+          user_id: userId,
+          status: EnumStatus.ACTIVE,
+          'response.status': EnumStatus.ACCEPTED,
+        },
+      },
+    } as object;
+    return this.getProjectsList(filter);
+  }
+
   async getProjectsList(
     filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
-    const aggregate = this.getProjectsListAggregate(filter);
+    const {user_id = ''} = (filter.where ?? {}) as AnyObject;
+    const aggregate = this.getProjectsListAggregate(filter, {
+      staff: {
+        $elemMatch: {
+          status: EnumStatus.ACTIVE,
+          user_id,
+          'response.status': EnumStatus.ACCEPTED,
+        },
+      },
+    });
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -1001,7 +1027,7 @@ Please Accept or Reject this assgiment
     {$sort: {_id: -1}},
   ];
 
-  getProjectsListAggregate(
+  private getProjectsListAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
     matchClause: AnyObject = {},
   ): AnyObject[] {
@@ -1018,7 +1044,7 @@ Please Accept or Reject this assgiment
     ];
   }
 
-  getProjectsListByUserOfficeAggregate(
+  private getProjectsListByUserOfficeAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
     matchClause: AnyObject = {},
   ): AnyObject[] {

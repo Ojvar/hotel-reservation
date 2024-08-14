@@ -1,18 +1,17 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {inject} from '@loopback/context';
 import {ProjectManagementService} from '../services';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
-  BuildingGroupDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
 } from '../dto';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 import {Filter} from '@loopback/repository';
-import {BuildingGroup, MONGO_ID_REGEX} from '../models';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 
-const BASE_ADDR = '/offices/me/projects';
-const tags = ['Offices.Me.Projects'];
+const BASE_ADDR = '/projects/me';
+const tags = ['Projects.Me'];
 
 export class ProjectMeController {
   constructor(
@@ -24,8 +23,8 @@ export class ProjectMeController {
 
   @get(`${BASE_ADDR}`, {
     tags,
-    summary: "Get current user's assigned office projects list",
-    description: "Get current user's assigned office projects list",
+    summary: "Get user's projects list",
+    description: "Get user's projects list",
     responses: {
       200: {
         content: {
@@ -39,35 +38,14 @@ export class ProjectMeController {
       },
     },
   })
-  async getProjects(
-    @param.filter(BuildingProjectFilter) filter?: Filter<BuildingProjectFilter>,
+  async getProjectsList(
+    @param.filter(BuildingProjectFilter)
+    filter: Filter<BuildingProjectFilter> = {limit: 100, skip: 0, where: {}},
   ): Promise<BuildingProjectsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getUserOfficeProjects(userId, filter);
-  }
-
-  @get(`${BASE_ADDR}/{id}/building-groups`, {
-    tags,
-    summary: "Get project's building group conditions",
-    description: "Get project's building group conditions",
-    responses: {
-      200: {
-        content: {
-          'application/json': {
-            schema: getModelSchemaRef(BuildingGroup),
-          },
-        },
-      },
-    },
-  })
-  async getBuildingGroupConditionByProject(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
-  ): Promise<BuildingGroupDTO | null> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getBuildingGroupConditionByProject(
-      userId,
-      id,
-    );
+    return this.projectManagementService.getProjectsList({
+      ...filter,
+      where: {...filter.where, user_id: userId},
+    });
   }
 }
