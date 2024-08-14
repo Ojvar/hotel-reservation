@@ -6,3 +6,4 @@ export * from './project-invoice.controller';
 export * from './project-operator.controller';
 export * from './project-staff.controller';
 export * from './office-me-project.controller';
+export * from './project-me.controller';
