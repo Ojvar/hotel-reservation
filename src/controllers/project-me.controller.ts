@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {inject} from '@loopback/context';
 import {ProjectManagementService} from '../services';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
