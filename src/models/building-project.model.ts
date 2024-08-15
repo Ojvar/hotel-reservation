@@ -678,9 +678,25 @@ export class BuildingProject extends Entity {
   updateAttachments(
     userId: string,
     newAttachments: {fileId: string; field: string}[],
+    forceValidation = true,
   ): void {
     const now = new ModifyStamp({by: userId});
     for (const attachment of newAttachments) {
+      // Check for selected staffs
+      if (
+        forceValidation &&
+        this.staff?.find(
+          s =>
+            s.status === EnumStatus.ACTIVE &&
+            s.field_id.toString() === attachment.field.toString() &&
+            s.response?.status === EnumStatus.ACCEPTED,
+        )
+      ) {
+        throw new HttpErrors.UnprocessableEntity(
+          `Field is locked, Field: ${attachment.field}`,
+        );
+      }
+
       const oldAttachment = this.attachments.find(
         a => a.field === attachment.field && a.status === EnumStatus.ACTIVE,
       );
