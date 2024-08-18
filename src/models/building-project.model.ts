@@ -119,6 +119,10 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
     this.signes = this.signes?.map(x => new BuildingProjectAttachmentSing(x));
   }
 
+  get isLocked(): boolean {
+    return this.signes.some(s => s.status === EnumStatus.ACTIVE);
+  }
+
   signByUser(operatorId: string, userId: string): void {
     const signs = this.signes ?? [];
     const oldSign = signs.find(
@@ -162,6 +166,11 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
     // Update attachments
     this.signes = signs;
     this.updated = now;
+  }
+
+  markAsRemoved(userId: string) {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: userId});
   }
 }
 export type BuildingProjectAttachmentItems = BuildingProjectAttachmentItem[];
@@ -747,28 +756,20 @@ export class BuildingProject extends Entity {
   ): void {
     const now = new ModifyStamp({by: userId});
     for (const attachment of newAttachments) {
-      // Check for selected staffs
-      if (
-        forceValidation &&
-        this.attachments.find(
-          a =>
-            a.field === attachment.field &&
-            a.status === EnumStatus.ACTIVE &&
-            a.signes.some(s => s.status === EnumStatus.ACTIVE),
-        )
-      ) {
-        throw new HttpErrors.UnprocessableEntity(
-          `Field is locked, Field: ${attachment.field}`,
-        );
-      }
-
       const oldAttachment = this.attachments.find(
         a => a.field === attachment.field && a.status === EnumStatus.ACTIVE,
       );
+
+      // Check for selected staffs
       if (oldAttachment) {
-        oldAttachment.updated = now;
-        oldAttachment.status = EnumStatus.DEACTIVE;
+        if (forceValidation && !oldAttachment.isLocked) {
+          throw new HttpErrors.UnprocessableEntity(
+            `Field is locked, Field: ${attachment.field}`,
+          );
+        }
+        oldAttachment.markAsRemoved(userId);
       }
+
       this.attachments.push(
         new BuildingProjectAttachmentItem({
           field: attachment.field,
@@ -782,13 +783,15 @@ export class BuildingProject extends Entity {
 
   removeUploadedFile(userId: string, fileId: string): void {
     const file = this.attachments.find(
-      a => a.id?.toString() === fileId && a.status === EnumStatus.ACTIVE,
+      a =>
+        a.id?.toString() === fileId.toString() &&
+        a.status === EnumStatus.ACTIVE &&
+        !a.isLocked,
     );
     if (!file) {
       throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
     }
-    file.status = EnumStatus.DEACTIVE;
-    file.updated = new ModifyStamp({by: userId});
+    file.markAsRemoved(userId);
   }
 
   commitState(userId: string, newState: EnumProgressStatus): void {
