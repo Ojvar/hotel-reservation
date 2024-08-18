@@ -3,6 +3,7 @@ import {AnyObject, Model, model, property} from '@loopback/repository';
 import {
   BuildingProject,
   BuildingProjectAttachmentItem,
+  BuildingProjectAttachmentSing,
   BuildingProjectBuildingSiteLocation,
   BuildingProjectInvoiceInfo,
   BuildingProjectLawyer,
@@ -716,6 +717,53 @@ export class AddNewJobRequestDTO extends Model {
 }
 
 @model()
+export class BuildingProjectAttachmentSingDTO extends Model {
+  @property({type: 'string'})
+  id?: string;
+  @property({type: 'date', required: true})
+  created_at: Date;
+  @property({type: 'date', required: true})
+  updated_at: Date;
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({})
+  profile?: Profile;
+
+  constructor(data?: Partial<BuildingProjectAttachmentSingDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectAttachmentSing & {profile?: Partial<Profile>},
+  ): BuildingProjectAttachmentSingDTO {
+    return new BuildingProjectAttachmentSingDTO({
+      id: data.id,
+      created_at: data.created.at,
+      updated_at: data.updated.at,
+      status: data.status,
+      user_id: data.user_id,
+      profile: data.profile
+        ? new Profile({
+            user_id: data.profile.user_id,
+            n_in: data.profile.n_in,
+            first_name: data.profile.first_name,
+            last_name: data.profile.last_name,
+            mobile: data.profile.mobile,
+          })
+        : undefined,
+    });
+  }
+}
+export type BuildingProjectAttachmentSingsDTO =
+  BuildingProjectAttachmentSingDTO[];
+
+@model()
 export class BuildingProjectAttachmentDTO extends Model {
   @property({type: 'string'})
   id: string;
@@ -735,6 +783,8 @@ export class BuildingProjectAttachmentDTO extends Model {
   access_url: string;
   @property({type: 'string'})
   mime: string;
+  @property.array(BuildingProjectAttachmentSingDTO)
+  signs?: BuildingProjectAttachmentSingsDTO;
 
   constructor(data?: Partial<BuildingProjectAttachmentDTO>) {
     super(data);
@@ -752,6 +802,7 @@ export class BuildingProjectAttachmentDTO extends Model {
       mime: data.fileInfo?.mime,
       access_url: data.fileInfo?.access_url,
       access_token: data.fileInfo?.access_token,
+      signs: data.signes.map(BuildingProjectAttachmentSingDTO.fromModel),
     });
   }
 }

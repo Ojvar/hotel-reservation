@@ -120,7 +120,7 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
   }
 
   get isLocked(): boolean {
-    return this.signes.some(s => s.status === EnumStatus.ACTIVE);
+    return this.signes?.some(s => s.status === EnumStatus.ACTIVE);
   }
 
   signByUser(operatorId: string, userId: string): void {
@@ -762,7 +762,7 @@ export class BuildingProject extends Entity {
 
       // Check for selected staffs
       if (oldAttachment) {
-        if (forceValidation && !oldAttachment.isLocked) {
+        if (forceValidation && oldAttachment.isLocked) {
           throw new HttpErrors.UnprocessableEntity(
             `Field is locked, Field: ${attachment.field}`,
           );
@@ -842,7 +842,7 @@ export class BuildingProject extends Entity {
     operatorId: string,
     userId: string,
     files: string[],
-    fileFieldMapper: Record<string, string>,
+    fileFieldMapper: Array<{id: string; field: string}>,
   ): void {
     files.forEach(fileId => {
       const file = this.attachments.find(
@@ -852,13 +852,17 @@ export class BuildingProject extends Entity {
         throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
       }
 
-      const userStaff = this.staff?.find(
-        staff =>
+      const userStaff = this.staff?.find(staff => {
+        const fieldId = fileFieldMapper.find(
+          f => f.id.toString() === staff.field_id.toString(),
+        )?.field;
+        return (
           staff.user_id === userId &&
           staff.status === EnumStatus.ACTIVE &&
           staff.response?.status === EnumStatus.ACCEPTED &&
-          fileFieldMapper[staff.field_id] === file.field,
-      );
+          fieldId === file.field
+        );
+      });
       if (!userStaff) {
         throw new HttpErrors.UnprocessableEntity('Invalid user field');
       }

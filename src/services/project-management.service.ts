@@ -5,6 +5,7 @@ import {
   BuildingGroupDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
+  BuildingProjectAttachmentSingDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
@@ -34,17 +35,18 @@ import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {
   BuildingGroup,
   BuildingProject,
-  BuildingProjectAttachmentItem,
+  BuildingProjectAttachmentSing,
   Condition,
   EnumOfficeMemberRole,
   EnumProgressStatus,
   EnumStatus,
   ModifyStamp,
   Office,
+  Profile,
 } from '../models';
 import {ObjectId} from 'bson';
 import {HttpErrors} from '@loopback/rest';
-import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
+import {FileTokenResponse} from '../lib-file-service/src';
 import {FileServiceAgentService} from './file-agent.service';
 import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
@@ -60,6 +62,12 @@ export enum EnumRegisterProjectType {
   REG_PROJECT = 1,
   REG_DESIGNER = 2,
 }
+
+type FieldMapper = {
+  id: string;
+  field: string;
+};
+type FieldMappers = FieldMapper[];
 
 const CATEGORY_LICENSE_TAG = 'LICENSE_TAG';
 const MAX_ATTACHMENT_ITEM_COUNT = 4;
@@ -110,7 +118,7 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
 
-  async createFilesFieldMapper(): Promise<Record<string, string>> {
+  async createFilesFieldMapper(): Promise<FieldMappers> {
     const basedata = await this.basedataRepo.find({
       where: {
         status: EnumStatus.ACTIVE,
@@ -125,11 +133,7 @@ export class ProjectManagementService {
           id: item.getId(),
         })),
       )
-      .flatMap(x => x)
-      .reduce<Record<string, string>>(
-        (r, i) => ({...r, [i.field]: i.id.toString()}),
-        {},
-      );
+      .flatMap(x => x);
   }
 
   async signFile(
@@ -450,28 +454,126 @@ export class ProjectManagementService {
   }
 
   async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
-    const project = await this.buildingProjectRepo.findById(id);
-    const attachments = project.attachments.filter(
-      a => a.status === EnumStatus.ACTIVE,
+    const aggregate: AnyObject[] = [
+      {$match: {_id: new ObjectId(id)}},
+
+      {$unwind: '$attachments'},
+      {$match: {'attachments.status': 6}},
+
+      {
+        $unwind: {
+          path: '$attachments.signes',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {$match: {'attachments.signes.status': {$ne: 7}}},
+
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'attachments.signes.user_id',
+          foreignField: 'user_id',
+          as: 'attachments.signes.profile',
+        },
+      },
+      {
+        $set: {
+          'attachments.signes.profile': {
+            $first: '$attachments.signes.profile',
+          },
+        },
+      },
+      //  { $match: { "attachments.signes.profile.user_id": { $exists: true } } },
+
+      {
+        $group: {
+          _id: '$attachments.id',
+          other_fields: {$first: '$attachments'},
+          all_signes: {$push: '$attachments.signes'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$other_fields', {signes: '$all_signes'}],
+          },
+        },
+      },
+    ];
+
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const attachments: AnyObject[] = await pointer.toArray();
+    const filesInfo = await this.fileServiceAgent.getFilesInformation(
+      attachments.map(x => x.file_id.toString()),
     );
 
-    // Get files info
-    const filesList = attachments.map(a => a.file_id);
-    const filesInfo =
-      await this.fileServiceAgent.getFilesInformation(filesList);
-
-    // Merge info
-    const mergedData = attachments.map(a => {
-      const fileInfo = filesInfo.find(
-        f => f.id.toString() === a.file_id.toString(),
+    // Combile files info
+    return attachments.map<BuildingProjectAttachmentDTO>(x => {
+      const info = filesInfo.find(
+        f => f.id.toString() === x.file_id.toString(),
       );
-      return {...a, fileInfo} as BuildingProjectAttachmentItem & {
-        fileInfo: FileInfoDTO | undefined;
-      };
-    });
 
-    return mergedData.map(BuildingProjectAttachmentDTO.fromModel);
+      return new BuildingProjectAttachmentDTO({
+        id: x.id,
+        created_at: x.created.at,
+        file_id: x.file_id,
+        mime: info?.mime,
+        field: info?.field_name,
+        file_name: info?.original_name,
+        file_size: info?.size,
+        access_url: info?.access_url,
+        access_token: info?.access_token,
+        signs: x.signes
+          .filter((y: AnyObject) => !!y.id)
+          .map(
+            (s: BuildingProjectAttachmentSing & {profile?: Profile}) =>
+              new BuildingProjectAttachmentSingDTO({
+                id: s.id,
+                created_at: s.created.at,
+                updated_at: s.updated.at,
+                user_id: s.user_id,
+                status: s.status,
+                profile: new Profile({
+                  user_id: s.profile?.user_id,
+                  n_in: s.profile?.n_in,
+                  first_name: s.profile?.first_name,
+                  last_name: s.profile?.last_name,
+                  mobile: s.profile?.mobile,
+                }),
+              }),
+          ),
+      });
+    });
   }
+
+  // async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
+  //   const project = await this.buildingProjectRepo.findById(id);
+  //   const attachments = project.attachments.filter(
+  //     a => a.status === EnumStatus.ACTIVE,
+  //   );
+  //
+  //   // Get files info
+  //   const filesList = attachments.map(a => a.file_id);
+  //   const filesInfo = await this.fileServiceAgent.getFilesInformation(
+  //     filesList,
+  //   );
+  //
+  //   // Merge info
+  //   const mergedData = attachments.map(a => {
+  //     const fileInfo = filesInfo.find(
+  //       f => f.id.toString() === a.file_id.toString(),
+  //     );
+  //     return { ...a, fileInfo } as BuildingProjectAttachmentItem & {
+  //       fileInfo: FileInfoDTO | undefined;
+  //     };
+  //   });
+  //
+  //   return mergedData.map(BuildingProjectAttachmentDTO.fromModel);
+  // }
 
   async commitUploadedFiles(
     userId: string,

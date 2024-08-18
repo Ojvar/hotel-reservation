@@ -11,6 +11,8 @@ import {
 } from '@loopback/rest';
 import {
   AddNewJobRequestDTO,
+  BuildingProjectAttachmentDTO,
+  BuildingProjectAttachmentsDTO,
   BuildingProjectDTO,
   BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
@@ -260,13 +262,18 @@ export class ProjectOperatorsController {
       200: {
         content: {
           'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(Object)},
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectAttachmentDTO),
+            },
           },
         },
       },
     },
   })
-  getUploadedFiles(@param.path.string('id') id: string): Promise<object> {
+  getUploadedFiles(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectAttachmentsDTO> {
     return this.projectManagementService.getFilesList(id);
   }
 
