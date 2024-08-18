@@ -57,7 +57,7 @@ export class ProjectMeController {
     });
   }
 
-  @patch(`${BASE_ADDR}/{project_id}/sign/{file_id}`, {
+  @patch(`${BASE_ADDR}/{project_id}/sign`, {
     tags,
     summary: 'Sign a file',
     description: 'Sign a file',
