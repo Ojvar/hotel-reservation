@@ -18,6 +18,7 @@ import {
   NewBuildingProjectRequestDTO,
   NewProjectStaffRequestDTO,
   SetBuildingProjectStaffResponseDTO,
+  SignFilesRequestDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {AnyObject, Filter, repository} from '@loopback/repository';
@@ -60,6 +61,9 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
+const CATEGORY_LICENSE_TAG = 'LICENSE_TAG';
+const MAX_ATTACHMENT_ITEM_COUNT = 4;
+
 @injectable({scope: BindingScope.REQUEST})
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
@@ -78,7 +82,12 @@ export class ProjectManagementService {
     'ELEVATOR_DETAILS',
     'BUILDING_SKETCH',
   ]
-    .map(item => Array.from({length: 4}, (_, index) => `${item}_${index + 1}`))
+    .map(item =>
+      Array.from(
+        {length: MAX_ATTACHMENT_ITEM_COUNT},
+        (_, index) => `${item}_${index + 1}`,
+      ),
+    )
     .flatMap(x => x);
 
   readonly PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
@@ -100,6 +109,52 @@ export class ProjectManagementService {
     @inject(PushNotificationAgentService.BINDING_KEY)
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
+
+  async createFilesFieldMapper(): Promise<Record<string, string>> {
+    const basedata = await this.basedataRepo.find({
+      where: {
+        status: EnumStatus.ACTIVE,
+        category: CATEGORY_LICENSE_TAG,
+        'meta.file_field': {exists: true},
+      } as object,
+    });
+    return basedata
+      .map(item =>
+        Array.from({length: MAX_ATTACHMENT_ITEM_COUNT}, (_, index) => ({
+          field: `${item.meta?.file_field}_${index + 1}`,
+          id: item.getId(),
+        })),
+      )
+      .flatMap(x => x)
+      .reduce<Record<string, string>>(
+        (r, i) => ({...r, [i.field]: i.id.toString()}),
+        {},
+      );
+  }
+
+  async signFile(
+    operatorId: string,
+    userId: string,
+    projectId: string,
+    data: SignFilesRequestDTO,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    const mapper = await this.createFilesFieldMapper();
+    project.signAttachments(operatorId, userId, data.files, mapper);
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async unsignFile(
+    operatorId: string,
+    projectId: string,
+    data: SignFilesRequestDTO,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    data.files.forEach(file => {
+      project.unsignAttachment(operatorId, file);
+    });
+    await this.buildingProjectRepo.update(project);
+  }
 
   async getBuildingGroupConditionByProject(
     userId: string,
@@ -353,10 +408,9 @@ export class ProjectManagementService {
     });
 
     // Send push message
-    const msg = `Dear Engineer,
-You are assigned as  Desginer engineer to the Project ${project.case_no.case_no}
-Please Accept or Reject this assgiment
-`;
+    const msg = `مهدس گرامی
+شما به عنوان مهندس طراح در پورژه ${project.case_no.case_no} انختاب شده اید
+لطفا برای تایید/عدم تایید به پورتال خود مراجعه فرمایید`;
     const tags = ['PROJECT_SERVICE', 'STAFF_ASSIGNMENT'];
     const targets = Array.from(new Set(profiles.map(x => x.n_in)));
     const title = 'Project Designer Assignment';
@@ -427,6 +481,7 @@ Please Accept or Reject this assgiment
     if (!fileToken) {
       return;
     }
+    const project = await this.buildingProjectRepo.findById(id);
 
     // Get uploaded files info
     const attachments = fileToken
@@ -435,7 +490,6 @@ Please Accept or Reject this assgiment
     const {uploaded_files: uploadedFiles} = attachments ?? {uploaded_files: []};
 
     // Update project
-    const project = await this.buildingProjectRepo.findById(id);
     const newAttachments = uploadedFiles.map(f => ({
       fileId: f.id,
       field: f.fieldname,

@@ -27,6 +27,19 @@ import {FileInfoDTO} from '../lib-file-service/src';
 import {KEYCLOAK_ID_REGEX} from '../lib-models/src';
 
 @model()
+export class SignFilesRequestDTO extends Model {
+  @property.array(String, {
+    jsonSchema: {pattern: MONGO_ID_REGEX.source},
+    required: true,
+  })
+  files: string[];
+
+  constructor(data?: Partial<SignFilesRequestDTO>) {
+    super(data);
+  }
+}
+
+@model()
 export class SetBuildingProjectStaffResponseDTO extends Model {
   @property({
     type: 'number',

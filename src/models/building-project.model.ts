@@ -16,13 +16,30 @@ import {
 } from './common';
 import {HttpErrors} from '@loopback/rest';
 import {Office} from './office.model';
-import {ObjectId} from 'bson';
 
 export enum EnumProgressStatus {
   OFFICE_DATA_ENTRY = 0,
   OFFICE_DATA_CONFIRMED = 1,
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
+
+@model()
+export class BuildingProjectAttachmentSing extends TimestampModelWithId {
+  @property({type: 'string', required: true})
+  user_id: string;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+
+  constructor(data?: Partial<BuildingProjectAttachmentSing>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type BuildingProjectAttachmentSings = BuildingProjectAttachmentSing[];
 
 @model()
 export class BuildingProjectStaffResponse extends Model {
@@ -39,6 +56,7 @@ export class BuildingProjectStaffResponse extends Model {
 
   constructor(data?: Partial<BuildingProjectStaffResponse>) {
     super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
   }
 }
 
@@ -81,28 +99,69 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
 export type BuildingProjectStaffItems = BuildingProjectStaffItem[];
 
 @model({...REMOVE_ID_SETTING})
-export class BuildingProjectAttachmentItem extends Model {
-  @property({type: 'string', required: true})
-  id: string;
+export class BuildingProjectAttachmentItem extends TimestampModelWithId {
   @property({type: 'string', required: true})
   field: string;
   @property({type: 'string', required: true})
   file_id: string;
-  @property({required: true})
-  created: ModifyStamp;
-  @property({required: true})
-  updated: ModifyStamp;
   @property({
     type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
+  @property.array(BuildingProjectAttachmentSing, {requird: false})
+  signes: BuildingProjectAttachmentSings;
 
   constructor(data?: Partial<BuildingProjectAttachmentItem>) {
     super(data);
-    this.id = this.id ?? new ObjectId();
     this.status = this.status ?? EnumStatus.ACTIVE;
+    this.signes = this.signes?.map(x => new BuildingProjectAttachmentSing(x));
+  }
+
+  signByUser(operatorId: string, userId: string): void {
+    const signs = this.signes ?? [];
+    const oldSign = signs.find(
+      s => s.user_id === userId && s.status === EnumStatus.ACTIVE,
+    );
+    if (oldSign) {
+      throw new HttpErrors.UnprocessableEntity(
+        `User already signed the attachment, id: ${this.id}, userId: ${userId}`,
+      );
+    }
+    const now = new ModifyStamp({by: operatorId});
+    this.signes = [
+      ...signs,
+      new BuildingProjectAttachmentSing({
+        user_id: userId,
+        created: now,
+        updated: now,
+        status: EnumStatus.ACTIVE,
+      }),
+    ];
+    this.updated = now;
+  }
+
+  removeUserSign(userId: string, signId: string): void {
+    const signs = this.signes ?? [];
+    const oldSign = signs.find(
+      s => s.id?.toString() === signId && s.status === EnumStatus.ACTIVE,
+    );
+    if (!oldSign) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Invalid sign record, ${signId}`,
+      );
+    }
+
+    const now = new ModifyStamp({by: userId});
+
+    // Update signs data
+    oldSign.updated = now;
+    oldSign.status = EnumStatus.DEACTIVE;
+
+    // Update attachments
+    this.signes = signs;
+    this.updated = now;
   }
 }
 export type BuildingProjectAttachmentItems = BuildingProjectAttachmentItem[];
@@ -551,13 +610,19 @@ export class BuildingProject extends Entity {
       i => new BuildingProjectInvoice(i),
     );
     this.jobs = (this.jobs ?? []).map(j => new BuildingProjectJob(j));
-    this.attachments = this.attachments ?? [];
+    this.attachments = (this.attachments ?? []).map(
+      attachment => new BuildingProjectAttachmentItem(attachment),
+    );
     this.staff = this.staff
       ?.filter(x => !!x.id)
       .map(s => new BuildingProjectStaffItem(s));
     this.progress_status_history =
       this.progress_status_history?.map(item => new ProgressStatusItem(item)) ??
       [];
+  }
+
+  get mainOwner(): BuildingProjectOwner | undefined {
+    return this.ownership.owners.find(owner => owner.is_delegate);
   }
 
   addStaff(staffItems: BuildingProjectStaffItems): void {
@@ -685,11 +750,11 @@ export class BuildingProject extends Entity {
       // Check for selected staffs
       if (
         forceValidation &&
-        this.staff?.find(
-          s =>
-            s.status === EnumStatus.ACTIVE &&
-            s.field_id.toString() === attachment.field.toString() &&
-            s.response?.status === EnumStatus.ACCEPTED,
+        this.attachments.find(
+          a =>
+            a.field === attachment.field &&
+            a.status === EnumStatus.ACTIVE &&
+            a.signes.some(s => s.status === EnumStatus.ACTIVE),
         )
       ) {
         throw new HttpErrors.UnprocessableEntity(
@@ -717,7 +782,7 @@ export class BuildingProject extends Entity {
 
   removeUploadedFile(userId: string, fileId: string): void {
     const file = this.attachments.find(
-      a => a.id.toString() === fileId && a.status === EnumStatus.ACTIVE,
+      a => a.id?.toString() === fileId && a.status === EnumStatus.ACTIVE,
     );
     if (!file) {
       throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
@@ -768,6 +833,58 @@ export class BuildingProject extends Entity {
       throw new HttpErrors.NotFound(`Staff request not found, id: ${staffId}`);
     }
     staff.setResponse(userId, status, description);
+  }
+
+  signAttachments(
+    operatorId: string,
+    userId: string,
+    files: string[],
+    fileFieldMapper: Record<string, string>,
+  ): void {
+    files.forEach(fileId => {
+      const file = this.attachments.find(
+        attachment => attachment.id!.toString() === fileId,
+      );
+      if (!file) {
+        throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
+      }
+
+      const userStaff = this.staff?.find(
+        staff =>
+          staff.user_id === userId &&
+          staff.status === EnumStatus.ACTIVE &&
+          staff.response?.status === EnumStatus.ACCEPTED &&
+          fileFieldMapper[staff.field_id] === file.field,
+      );
+      if (!userStaff) {
+        throw new HttpErrors.UnprocessableEntity('Invalid user field');
+      }
+      file.signByUser(operatorId, userId);
+    });
+
+    this.updated = new ModifyStamp({by: operatorId});
+  }
+
+  unsignAttachment(userId: string, fileId: string): void {
+    const file = this.attachments.find(
+      fileItem => fileItem.id?.toString() === fileId,
+    );
+    if (!file) {
+      throw new HttpErrors.NotFound(`File not found, id: ${fileId}`);
+    }
+    file.removeUserSign(userId, userId);
+    this.updated = new ModifyStamp({by: userId});
+  }
+
+  getStaffDataByUserId(userId: string): BuildingProjectStaffItem[] {
+    return (
+      this.staff?.filter(
+        s =>
+          s.user_id === userId &&
+          s.status === EnumStatus.ACCEPTED &&
+          s.response?.status === EnumStatus.ACCEPTED,
+      ) ?? []
+    );
   }
 }
 
