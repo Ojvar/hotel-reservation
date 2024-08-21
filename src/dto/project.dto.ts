@@ -45,14 +45,14 @@ export class NewBuildingProjectSpecificationDTO extends Model {
   house_storage_count: number;
 
   // Districts data
-  @property({type: 'number', required: true})
-  distict_north: number;
-  @property({type: 'number', required: true})
-  distict_south: number;
-  @property({type: 'number', required: true})
-  distict_east: number;
-  @property({type: 'number', required: true})
-  distict_west: number;
+  @property({type: 'string', required: true})
+  distict_north: string;
+  @property({type: 'string', required: true})
+  distict_south: string;
+  @property({type: 'string', required: true})
+  distict_east: string;
+  @property({type: 'string', required: true})
+  distict_west: string;
 
   // Building data
   @property({required: true})

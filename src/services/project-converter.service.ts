@@ -228,10 +228,10 @@ WHERE   CaseNo = '${caseNo}'
         total_units: data.TotalUnits ?? 0,
         parking_count: data.TotalParking ?? 0,
         house_storage_count: data.TotalAnbari ?? 0,
-        distict_north: +(data.FromNorth ?? '0'),
-        distict_south: +(data.FromSouth ?? '0'),
-        distict_east: +(data.FromEast ?? '0'),
-        distict_west: +(data.FromWest ?? '0'),
+        distict_north: data.FromNorth ?? '0',
+        distict_south: data.FromSouth ?? '0',
+        distict_east: data.FromEast ?? '0',
+        distict_west: data.FromWest ?? '0',
         building_priority:
           basedata.building_priority[
             data.BuildingImportance as keyof typeof basedata.building_priority
