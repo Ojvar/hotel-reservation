@@ -3,43 +3,43 @@ import {Model, model, property} from '@loopback/repository';
 
 @model({settings: {strict: false}})
 export class JobCandiateResultJobMetaDTO extends Model {
-  @property({})
+  @property({type: 'string'})
   id: string;
-  @property({})
+  @property({type: 'string'})
   ownerName: string;
-  @property({})
+  @property({type: 'string'})
   address: string;
   @property({})
   totalArea: number;
   @property({})
   totalFloor: number;
-  @property({})
+  @property({type: 'string'})
   caseNo: string;
-  @property({})
+  @property({type: 'string'})
   caseDate: string;
-  @property({})
+  @property({type: 'string'})
   nosaziCode: string;
-  @property({})
+  @property({type: 'string'})
   projectType: string;
   @property({})
   maskooniUnits: number;
   @property({})
   tejariUnits: number;
-  @property({})
+  @property({type: 'string'})
   group: string;
-  @property({})
+  @property({type: 'string'})
   subGroup: string;
-  @property({})
+  @property({type: 'string'})
   city_id: string;
   @property({})
   amount: number;
-  @property({})
+  @property({type: 'string'})
   refLicenseLevel: string;
-  @property({})
+  @property({type: 'string'})
   refTotalMeterage: string;
   @property({})
   refWorkType: number;
-  @property({})
+  @property({type: 'string'})
   refLicenseType: string;
 
   [key: string]: unknown;
@@ -51,7 +51,7 @@ export class JobCandiateResultJobMetaDTO extends Model {
 
 @model()
 export class JobCandiateResultJobDTO extends Model {
-  @property({id: true})
+  @property({id: true, type: 'string'})
   id: string;
   @property({})
   meta: JobCandiateResultJobMetaDTO;
@@ -65,13 +65,13 @@ export class JobCandiateResultJobDTO extends Model {
 
 @model()
 export class JobCandiateResultRelatedDataDTO extends Model {
-  @property({})
+  @property({type: 'string'})
   user_id: string;
   @property({})
   score: number;
-  @property({})
+  @property({type: 'string'})
   job_id: string;
-  @property({})
+  @property({type: 'string'})
   register_date: string;
   @property({})
   priority: number;
@@ -119,7 +119,7 @@ export class JobCandiateScheduleResultDTO extends Model {
 
 @model()
 export class JobCandiateScheduleDTO extends Model {
-  @property({id: true})
+  @property({id: true, type: 'string'})
   id: string;
   @property({})
   from: Date;
