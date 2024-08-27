@@ -774,7 +774,7 @@ export class ProjectManagementService {
         x.id?.toString() === officeId.toString() &&
         x.status === EnumStatus.ACTIVE,
     );
-    if (!office || !office.getMemberDataByUserId(userId)) {
+    if (!office?.getMemberDataByUserId(userId)) {
       throw new HttpErrors.NotAcceptable('User access denined to the office');
     }
   }
