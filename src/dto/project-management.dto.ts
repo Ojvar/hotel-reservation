@@ -206,6 +206,8 @@ export class BuildingProjectFilter extends Model {
   office_id: string;
   @property({type: 'string', required: true})
   user_id: string;
+  @property({type: 'string', required: true})
+  case_no: string;
 
   constructor(data?: Partial<BuildingProjectFilter>) {
     super(data);

@@ -4,6 +4,7 @@ import {
   EnumOfficeMemberRole,
   EnumStatus,
   Office as BaseOffice,
+  OfficeMember,
 } from '../lib-models/src';
 
 @model({
@@ -32,6 +33,19 @@ export class Office extends BaseOffice {
           EnumOfficeMemberRole.SECRETARY,
           EnumOfficeMemberRole.CO_FOUNDER,
         ].includes(m.membership.role),
+    );
+  }
+
+  getMemberDataByUserId(
+    userId: string,
+    date = new Date(),
+  ): OfficeMember | undefined {
+    return this.members.find(
+      m =>
+        m.user_id === userId &&
+        m.status === EnumStatus.ACTIVE &&
+        m.membership.from <= date &&
+        (m.membership.to ? date <= m.membership.to : true),
     );
   }
 }

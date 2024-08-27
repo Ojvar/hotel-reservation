@@ -679,6 +679,7 @@ export class ProjectManagementService {
     options: {checkOfficeId: boolean} = {checkOfficeId: true},
     allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
+    /// TODO: Check user membership date
     if (options.checkOfficeId) {
       await this.userIsAllowedToProjectForOffice(userId, data.office_id, [
         EnumOfficeMemberRole.OWNER,
@@ -768,7 +769,12 @@ export class ProjectManagementService {
       userId,
       allowedRoles,
     );
-    if (!offices) {
+    const office = offices?.find(
+      x =>
+        x.id?.toString() === officeId.toString() &&
+        x.status === EnumStatus.ACTIVE,
+    );
+    if (!office || !office.getMemberDataByUserId(userId)) {
       throw new HttpErrors.NotAcceptable('User access denined to the office');
     }
   }
@@ -1076,12 +1082,14 @@ export class ProjectManagementService {
   ): Promise<BuildingProjectsDTO> {
     filter.where = {...filter.where, user_id: userId};
     const aggregate = this.getProjectsListByUserOfficeAggregate(filter);
+    console.debug(JSON.stringify(aggregate, null, 1));
     const pointer = await this.officeRepo.execute(
       Office.modelName,
       'aggregate',
       aggregate,
     );
     const projects = await pointer.toArray();
+    console.debug(projects);
     return projects
       .map((p: AnyObject) => new BuildingProject(p))
       .map(BuildingProjectDTO.fromModel);
