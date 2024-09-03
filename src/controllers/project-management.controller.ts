@@ -70,7 +70,7 @@ export class ProjectManagementController {
       },
     },
   })
-  async getProjectsList(
+  getProjectsList(
     @param.filter(BuildingProjectFilter)
     filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {

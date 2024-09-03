@@ -76,7 +76,6 @@ export class BuildingGroupDTO extends Model {
   }
 
   static fromModel(data: BuildingGroupWithRelations): BuildingGroupDTO {
-    console.debug(JSON.stringify(data, null, 1));
     return new BuildingGroupDTO({
       id: data.id,
       created: data.created.at,

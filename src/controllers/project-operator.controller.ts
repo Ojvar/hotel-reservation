@@ -93,7 +93,7 @@ export class ProjectOperatorsController {
       },
     },
   })
-  async getProjectRegistrationCode(
+  getProjectRegistrationCode(
     @param.path.string('n_id') nId: string,
   ): Promise<BuildingProjectRegistrationCodeDTO> {
     return this.projectManagementService.sendProjectRegistrationCode(nId);
@@ -189,7 +189,7 @@ export class ProjectOperatorsController {
       },
     },
   })
-  async getAllInvoice(
+  getAllInvoice(
     @param.filter(BuildingProjectInvoiceFilter)
     filter: Filter<BuildingProjectInvoiceFilter> = {},
   ): Promise<AnyObject[]> {
