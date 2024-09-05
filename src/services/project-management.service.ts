@@ -780,11 +780,12 @@ export class ProjectManagementService {
       userId,
       allowedRoles,
     );
-    const office = offices?.find(
-      x =>
-        x.id?.toString() === officeId.toString() &&
-        allowedStatus.includes(x.status),
-    );
+    const office = offices?.find(currentOffice => {
+      return (
+        currentOffice.id?.toString() === officeId.toString() &&
+        allowedStatus.includes(currentOffice.status)
+      );
+    });
     if (!office?.getMemberDataByUserId(userId)) {
       throw new HttpErrors.NotAcceptable('User access denined to the office');
     }

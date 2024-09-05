@@ -33,7 +33,10 @@ export class OfficeRepository extends DefaultCrudRepository<
             'membership.status': EnumStatus.ACTIVE,
             'membership.role': {$in: roles},
             'membership.from': {$lte: now},
-            'membership.to': {$gte: now},
+            $or: [
+              {'membership.to': {$gte: now}},
+              {'membership.to': {$exists: false}},
+            ],
           },
         },
       } as object,
