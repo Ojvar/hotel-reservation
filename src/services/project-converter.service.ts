@@ -7,12 +7,13 @@ import {ProfileService, ProfileServiceProvider} from './profile.service';
 import {KeycloakAgentService} from '../lib-keycloak/src';
 import {AuthService, AuthServiceProvider} from './auth.service';
 import {AnyObject, repository} from '@loopback/repository';
-import {BuildingProjectRepository} from '../repositories';
+import {BuildingProjectRepository, OfficeRepository} from '../repositories';
 import {
   BuildingProjectDTO,
   NewBuildingProjectRequestDTO,
   PlanControlProject,
 } from '../dto';
+import {Office} from '../models';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {
@@ -25,6 +26,7 @@ export class ProjectConverterService {
   }
 
   constructor(
+    @repository(OfficeRepository) private officeRepo: OfficeRepository,
     @repository(BuildingProjectRepository)
     private buildingProjectRepo: BuildingProjectRepository,
     @inject(MsSqlService.BINDING_KEY) private sqlService: MsSqlService,
@@ -41,6 +43,23 @@ FROM    PlanControl_Projects AS p
 WHERE   CaseNo = '${caseNo}'
 `;
 
+  async getOfficeById(officeId: string | number): Promise<Office | null> {
+    const {
+      recordset: [office],
+    } = await this.sqlService.runQueryWithResult<AnyObject>(
+      `select o_LicenseNo from Moj_Offices where o_Id=${officeId}`,
+    );
+    console.debug(officeId);
+    if (!office) {
+      throw new HttpErrors.UnprocessableEntity('Invalid office id');
+    }
+    console.debug(office);
+
+    return this.officeRepo.findOne({
+      where: {'license.no': office.o_LicenseNo} as object,
+    });
+  }
+
   async importProject(
     userId: string,
     caseNo: string,
@@ -56,10 +75,16 @@ WHERE   CaseNo = '${caseNo}'
 
     // convert project new-style
     const projectObject = await this.toProjectObject(project);
+    const office = await this.getOfficeById(project.OfficeId ?? '');
+    if (!office) {
+      throw new HttpErrors.NotFound(
+        `Office not found, office id: ${projectObject.OfficeId}`,
+      );
+    }
+
     const prjDto = new NewBuildingProjectRequestDTO({
       ...projectObject,
-      /// TODO: THIS OFFICE ID IS JUST FOR IMPORT- IT SHOULD BE CHANGED
-      office_id: '669e73dcd5ddef2446357f54',
+      office_id: office.id?.toString(),
     });
     const newBuildingProject = await this.buildingProjectRepo.create(
       prjDto.toModel(userId),
