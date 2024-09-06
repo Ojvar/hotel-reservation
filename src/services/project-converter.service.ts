@@ -37,6 +37,32 @@ export class ProjectConverterService {
     private keycloakAgentService: KeycloakAgentService,
   ) {}
 
+  //async fixProjectsOfficeId(): Promise<void> {
+  //  const projects = await this.buildingProjectRepo.find();
+  //  for (const project of projects) {
+  //    console.debug(`Project ${project.id}`);
+  //    const {
+  //      recordset: [oldProject],
+  //    } = await this.sqlService.runQueryWithResult<PlanControlProject>(
+  //      this.projectDetailsQueryByCaseNo(project.case_no.case_no),
+  //    );
+  //    if (!oldProject) {
+  //      console.error(`Project Not found, case-no: ${project.case_no.case_no}`);
+  //      continue;
+  //    }
+  //
+  //    // convert project new-style
+  //    const office = await this.getOfficeById(oldProject.OfficeId ?? '');
+  //    if (!office) {
+  //      console.error(`Office not found, office id: ${oldProject.OfficeId}`);
+  //      continue;
+  //    }
+  //
+  //    project.office_id = office.getId().toString();
+  //    await this.buildingProjectRepo.update(project);
+  //  }
+  //}
+
   private projectDetailsQueryByCaseNo = (caseNo: string): string => `
 SELECT  p.*
 FROM    PlanControl_Projects AS p

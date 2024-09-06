@@ -837,6 +837,7 @@ export class ProjectManagementService {
     userId: string,
     id: string,
   ): Promise<BuildingProject> {
+    const now = new Date();
     const aggregate = [
       {$match: {_id: new ObjectId(id)}},
 
@@ -856,7 +857,10 @@ export class ProjectManagementService {
           'office.members.user_id': userId,
           'office.members.status': EnumStatus.ACTIVE,
           'office.members.membership.from': {$lte: new Date()},
-          'office.members.membership.to': {$gte: new Date()},
+          $or: [
+            {'members.membership.to': {$exists: false}},
+            {'members.membership.to': {$gte: now}},
+          ],
           'office.members.membership.role': {
             $in: [
               EnumOfficeMemberRole.OWNER,
@@ -1094,6 +1098,7 @@ export class ProjectManagementService {
   ): Promise<BuildingProjectsDTO> {
     filter.where = {...filter.where, user_id: userId};
     const aggregate = this.getProjectsListByUserOfficeAggregate(filter);
+    console.debug(JSON.stringify(aggregate, null, 1));
     const pointer = await this.officeRepo.execute(
       Office.modelName,
       'aggregate',
@@ -1252,7 +1257,10 @@ export class ProjectManagementService {
           'members.status': EnumStatus.ACTIVE,
           'members.membership.status': EnumStatus.ACTIVE,
           'members.membership.from': {$lte: now},
-          'members.membership.to': {$gte: now},
+          $or: [
+            {'members.membership.to': {$exists: false}},
+            {'members.membership.to': {$gte: now}},
+          ],
         },
       },
 
