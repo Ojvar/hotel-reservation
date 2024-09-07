@@ -420,7 +420,7 @@ export class ProjectManagementService {
 لطفا برای تایید/عدم تایید به پورتال خود مراجعه فرمایید`;
     const tags = ['PROJECT_SERVICE', 'STAFF_ASSIGNMENT'];
     const targets = Array.from(new Set(profiles.map(x => x.n_in)));
-    const title = 'Project Designer Assignment';
+    const title = 'درخواست همکاری در پروژه';
     await this.pushNotifAgent.publish(
       EnumTargetType.USERS,
       title,
