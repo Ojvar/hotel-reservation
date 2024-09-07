@@ -325,7 +325,10 @@ export class ProjectManagementService {
                 ],
               },
               'membership.from': {$lte: now},
-              'membership.to': {$gte: now},
+              $or: [
+                {'members.membership.to': {$exists: false}},
+                {'members.membership.to': {$gte: now}},
+              ],
             },
           },
         },
