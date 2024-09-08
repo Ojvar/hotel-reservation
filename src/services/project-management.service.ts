@@ -118,6 +118,19 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
 
+  async getProjectDetailsById(
+    userId: string,
+    id: string,
+    checkUserAccess = true,
+  ): Promise<BuildingProjectDTO> {
+    const project = await this.getProjectByUserIdRaw(
+      userId,
+      id,
+      checkUserAccess,
+    );
+    return BuildingProjectDTO.fromModel(project);
+  }
+
   async createFilesFieldMapper(): Promise<FieldMappers> {
     const basedata = await this.basedataRepo.find({
       where: {
@@ -839,6 +852,7 @@ export class ProjectManagementService {
   async getProjectByUserIdRaw(
     userId: string,
     id: string,
+    checkUserAccess = true,
   ): Promise<BuildingProject> {
     const now = new Date();
     const aggregate = [
@@ -855,24 +869,28 @@ export class ProjectManagementService {
       },
       {$set: {office: {$first: '$office'}}},
       {$unwind: '$office.members'},
-      {
-        $match: {
-          'office.members.user_id': userId,
-          'office.members.status': EnumStatus.ACTIVE,
-          'office.members.membership.from': {$lte: new Date()},
-          $or: [
-            {'members.membership.to': {$exists: false}},
-            {'members.membership.to': {$gte: now}},
-          ],
-          'office.members.membership.role': {
-            $in: [
-              EnumOfficeMemberRole.OWNER,
-              EnumOfficeMemberRole.SECRETARY,
-              EnumOfficeMemberRole.CO_FOUNDER,
-            ],
-          },
-        },
-      },
+      ...(checkUserAccess
+        ? [
+            {
+              $match: {
+                'office.members.user_id': userId,
+                'office.members.status': EnumStatus.ACTIVE,
+                'office.members.membership.from': {$lte: new Date()},
+                $or: [
+                  {'members.membership.to': {$exists: false}},
+                  {'members.membership.to': {$gte: now}},
+                ],
+                'office.members.membership.role': {
+                  $in: [
+                    EnumOfficeMemberRole.OWNER,
+                    EnumOfficeMemberRole.SECRETARY,
+                    EnumOfficeMemberRole.CO_FOUNDER,
+                  ],
+                },
+              },
+            },
+          ]
+        : []),
       {$unset: ['office']},
 
       // Get profiles

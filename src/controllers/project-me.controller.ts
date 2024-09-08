@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {inject} from '@loopback/context';
+import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
 import {
   get,
@@ -15,7 +15,12 @@ import {
   SignFilesRequestDTO,
 } from '../dto';
 import {Filter} from '@loopback/repository';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {
+  EnumRoles,
+  KeycloakSecurity,
+  KeycloakSecurityProvider,
+  protect,
+} from '../lib-keycloak/src';
 import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/me';
@@ -28,6 +33,30 @@ export class ProjectMeController {
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
   ) {}
+
+  @intercept(protect([EnumRoles.NO_BODY]))
+  @get(`${BASE_ADDR}/{id}`, {
+    tags,
+    summary: 'Get Project details',
+    description: 'Get Project details',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async viewProjectById(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectDetailsById(
+      userId,
+      id,
+      false,
+    );
+  }
 
   @get(`${BASE_ADDR}`, {
     tags,
