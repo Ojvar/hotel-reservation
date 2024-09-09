@@ -442,7 +442,7 @@ export class ProjectManagementService {
 
     // Send push message
     const msg = `مهندس گرامی
-شما به عنوان مهندس طراح در پورژه ${project.case_no.case_no} انتخاب شده اید
+شما به عنوان مهندس طراح در پروژه ${project.case_no.case_no} انتخاب شده اید
 لطفا برای تایید/عدم تایید به پورتال خود مراجعه فرمایید`;
     const tags = ['PROJECT_SERVICE', 'STAFF_ASSIGNMENT'];
     const targets = Array.from(new Set(profiles.map(x => x.n_in)));
