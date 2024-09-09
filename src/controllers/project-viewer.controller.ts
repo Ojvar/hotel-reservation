@@ -36,7 +36,10 @@ export class ProjectViewerController {
     return this.projectManagementService.getProjectDetailsById(
       userId,
       projectId,
-      false,
+      {
+        checkOfficeMembership: false,
+        checkUserAccess: false,
+      },
     );
   }
 }

@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectConverterService, ProjectManagementService} from '../services';
+import {AnyObject, Filter} from '@loopback/repository';
 import {
   del,
   get,
@@ -25,19 +25,20 @@ import {
   SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
+import {FileTokenResponse} from '../lib-file-service/src';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {AnyObject, Filter} from '@loopback/repository';
-import {FileTokenResponse} from '../lib-file-service/src';
 import {
   EnumProgressStatus,
   EnumProgressStatusValues,
+  EnumStatus,
   MONGO_ID_REGEX,
 } from '../models';
+import {ProjectConverterService, ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -138,6 +139,7 @@ export class ProjectOperatorsController {
     @requestBody() body: NewBuildingProjectRequestDTO,
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
+    @param.header.string('file-token') fileToken = '',
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.createNewProject(
@@ -145,6 +147,8 @@ export class ProjectOperatorsController {
       nId,
       verificationCode,
       new NewBuildingProjectRequestDTO(body),
+      {checkOfficeId: true},
+      fileToken,
     );
   }
 
@@ -315,7 +319,10 @@ export class ProjectOperatorsController {
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectByUserId(userId, id);
+    return this.projectManagementService.getProjectByUserId(userId, id, {
+      checkUserAccess: false,
+      checkOfficeMembership: true,
+    });
   }
 
   @intercept(
@@ -342,7 +349,15 @@ export class ProjectOperatorsController {
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectStaffItemsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectStaffList(userId, id);
+    return this.projectManagementService.getProjectStaffList(
+      userId,
+      id,
+      [EnumStatus.ACTIVE],
+      {
+        checkOfficeMembership: true,
+        checkUserAccess: false,
+      },
+    );
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))

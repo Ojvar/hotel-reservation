@@ -88,6 +88,7 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
     if (this.response?.status) {
       throw new HttpErrors.UnprocessableEntity('Response already registered');
     }
+    this.status = status;
     this.response = new BuildingProjectStaffResponse({
       responsed: new ModifyStamp({by: userId}),
       description,
@@ -191,10 +192,23 @@ export class BuildingProjectLawyer extends TimestampModelWithId {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
+  @property({type: 'string', required: true})
+  auth_pwd: string;
+  @property({type: 'date', required: false})
+  expire_date?: Date;
+  @property({type: 'string', required: true})
+  document_no: string;
+  @property({type: 'string', required: false})
+  attachment_id: string;
 
   constructor(data?: Partial<BuildingProjectLawyer>) {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+
+  markAsDeactive(userId: string): void {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: userId});
   }
 }
 export type BuildingProjectLawyers = BuildingProjectLawyer[];
@@ -642,9 +656,8 @@ export class BuildingProject extends Entity {
     // Find active or pending staff requests of the user
     const hasConflict = this.staff?.some(
       staff =>
-        staff.status === EnumStatus.ACTIVE &&
-        staff.response?.status !== EnumStatus.REJECTED &&
-        requestedUsers[staff.user_id] === staff.field_id.toString(),
+        requestedUsers[staff.user_id] === staff.field_id.toString() &&
+        ![EnumStatus.DEACTIVE, EnumStatus.REJECTED].includes(staff.status),
     );
     if (hasConflict) {
       throw new HttpErrors.UnprocessableEntity(
@@ -825,15 +838,17 @@ export class BuildingProject extends Entity {
     validateUser = true,
   ): void {
     const staff = this.staff?.find(
-      s => s.id?.toString() === staffId && s.status === EnumStatus.ACTIVE,
+      s => s.id?.toString() === staffId && s.status === EnumStatus.PENDING,
     );
-    if (validateUser && userId !== staff?.user_id) {
-      throw new HttpErrors.UnprocessableEntity(
-        `Operation failed to the user, ${userId}`,
+    if (!staff) {
+      throw new HttpErrors.NotFound(
+        `Staff request not found or already responded to, Staff id: ${staffId}`,
       );
     }
-    if (!staff) {
-      throw new HttpErrors.NotFound(`Staff request not found, id: ${staffId}`);
+    if (validateUser && userId !== staff.user_id) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Operation is not accpeted for the user, User id: ${userId}`,
+      );
     }
     staff.setResponse(userId, status, description);
   }
@@ -858,8 +873,7 @@ export class BuildingProject extends Entity {
         )?.field;
         return (
           staff.user_id === userId &&
-          staff.status === EnumStatus.ACTIVE &&
-          staff.response?.status === EnumStatus.ACCEPTED &&
+          staff.status !== EnumStatus.DEACTIVE &&
           fieldId === file.field
         );
       });

@@ -9,8 +9,11 @@ import {
 } from '@loopback/rest';
 import {
   BuildingProjectDTO,
+  BuildingProjectStaffItemDTO,
+  BuildingProjectStaffItemsDTO,
   BuildingProjectsDTO,
   SetBuildingProjectStaffResponseDTO,
+  SignFilesRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -18,7 +21,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {MONGO_ID_REGEX} from '../models';
+import {EnumStatus, MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/staff';
 const tags = ['Projects.Staff'];
@@ -31,6 +34,82 @@ export class ProjectStaffController {
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
   ) {}
+
+  @get(`${BASE_ADDR}/{id}/staff`, {
+    tags,
+    summary: 'Get staff list',
+    description: 'Get staff list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectStaffItemDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getStaffList(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectStaffItemsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectStaffList(
+      userId,
+      id,
+      [EnumStatus.ACTIVE],
+      {
+        checkOfficeMembership: false,
+        checkUserAccess: true,
+      },
+    );
+  }
+
+  @patch(`${BASE_ADDR}/{project_id}/sign`, {
+    tags,
+    summary: 'Sign a file',
+    description: 'Sign a file',
+    responses: {204: {}},
+  })
+  async signFile(
+    @requestBody() body: SignFilesRequestDTO,
+    @param.path.string('project_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.signFile(
+      userId,
+      userId,
+      projectId,
+      body,
+    );
+  }
+
+  @get(`${BASE_ADDR}/{project_id}/details`, {
+    tags,
+    summary: 'Get Project details',
+    description: 'Get Project details',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async getProjectDetails(
+    @param.path.string('project_id') id: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectByUserId(userId, id, {
+      checkUserAccess: true,
+      checkOfficeMembership: false,
+    });
+  }
 
   @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
     tags,

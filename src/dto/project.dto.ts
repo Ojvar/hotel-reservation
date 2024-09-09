@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {Model, model, property} from '@loopback/repository';
+import {ModifyStamp} from '../lib-models/src';
 import {
   BuildingProject,
   BuildingProjectBuildingSiteLocation,
@@ -12,7 +13,6 @@ import {
   BuildingProjectPropertyRegistrationDetails,
   BuildingProjectSpecification,
 } from '../models';
-import {ModifyStamp} from '../lib-models/src';
 
 @model({})
 export class NewBuildingProjectSpecificationDTO extends Model {
@@ -155,6 +155,15 @@ export class BuildingNewProjectLawyerDTO extends Model {
   power_of_attorney_date?: Date;
   @property({required: false})
   description?: string;
+  @property({type: 'string', required: true})
+  auth_pwd: string;
+  @property({type: 'string', required: true})
+  document_no: string;
+  @property({type: 'date', required: false})
+  expire_date?: Date;
+
+  // Private fields
+  attachment_id?: string;
 
   constructor(data?: Partial<BuildingNewProjectLawyerDTO>) {
     super(data);
@@ -166,11 +175,15 @@ export class BuildingNewProjectLawyerDTO extends Model {
       created: now,
       updated: now,
       user_id: this.user_id,
+      auth_pwd: this.auth_pwd,
+      document_no: this.document_no,
+      expire_date: this.expire_date ? new Date(this.expire_date) : undefined,
       power_of_attorney_date: this.power_of_attorney_date
         ? new Date(this.power_of_attorney_date)
         : undefined,
       power_of_attorney_number: this.power_of_attorney_number,
       description: this.description,
+      attachment_id: this.attachment_id,
     });
   }
 }

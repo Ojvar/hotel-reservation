@@ -1,18 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {
-  get,
-  getModelSchemaRef,
-  param,
-  patch,
-  requestBody,
-} from '@loopback/rest';
+import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
-  SignFilesRequestDTO,
 } from '../dto';
 import {Filter} from '@loopback/repository';
 import {
@@ -21,11 +14,11 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/me';
 const tags = ['Projects.Me'];
 
+@intercept(protect(EnumRoles.NO_BODY))
 export class ProjectMeController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
@@ -33,30 +26,6 @@ export class ProjectMeController {
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
   ) {}
-
-  @intercept(protect([EnumRoles.NO_BODY]))
-  @get(`${BASE_ADDR}/{id}`, {
-    tags,
-    summary: 'Get Project details',
-    description: 'Get Project details',
-    responses: {
-      200: {
-        content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-        },
-      },
-    },
-  })
-  async viewProjectById(
-    @param.path.string('id') id: string,
-  ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectDetailsById(
-      userId,
-      id,
-      false,
-    );
-  }
 
   @get(`${BASE_ADDR}`, {
     tags,
@@ -84,27 +53,5 @@ export class ProjectMeController {
       ...filter,
       where: {...filter.where, user_id: userId},
     });
-  }
-
-  @patch(`${BASE_ADDR}/{project_id}/sign`, {
-    tags,
-    summary: 'Sign a file',
-    description: 'Sign a file',
-    responses: {204: {}},
-  })
-  async signFile(
-    @requestBody() body: SignFilesRequestDTO,
-    @param.path.string('project_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
-    })
-    projectId: string,
-  ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.signFile(
-      userId,
-      userId,
-      projectId,
-      body,
-    );
   }
 }

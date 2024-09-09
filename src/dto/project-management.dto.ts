@@ -176,6 +176,7 @@ export class NewProjectStaffRequestDTO extends Model {
           updated: now,
           user_id: s.user_id,
           field_id: s.field_id,
+          status: EnumStatus.PENDING,
         }),
     );
   }

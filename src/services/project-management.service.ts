@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
+import {AnyObject, Filter, repository} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
+import {ObjectId} from 'bson';
+import lodash from 'lodash';
 import {
   AddNewJobRequestDTO,
   BuildingGroupDTO,
@@ -22,16 +26,9 @@ import {
   SignFilesRequestDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
-import {AnyObject, Filter, repository} from '@loopback/repository';
-import {
-  BaseDataRepository,
-  BuildingGroupRepository,
-  BuildingProjectRepository,
-  OfficeRepository,
-  ProfileRepository,
-} from '../repositories';
-import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
+import {FileTokenResponse} from '../lib-file-service/src';
+import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
   BuildingGroup,
   BuildingProject,
@@ -44,14 +41,17 @@ import {
   Office,
   Profile,
 } from '../models';
-import {ObjectId} from 'bson';
-import {HttpErrors} from '@loopback/rest';
-import {FileTokenResponse} from '../lib-file-service/src';
-import {FileServiceAgentService} from './file-agent.service';
+import {
+  BaseDataRepository,
+  BuildingGroupRepository,
+  BuildingProjectRepository,
+  OfficeRepository,
+  ProfileRepository,
+} from '../repositories';
 import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
+import {FileServiceAgentService} from './file-agent.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
-import {EnumTargetType} from '../lib-push-notification-service/src';
-import lodash from 'lodash';
+import {VerificationCodeService} from './verification-code.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -62,6 +62,11 @@ export enum EnumRegisterProjectType {
   REG_PROJECT = 1,
   REG_DESIGNER = 2,
 }
+
+export type GetProjectDetailsOptions = {
+  checkOfficeMembership: boolean;
+  checkUserAccess: boolean;
+};
 
 type FieldMapper = {
   id: string;
@@ -89,6 +94,7 @@ export class ProjectManagementService {
     'ELEVATOR_CONTRACT',
     'ELEVATOR_DETAILS',
     'BUILDING_SKETCH',
+    'LAWYER',
   ]
     .map(item =>
       Array.from(
@@ -121,13 +127,9 @@ export class ProjectManagementService {
   async getProjectDetailsById(
     userId: string,
     id: string,
-    checkUserAccess = true,
+    options?: GetProjectDetailsOptions,
   ): Promise<BuildingProjectDTO> {
-    const project = await this.getProjectByUserIdRaw(
-      userId,
-      id,
-      checkUserAccess,
-    );
+    const project = await this.getProjectByUserIdRaw(userId, id, options);
     return BuildingProjectDTO.fromModel(project);
   }
 
@@ -176,9 +178,14 @@ export class ProjectManagementService {
   async getBuildingGroupConditionByProject(
     userId: string,
     projectId: string,
+    options?: GetProjectDetailsOptions,
   ): Promise<BuildingGroupDTO | null> {
     // Find project
-    const project = await this.getProjectByUserIdRaw(userId, projectId);
+    const project = await this.getProjectByUserIdRaw(
+      userId,
+      projectId,
+      options,
+    );
     const conditionsBaseData = await this.basedataRepo.find({
       where: {category: 'BUILDING_GROUP_CONDITIONS'},
     });
@@ -235,13 +242,7 @@ export class ProjectManagementService {
     };
     const aggregate = this.getProjectsListAggregate(filter, {
       status: EnumStatus.ACTIVE,
-      staff: {
-        $elemMatch: {
-          user_id: userId,
-          status: EnumStatus.ACTIVE,
-          response: null,
-        },
-      },
+      staff: {$elemMatch: {user_id: userId, status: EnumStatus.PENDING}},
     });
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -308,48 +309,60 @@ export class ProjectManagementService {
     userId: string,
     id: string,
     staffStatuses = [EnumStatus.ACTIVE],
+    {checkOfficeMembership, checkUserAccess}: GetProjectDetailsOptions = {
+      checkUserAccess: true,
+      checkOfficeMembership: true,
+    },
   ): Promise<BuildingProjectStaffItemsDTO> {
     const now = new Date();
     const aggregate = [
       {$match: {_id: new ObjectId(id)}},
 
-      // Office
-      {
-        $lookup: {
-          from: 'offices',
-          localField: 'office_id',
-          foreignField: '_id',
-          as: 'office',
-        },
-      },
-      {$set: {office: {$first: '$office'}}},
-
-      {
-        $match: {
-          'office.members': {
-            $elemMatch: {
-              user_id: userId,
-              status: {$in: staffStatuses},
-              'membership.role': {
-                $in: [
-                  EnumOfficeMemberRole.OWNER,
-                  EnumOfficeMemberRole.SECRETARY,
-                  EnumOfficeMemberRole.CO_FOUNDER,
-                ],
+      ...(!checkOfficeMembership
+        ? []
+        : [
+            // Office
+            {
+              $lookup: {
+                from: 'offices',
+                localField: 'office_id',
+                foreignField: '_id',
+                as: 'office',
               },
-              'membership.from': {$lte: now},
-              $or: [
-                {'members.membership.to': {$exists: false}},
-                {'members.membership.to': {$gte: now}},
-              ],
             },
-          },
-        },
-      },
+            {$set: {office: {$first: '$office'}}},
+            {
+              $match: {
+                'office.members': {
+                  $elemMatch: {
+                    user_id: userId,
+                    status: {$in: staffStatuses},
+                    'membership.role': {
+                      $in: [
+                        EnumOfficeMemberRole.OWNER,
+                        EnumOfficeMemberRole.SECRETARY,
+                        EnumOfficeMemberRole.CO_FOUNDER,
+                      ],
+                    },
+                    'membership.from': {$lte: now},
+                    $or: [
+                      {'members.membership.to': {$exists: false}},
+                      {'members.membership.to': {$gte: now}},
+                    ],
+                  },
+                },
+              },
+            },
+          ]),
 
       // Unwind over staff
       {$unwind: '$staff'},
-      {$match: {'staff.status': EnumStatus.ACTIVE}},
+      {
+        $match: {
+          ...(checkUserAccess ? {'staff.user_id': userId} : {}),
+          'staff.status': {$ne: EnumStatus.DEACTIVE},
+        },
+      },
 
       // Lookup over profiles
       {
@@ -566,31 +579,6 @@ export class ProjectManagementService {
     });
   }
 
-  // async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
-  //   const project = await this.buildingProjectRepo.findById(id);
-  //   const attachments = project.attachments.filter(
-  //     a => a.status === EnumStatus.ACTIVE,
-  //   );
-  //
-  //   // Get files info
-  //   const filesList = attachments.map(a => a.file_id);
-  //   const filesInfo = await this.fileServiceAgent.getFilesInformation(
-  //     filesList,
-  //   );
-  //
-  //   // Merge info
-  //   const mergedData = attachments.map(a => {
-  //     const fileInfo = filesInfo.find(
-  //       f => f.id.toString() === a.file_id.toString(),
-  //     );
-  //     return { ...a, fileInfo } as BuildingProjectAttachmentItem & {
-  //       fileInfo: FileInfoDTO | undefined;
-  //     };
-  //   });
-  //
-  //   return mergedData.map(BuildingProjectAttachmentDTO.fromModel);
-  // }
-
   async commitUploadedFiles(
     userId: string,
     id: string,
@@ -695,7 +683,6 @@ export class ProjectManagementService {
     options: {checkOfficeId: boolean} = {checkOfficeId: true},
     allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
-    /// TODO: Check user membership date
     if (options.checkOfficeId) {
       await this.userIsAllowedToProjectForOffice(
         userId,
@@ -744,6 +731,7 @@ export class ProjectManagementService {
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
     options: {checkOfficeId: boolean} = {checkOfficeId: true},
+    fileToken = '',
   ): Promise<BuildingProjectDTO> {
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
@@ -770,14 +758,44 @@ export class ProjectManagementService {
       const year = +getPersianDateParts()[0].slice(-2);
       data.case_no = await this.generateNewCaseNo(year);
     }
+
+    // Check uploaded files list , get files info
+    const attachments = await this.fileServiceAgent.getAttachments(
+      userId,
+      fileToken,
+    );
+    // Just accept allowed attachments
+    const allowedAttachmentsFields = ['LAWYER_1'];
+    if (
+      !attachments?.allowed_files.some(
+        file => !allowedAttachmentsFields.includes(file.field),
+      )
+    ) {
+      throw new HttpErrors.NotAcceptable(
+        'Invalid attachments data, extra fileds',
+      );
+    }
+
+    // Setup attachments
+    if (data.lawyer) {
+      data.lawyer.attachment_id = attachments.uploaded_files
+        .find(x => x.fieldname === 'LAWYER_1')
+        ?.id.toString();
+    }
+
     const newProject = await this.buildingProjectRepo.create(
-      data.toModel(userId),
+      data.toModel(userId, {}),
     );
     if (shouldVerify) {
       await this.verificationCodeService.removeVerificationCodeByNId(
         nId,
         EnumRegisterProjectType.REG_PROJECT,
       );
+    }
+
+    // Commit files
+    if (fileToken) {
+      await this.fileServiceAgent.commit(userId, fileToken);
     }
 
     return BuildingProjectDTO.fromModel(newProject);
@@ -814,13 +832,7 @@ export class ProjectManagementService {
     filter.where = {
       ...filter.where,
       status: EnumStatus.ACTIVE,
-      staff: {
-        elemMatch: {
-          user_id: userId,
-          status: EnumStatus.ACTIVE,
-          'response.status': EnumStatus.ACCEPTED,
-        },
-      },
+      staff: {elemMatch: {user_id: userId, status: EnumStatus.ACCEPTED}},
     } as object;
     return this.getProjectsList(filter);
   }
@@ -830,13 +842,7 @@ export class ProjectManagementService {
   ): Promise<BuildingProjectsDTO> {
     const {user_id = ''} = (filter.where ?? {}) as AnyObject;
     const aggregate = this.getProjectsListAggregate(filter, {
-      staff: {
-        $elemMatch: {
-          status: EnumStatus.ACTIVE,
-          user_id,
-          'response.status': EnumStatus.ACCEPTED,
-        },
-      },
+      staff: {$elemMatch: {status: EnumStatus.ACCEPTED, user_id}},
     });
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
@@ -852,11 +858,28 @@ export class ProjectManagementService {
   async getProjectByUserIdRaw(
     userId: string,
     id: string,
-    checkUserAccess = true,
+    {checkOfficeMembership, checkUserAccess}: GetProjectDetailsOptions = {
+      checkUserAccess: true,
+      checkOfficeMembership: true,
+    },
   ): Promise<BuildingProject> {
     const now = new Date();
     const aggregate = [
-      {$match: {_id: new ObjectId(id)}},
+      {
+        $match: {
+          _id: new ObjectId(id),
+          ...(checkUserAccess
+            ? {
+                staff: {
+                  $elemMatch: {
+                    user_id: userId,
+                    status: {$in: [EnumStatus.ACCEPTED, EnumStatus.PENDING]},
+                  },
+                },
+              }
+            : {}),
+        },
+      },
 
       // Check user access
       {
@@ -869,12 +892,14 @@ export class ProjectManagementService {
       },
       {$set: {office: {$first: '$office'}}},
       {$unwind: '$office.members'},
-      ...(checkUserAccess
+      ...(checkOfficeMembership
         ? [
             {
               $match: {
                 'office.members.user_id': userId,
-                'office.members.status': EnumStatus.ACTIVE,
+                'office.members.status': {
+                  $in: [EnumStatus.ACTIVE, EnumStatus.PENDING],
+                },
                 'office.members.membership.from': {$lte: new Date()},
                 $or: [
                   {'members.membership.to': {$exists: false}},
@@ -895,12 +920,7 @@ export class ProjectManagementService {
 
       // Get profiles
       {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
-      {
-        $unwind: {
-          path: '$ownership.owners',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      {$unwind: {path: '$ownership.owners', preserveNullAndEmptyArrays: true}},
       {
         $lookup: {
           from: 'profiles',
@@ -937,11 +957,7 @@ export class ProjectManagementService {
           newRoot: {
             $mergeObjects: [
               '$other_fields',
-              {
-                ownership: '$ownership',
-                lawyers: '$lawyers',
-                owners: '$owners',
-              },
+              {ownership: '$ownership', lawyers: '$lawyers', owners: '$owners'},
             ],
           },
         },
@@ -966,8 +982,9 @@ export class ProjectManagementService {
   async getProjectByUserId(
     userId: string,
     id: string,
+    options?: GetProjectDetailsOptions,
   ): Promise<BuildingProjectDTO> {
-    const project = await this.getProjectByUserIdRaw(userId, id);
+    const project = await this.getProjectByUserIdRaw(userId, id, options);
     return BuildingProjectDTO.fromModel(project);
   }
 
@@ -1064,7 +1081,7 @@ export class ProjectManagementService {
         },
       },
       {$set: {ownership_info: {$first: '$ownership_info'}}},
-      {$sort: {_id: 1}},
+      {$sort: {'created.at': 1}},
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
@@ -1119,7 +1136,6 @@ export class ProjectManagementService {
   ): Promise<BuildingProjectsDTO> {
     filter.where = {...filter.where, user_id: userId};
     const aggregate = this.getProjectsListByUserOfficeAggregate(filter);
-    console.debug(JSON.stringify(aggregate, null, 1));
     const pointer = await this.officeRepo.execute(
       Office.modelName,
       'aggregate',
@@ -1160,15 +1176,18 @@ export class ProjectManagementService {
 
     // Unwind over staff
     {$unwind: {path: '$staff', preserveNullAndEmptyArrays: true}},
-    {
-      $match: {
-        $or: [
-          {staff: {$exists: false}},
-          {staff: null},
-          {'staff.status': EnumStatus.ACTIVE},
-        ],
-      },
-    },
+
+    //// TODO: [BUG] If there are no any active staff, the project will be ommited from list
+    ////   and it isn't correct
+    // {
+    //   $match: {
+    //     $or: [
+    //       {staff: {$exists: false}},
+    //       {staff: null},
+    //       {'staff.status': {$ne: EnumStatus.DEACTIVE}},
+    //     ],
+    //   },
+    // },
 
     // Lookup over profiles
     {
@@ -1224,7 +1243,7 @@ export class ProjectManagementService {
         },
       },
     },
-    {$sort: {_id: -1}},
+    {$sort: {'created.at': -1}},
   ];
 
   private getProjectsListAggregate(
@@ -1237,7 +1256,7 @@ export class ProjectManagementService {
     return [
       {$match: {status, ...matchClause}},
       ...this.projectLookupProfileAggregate,
-      {$sort: {_id: 1}},
+      {$sort: {'created.at': -1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},

@@ -1,5 +1,5 @@
 import {inject} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
   BuildingGroupDTO,
@@ -8,8 +8,8 @@ import {
   BuildingProjectsDTO,
 } from '../dto';
 import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
 import {BuildingGroup, MONGO_ID_REGEX} from '../models';
+import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/offices/me/projects';
 const tags = ['Offices.Me.Projects'];

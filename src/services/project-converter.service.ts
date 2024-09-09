@@ -40,7 +40,6 @@ export class ProjectConverterService {
   //async fixProjectsOfficeId(): Promise<void> {
   //  const projects = await this.buildingProjectRepo.find();
   //  for (const project of projects) {
-  //    console.debug(`Project ${project.id}`);
   //    const {
   //      recordset: [oldProject],
   //    } = await this.sqlService.runQueryWithResult<PlanControlProject>(
@@ -75,11 +74,9 @@ WHERE   CaseNo = '${caseNo}'
     } = await this.sqlService.runQueryWithResult<AnyObject>(
       `select o_LicenseNo from Moj_Offices where o_Id=${officeId}`,
     );
-    console.debug(officeId);
     if (!office) {
       throw new HttpErrors.UnprocessableEntity('Invalid office id');
     }
-    console.debug(office);
 
     return this.officeRepo.findOne({
       where: {'license.no': office.o_LicenseNo} as object,
