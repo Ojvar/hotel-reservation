@@ -104,6 +104,7 @@ export class ProjectManagementService {
     )
     .flatMap(x => x);
 
+  readonly VERIFICATION_SMS_EXPIRE_TIME = 300;
   readonly PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
 
   constructor(
@@ -670,6 +671,7 @@ export class ProjectManagementService {
         this.PROJECT_REGISTRATION_TITLE,
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
+        this.VERIFICATION_SMS_EXPIRE_TIME,
       );
     return new BuildingProjectRegistrationCodeDTO({
       tracking_code: trackingCode,
@@ -765,23 +767,23 @@ export class ProjectManagementService {
       fileToken,
     );
     // Just accept allowed attachments
-    const allowedAttachmentsFields = ['LAWYER_1'];
-    if (
-      !attachments?.allowed_files.some(
-        file => !allowedAttachmentsFields.includes(file.field),
-      )
-    ) {
-      throw new HttpErrors.NotAcceptable(
-        'Invalid attachments data, extra fileds',
-      );
-    }
+    //    const allowedAttachmentsFields = ['LAWYER_1'];
+    //    if (
+    //      !attachments?.allowed_files.some(
+    //        file => !allowedAttachmentsFields.includes(file.field),
+    //      )
+    //    ) {
+    //      throw new HttpErrors.NotAcceptable(
+    //        'Invalid attachments data, extra fileds',
+    //      );
+    //    }
 
     // Setup attachments
-    if (data.lawyer) {
-      data.lawyer.attachment_id = attachments.uploaded_files
-        .find(x => x.fieldname === 'LAWYER_1')
-        ?.id.toString();
-    }
+    //    if (data.lawyer) {
+    //      data.lawyer.attachment_id = attachments.uploaded_files
+    //        .find(x => x.fieldname === 'LAWYER_1')
+    //        ?.id.toString();
+    //    }
 
     const newProject = await this.buildingProjectRepo.create(
       data.toModel(userId, {}),

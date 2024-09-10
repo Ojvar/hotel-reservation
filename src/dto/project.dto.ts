@@ -183,7 +183,7 @@ export class BuildingNewProjectLawyerDTO extends Model {
         : undefined,
       power_of_attorney_number: this.power_of_attorney_number,
       description: this.description,
-      attachment_id: this.attachment_id,
+      //attachment_id: this.attachment_id,
     });
   }
 }
