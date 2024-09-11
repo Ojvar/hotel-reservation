@@ -33,6 +33,7 @@ import {
   BuildingGroup,
   BuildingProject,
   BuildingProjectAttachmentSing,
+  BuildingProjectLawyer,
   Condition,
   EnumOfficeMemberRole,
   EnumProgressStatus,
@@ -710,6 +711,12 @@ export class ProjectManagementService {
     if (mainOwner?.user_id !== newMainOwner?.user_id) {
       throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
     }
+    const updatedLawyers = [...(oldProject.lawyers ?? [])].map(
+      x => new BuildingProjectLawyer({...x, status: EnumStatus.DEACTIVE}),
+    );
+    if (data.lawyer) {
+      updatedLawyers.push(data.lawyer.toModel(userId));
+    }
     const updatedProject = data.toModel(
       userId,
       new BuildingProject({
@@ -721,6 +728,7 @@ export class ProjectManagementService {
         case_no: oldProject.case_no,
         progress_status: oldProject.progress_status,
         progress_status_history: oldProject.progress_status_history,
+        lawyers: updatedLawyers,
       }),
     );
     await this.buildingProjectRepo.update(updatedProject);
