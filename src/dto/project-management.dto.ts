@@ -490,6 +490,7 @@ export class BuildingProjectLawyerDTO extends Model {
       power_of_attorney_date: data?.power_of_attorney_date,
       power_of_attorney_number: data?.power_of_attorney_number,
       description: data?.description,
+      /// TODO: Add File INfo
       profile: data.profile
         ? new Profile({
             first_name: data?.profile?.first_name,

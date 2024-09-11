@@ -732,9 +732,29 @@ export class ProjectManagementService {
     nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
-    options: {checkOfficeId: boolean} = {checkOfficeId: true},
     fileToken = '',
+    options: {checkOfficeId: boolean} = {checkOfficeId: true},
   ): Promise<BuildingProjectDTO> {
+    const lawyerAttachmentField = 'LAWYER_1';
+
+    // Check uploaded files list , get files info
+    const attachments = await this.fileServiceAgent.getAttachments(
+      userId,
+      fileToken,
+    );
+
+    // Just accept allowed attachments
+    const allowedAttachmentsFields = [lawyerAttachmentField];
+    if (
+      !attachments?.uploaded_files.some(
+        file => !allowedAttachmentsFields.includes(file.fieldname),
+      )
+    ) {
+      throw new HttpErrors.NotAcceptable(
+        'Invalid attachments data, extra fileds',
+      );
+    }
+
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
       await this.verificationCodeService.checkVerificationCodeByNId(
@@ -761,29 +781,12 @@ export class ProjectManagementService {
       data.case_no = await this.generateNewCaseNo(year);
     }
 
-    // Check uploaded files list , get files info
-    const attachments = await this.fileServiceAgent.getAttachments(
-      userId,
-      fileToken,
-    );
-    // Just accept allowed attachments
-    //    const allowedAttachmentsFields = ['LAWYER_1'];
-    //    if (
-    //      !attachments?.allowed_files.some(
-    //        file => !allowedAttachmentsFields.includes(file.field),
-    //      )
-    //    ) {
-    //      throw new HttpErrors.NotAcceptable(
-    //        'Invalid attachments data, extra fileds',
-    //      );
-    //    }
-
     // Setup attachments
-    //    if (data.lawyer) {
-    //      data.lawyer.attachment_id = attachments.uploaded_files
-    //        .find(x => x.fieldname === 'LAWYER_1')
-    //        ?.id.toString();
-    //    }
+    if (data.lawyer) {
+      data.lawyer.attachment_id = attachments.uploaded_files
+        .find(x => x.fieldname === lawyerAttachmentField)
+        ?.id.toString();
+    }
 
     const newProject = await this.buildingProjectRepo.create(
       data.toModel(userId, {}),
@@ -1315,6 +1318,7 @@ export class ProjectManagementService {
           as: 'projects',
         },
       },
+      {$match: {'projects.status': {$ne: EnumStatus.DEACTIVE}}},
       {$unwind: {path: '$projects', preserveNullAndEmptyArrays: true}},
       {$replaceRoot: {newRoot: '$projects'}},
       ...this.projectLookupProfileAggregate,

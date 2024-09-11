@@ -1,6 +1,6 @@
 {
   "name": "projects-service",
-  "version": "1.11.1",
+  "version": "1.11.2",
   "description": "projects-service",
   "keywords": [
     "loopback-application",

@@ -198,8 +198,8 @@ export class BuildingProjectLawyer extends TimestampModelWithId {
   expire_date?: Date;
   @property({type: 'string', required: true})
   document_no: string;
-  //@property({type: 'string', required: false})
-  //attachment_id: string;
+  @property({type: 'string', required: false})
+  attachment_id: string;
 
   constructor(data?: Partial<BuildingProjectLawyer>) {
     super(data);

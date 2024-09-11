@@ -15,7 +15,7 @@ import {
 import {KeycloakAgentService} from '../lib-keycloak/src';
 
 export const EXPIRE_TIME = 600; // 10 Minutes
-export const MAX_SIZE = 16777216; // 2MB -> 2 * 1024 * 1024 * 8;
+export const MAX_SIZE = 104857600; // 100MB -> 2 * 1024 * 1024 * 8;
 export const MIME_TYPE = 'image/*';
 
 export type AttachmentItems = Record<string, string>;

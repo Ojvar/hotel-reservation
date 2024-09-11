@@ -147,8 +147,8 @@ export class ProjectOperatorsController {
       nId,
       verificationCode,
       new NewBuildingProjectRequestDTO(body),
-      {checkOfficeId: true},
       fileToken,
+      {checkOfficeId: true},
     );
   }
 

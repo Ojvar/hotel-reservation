@@ -41,6 +41,7 @@ export class ProjectManagementController {
   })
   async createNewProject(
     @requestBody() body: NewBuildingProjectRequestDTO,
+    @param.header.string('file-token') fileToken: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
@@ -49,6 +50,7 @@ export class ProjectManagementController {
       undefined,
       undefined,
       body,
+      fileToken,
       {checkOfficeId: false},
     );
   }
