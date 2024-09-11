@@ -1,6 +1,13 @@
 import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  post,
+  requestBody,
+} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
@@ -22,7 +29,7 @@ const tags = ['Projects.Management'];
 export class ProjectManagementController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
-    private projectMangementService: ProjectManagementService,
+    private projectManagementService: ProjectManagementService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
   ) {}
@@ -45,7 +52,7 @@ export class ProjectManagementController {
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
-    return this.projectMangementService.createNewProject(
+    return this.projectManagementService.createNewProject(
       userId,
       undefined,
       undefined,
@@ -76,6 +83,21 @@ export class ProjectManagementController {
     @param.filter(BuildingProjectFilter)
     filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
-    return this.projectMangementService.getProjectsList(filter);
+    return this.projectManagementService.getProjectsList(filter);
+  }
+
+  @del(`${BASE_ADDR}/{project_id}`, {
+    tags,
+    summary: 'Remove project',
+    description: 'Remove project',
+    responses: {204: {}},
+  })
+  async removeProjectById(
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeProjectById(userId, projectId, {
+      checkOfficeMembership: false,
+    });
   }
 }

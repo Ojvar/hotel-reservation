@@ -64,8 +64,10 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-export type GetProjectDetailsOptions = {
+export type CheckOfficeAccessOptions = {
   checkOfficeMembership: boolean;
+};
+export type CheckProjectDetailsOptions = CheckOfficeAccessOptions & {
   checkUserAccess: boolean;
 };
 
@@ -126,10 +128,40 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
 
+  async removeProjectById(
+    userId: string,
+    projectId: string,
+    {checkOfficeMembership}: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+
+    // Check office membership data
+    if (checkOfficeMembership) {
+      const offices = await this.officeRepo.getOfficesByUserMembership(userId, [
+        EnumOfficeMemberRole.OWNER,
+        EnumOfficeMemberRole.SECRETARY,
+        EnumOfficeMemberRole.CO_FOUNDER,
+      ]);
+      const office = offices.find(
+        o =>
+          project.office_id.toString() === o.id?.toString() &&
+          o.members.some(m => m.user_id === userId),
+      );
+      if (!office) {
+        throw new HttpErrors.UnprocessableEntity(
+          `Invalid membership access, User id: ${userId}, Project Id: ${projectId}`,
+        );
+      }
+    }
+
+    project.markAsRemoved(userId);
+    await this.buildingProjectRepo.update(project);
+  }
+
   async getProjectDetailsById(
     userId: string,
     id: string,
-    options?: GetProjectDetailsOptions,
+    options?: CheckProjectDetailsOptions,
   ): Promise<BuildingProjectDTO> {
     const project = await this.getProjectByUserIdRaw(userId, id, options);
     return BuildingProjectDTO.fromModel(project);
@@ -180,7 +212,7 @@ export class ProjectManagementService {
   async getBuildingGroupConditionByProject(
     userId: string,
     projectId: string,
-    options?: GetProjectDetailsOptions,
+    options?: CheckProjectDetailsOptions,
   ): Promise<BuildingGroupDTO | null> {
     // Find project
     const project = await this.getProjectByUserIdRaw(
@@ -311,7 +343,7 @@ export class ProjectManagementService {
     userId: string,
     id: string,
     staffStatuses = [EnumStatus.ACTIVE],
-    {checkOfficeMembership, checkUserAccess}: GetProjectDetailsOptions = {
+    {checkOfficeMembership, checkUserAccess}: CheckProjectDetailsOptions = {
       checkUserAccess: true,
       checkOfficeMembership: true,
     },
@@ -871,7 +903,7 @@ export class ProjectManagementService {
   async getProjectByUserIdRaw(
     userId: string,
     id: string,
-    {checkOfficeMembership, checkUserAccess}: GetProjectDetailsOptions = {
+    {checkOfficeMembership, checkUserAccess}: CheckProjectDetailsOptions = {
       checkUserAccess: true,
       checkOfficeMembership: true,
     },
@@ -995,7 +1027,7 @@ export class ProjectManagementService {
   async getProjectByUserId(
     userId: string,
     id: string,
-    options?: GetProjectDetailsOptions,
+    options?: CheckProjectDetailsOptions,
   ): Promise<BuildingProjectDTO> {
     const project = await this.getProjectByUserIdRaw(userId, id, options);
     return BuildingProjectDTO.fromModel(project);

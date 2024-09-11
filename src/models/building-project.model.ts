@@ -907,6 +907,18 @@ export class BuildingProject extends Entity {
       ) ?? []
     );
   }
+
+  markAsRemoved(userId: string): void {
+    const allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY];
+    if (!allowedStatus.includes(this.progress_status)) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Invalid project state, state: ${this.progress_status}`,
+      );
+    }
+    const now = new ModifyStamp({by: userId});
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = now;
+  }
 }
 
 export interface ProjectRelations {

@@ -446,4 +446,19 @@ export class ProjectOperatorsController {
       false,
     );
   }
+
+  @del(`${BASE_ADDR}/{project_id}`, {
+    tags,
+    summary: 'Remove project',
+    description: 'Remove project',
+    responses: {204: {}},
+  })
+  async removeProjectById(
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeProjectById(userId, projectId, {
+      checkOfficeMembership: true,
+    });
+  }
 }
