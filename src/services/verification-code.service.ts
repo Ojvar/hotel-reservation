@@ -13,6 +13,7 @@ type RedisVerificationCode = {
   tracking_code: string;
   code: number;
   meta: AnyObject;
+  lawyer_nid?: string;
 };
 
 @injectable({scope: BindingScope.APPLICATION})
@@ -40,6 +41,7 @@ export class VerificationCodeService {
     postfix: string | number,
     expireTime: number = 180,
     meta: AnyObject = {},
+    lawyer: Profile | undefined = undefined,
   ): Promise<string> {
     const key = this.getKey([this.C_PRJ_MGR, owner.n_in, postfix]);
 
@@ -60,6 +62,7 @@ export class VerificationCodeService {
       tracking_code: trackingCode,
       code,
       meta,
+      lawyer_nid: lawyer?.n_in,
     };
 
     // Store in redis
@@ -71,7 +74,8 @@ export class VerificationCodeService {
 
     // Send sms
     const ownerName = owner.first_name + ' ' + owner.last_name;
-    const msg = `مالک گرامی، ${ownerName} (${owner.n_in})
+    const msg = `سازمان نظرام مهندسی ساختمان استان قزوین
+مالک گرامی، ${ownerName} (${owner.n_in})
 کد تایید جهت ${title}
 ${code}
 
@@ -81,7 +85,7 @@ ${code}
       sender: this.C_PROJECT_MANAGMENET_SMS_SENDER,
       tag: this.C_PROJECT_MANAGMENET_SMS_TAG,
       body: msg,
-      receiver: owner.mobile,
+      receiver: lawyer?.mobile ?? owner.mobile,
     });
     await this.messageService.sendSms(smsMessage);
 
@@ -92,6 +96,7 @@ ${code}
     nIn: string,
     postfix: number,
     verificationCode: number,
+    laywerNId?: string,
   ): Promise<void> {
     const key = this.getKey([this.C_PRJ_MGR, nIn, postfix]);
 
@@ -102,7 +107,10 @@ ${code}
     }
 
     const storedData = JSON.parse(oldRedisData) as RedisVerificationCode;
-    if (storedData.code.toString() !== verificationCode.toString()) {
+    if (
+      (storedData.lawyer_nid ?? laywerNId) !== laywerNId ||
+      storedData.code.toString() !== verificationCode.toString()
+    ) {
       throw new HttpErrors.UnprocessableEntity('Invalid verification code');
     }
   }

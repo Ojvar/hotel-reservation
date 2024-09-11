@@ -96,9 +96,13 @@ export class ProjectOperatorsController {
   })
   getProjectRegistrationCode(
     @param.path.string('n_id') nId: string,
-    @param.query.boolean('send_to_lawyer') sendTolawyer = false,
+    @param.query.string('lawyer_nid', {schema: {pattern: /^\d{10}$/.source}})
+    lawyerNId = '',
   ): Promise<BuildingProjectRegistrationCodeDTO> {
-    return this.projectManagementService.sendProjectRegistrationCode(nId);
+    return this.projectManagementService.sendProjectRegistrationCode(
+      nId,
+      lawyerNId,
+    );
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))

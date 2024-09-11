@@ -732,15 +732,19 @@ https://apps.qeng.ir/dashboard
 
   async sendProjectRegistrationCode(
     nId: string,
-    sendToLawyer = false,
+    lawyerNid = '',
   ): Promise<BuildingProjectRegistrationCodeDTO> {
     const userProfile = await this.profileRepo.findByNIdOrFail(nId);
+    const lawyerProfile = lawyerNid
+      ? await this.profileRepo.findByNIdOrFail(lawyerNid)
+      : undefined;
     const trackingCode =
       await this.verificationCodeService.generateAndStoreCode(
         this.configs.projectRegistrationTitle,
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
         this.configs.verificationSmsExpireTime,
+        lawyerProfile,
       );
     return new BuildingProjectRegistrationCodeDTO({
       tracking_code: trackingCode,
@@ -833,10 +837,16 @@ https://apps.qeng.ir/dashboard
 
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
+      const laywerProfile = data.lawyer
+        ? await this.profileRepo.findOne({
+            where: {user_id: data.lawyer?.user_id},
+          })
+        : undefined;
       await this.verificationCodeService.checkVerificationCodeByNId(
         nId,
         EnumRegisterProjectType.REG_PROJECT,
         verificationCode,
+        laywerProfile?.n_in,
       );
     }
 
