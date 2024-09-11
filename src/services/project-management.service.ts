@@ -128,32 +128,37 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
   ) {}
 
+  async removeProjectStaff(
+    userId: string,
+    projectId: string,
+    staffId: string,
+    {checkOfficeMembership}: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.findActiveProjectOrFail(projectId);
+    if (checkOfficeMembership) {
+      await this.getProjectByCheckingPrivileges(
+        userId,
+        projectId,
+        project.office_id.toString(),
+      );
+    }
+    project.removeStaff(userId, staffId);
+    await this.buildingProjectRepo.update(project);
+  }
+
   async removeProjectById(
     userId: string,
     projectId: string,
     {checkOfficeMembership}: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.buildingProjectRepo.findById(projectId);
-
-    // Check office membership data
+    const project = await this.findActiveProjectOrFail(projectId);
     if (checkOfficeMembership) {
-      const offices = await this.officeRepo.getOfficesByUserMembership(userId, [
-        EnumOfficeMemberRole.OWNER,
-        EnumOfficeMemberRole.SECRETARY,
-        EnumOfficeMemberRole.CO_FOUNDER,
-      ]);
-      const office = offices.find(
-        o =>
-          project.office_id.toString() === o.id?.toString() &&
-          o.members.some(m => m.user_id === userId),
+      await this.getProjectByCheckingPrivileges(
+        userId,
+        projectId,
+        project.office_id.toString(),
       );
-      if (!office) {
-        throw new HttpErrors.UnprocessableEntity(
-          `Invalid membership access, User id: ${userId}, Project Id: ${projectId}`,
-        );
-      }
     }
-
     project.markAsRemoved(userId);
     await this.buildingProjectRepo.update(project);
   }
@@ -492,17 +497,6 @@ export class ProjectManagementService {
       'https://qeng.ir',
       true,
     );
-  }
-
-  async removeProjectStaff(
-    userId: string,
-    id: string,
-    staffId: string,
-  ): Promise<void> {
-    const project = await this.buildingProjectRepo.findById(id);
-    project.removeStaff(userId, staffId);
-    project.updated = new ModifyStamp({by: userId});
-    await this.buildingProjectRepo.update(project);
   }
 
   async removeUploadedFile(
@@ -1173,6 +1167,46 @@ export class ProjectManagementService {
     }));
 
     return output;
+  }
+
+  private async getProjectByCheckingPrivileges(
+    userId: string,
+    projectId: string,
+    officeId: string,
+    allowedRoles = [
+      EnumOfficeMemberRole.OWNER,
+      EnumOfficeMemberRole.SECRETARY,
+      EnumOfficeMemberRole.CO_FOUNDER,
+    ],
+  ) {
+    // Check office membership data
+    const offices = await this.officeRepo.getOfficesByUserMembership(
+      userId,
+      allowedRoles,
+    );
+    const office = offices.find(
+      o =>
+        officeId === o.id?.toString() &&
+        o.members.some(m => m.user_id === userId),
+    );
+    if (!office) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Invalid membership access, User id: ${userId}, Project Id: ${projectId}`,
+      );
+    }
+    return office;
+  }
+
+  private async findActiveProjectOrFail(
+    projectId: string,
+  ): Promise<BuildingProject> {
+    const project = await this.buildingProjectRepo.findOne({
+      where: {id: projectId, status: EnumStatus.ACTIVE},
+    });
+    if (!project) {
+      throw new HttpErrors.NotFound(`Project not found, Id: ${projectId}`);
+    }
+    return project;
   }
 
   async getUserOfficeProjects(

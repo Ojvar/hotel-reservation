@@ -380,29 +380,6 @@ export class ProjectOperatorsController {
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @del(`${BASE_ADDR}/{id}/staff/{staff_id}`, {
-    tags,
-    summary: 'Remove staff item',
-    description: 'Remove staff item',
-    responses: {204: {}},
-  })
-  async removeStaff(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
-    @param.path.string('staff_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
-    })
-    staffId: string,
-  ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.removeProjectStaff(
-      userId,
-      id,
-      staffId,
-    );
-  }
-
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @patch(`${BASE_ADDR}/{id}/state/commit/{state}`, {
     tags,
     summary: 'Commit project state',
@@ -447,6 +424,7 @@ export class ProjectOperatorsController {
     );
   }
 
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @del(`${BASE_ADDR}/{project_id}`, {
     tags,
     summary: 'Remove project',
@@ -460,5 +438,27 @@ export class ProjectOperatorsController {
     return this.projectManagementService.removeProjectById(userId, projectId, {
       checkOfficeMembership: true,
     });
+  }
+
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+  @del(`${BASE_ADDR}/{project_id}/staff/{staff_id}`, {
+    tags,
+    summary: 'Remove staff from a project',
+    description: 'Remove staff from a project',
+    responses: {204: {}},
+  })
+  async removeProjectStaffById(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('staff_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    staffId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeProjectStaff(
+      userId,
+      projectId,
+      staffId,
+      {checkOfficeMembership: true},
+    );
   }
 }

@@ -671,10 +671,12 @@ export class BuildingProject extends Entity {
     const staffItem = this.staff?.find(
       s =>
         s.id?.toString() === staffId.toString() &&
-        s.status === EnumStatus.ACTIVE,
+        s.status !== EnumStatus.DEACTIVE,
     );
     if (!staffItem) {
-      throw new HttpErrors.NotFound('Staff item not found');
+      throw new HttpErrors.NotFound(
+        `Staff item not found, Staff id: ${staffId}`,
+      );
     }
     staffItem.markAsRemoved(userId);
     this.updated = new ModifyStamp({by: userId});

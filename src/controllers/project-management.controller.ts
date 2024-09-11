@@ -21,6 +21,7 @@ import {
   protect,
 } from '../lib-keycloak/src';
 import {Filter} from '@loopback/repository';
+import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
@@ -99,5 +100,26 @@ export class ProjectManagementController {
     return this.projectManagementService.removeProjectById(userId, projectId, {
       checkOfficeMembership: false,
     });
+  }
+
+  @del(`${BASE_ADDR}/{project_id}/staff/{staff_id}`, {
+    tags,
+    summary: 'Remove staff from a project',
+    description: 'Remove staff from a project',
+    responses: {204: {}},
+  })
+  async removeProjectStaffById(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('staff_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    staffId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeProjectStaff(
+      userId,
+      projectId,
+      staffId,
+      {checkOfficeMembership: false},
+    );
   }
 }

@@ -473,6 +473,14 @@ export class BuildingProjectLawyerDTO extends Model {
   status: EnumStatus;
   @property({})
   profile: Profile;
+  @property({type: 'string', required: true})
+  auth_pwd: string;
+  @property({type: 'date', required: false})
+  expire_date?: Date;
+  @property({type: 'string', required: true})
+  document_no: string;
+  //@property({type: 'string', required: false})
+  attachment_id: string;
 
   constructor(data?: Partial<BuildingProjectLawyerDTO>) {
     super(data);
@@ -490,6 +498,9 @@ export class BuildingProjectLawyerDTO extends Model {
       power_of_attorney_date: data?.power_of_attorney_date,
       power_of_attorney_number: data?.power_of_attorney_number,
       description: data?.description,
+      auth_pwd: data.auth_pwd,
+      document_no: data.document_no,
+      expire_date: data.expire_date,
       /// TODO: Add File INfo
       profile: data.profile
         ? new Profile({
