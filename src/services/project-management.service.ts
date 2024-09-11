@@ -24,6 +24,7 @@ import {
   NewProjectStaffRequestDTO,
   SetBuildingProjectStaffResponseDTO,
   SignFilesRequestDTO,
+  SmsMessage,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
@@ -53,6 +54,7 @@ import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.servi
 import {FileServiceAgentService} from './file-agent.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
 import {VerificationCodeService} from './verification-code.service';
+import {MessageService} from './message.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -78,15 +80,25 @@ type FieldMapper = {
 type FieldMappers = FieldMapper[];
 
 const CATEGORY_LICENSE_TAG = 'LICENSE_TAG';
-const MAX_ATTACHMENT_ITEM_COUNT = 4;
+
+export type ProjectManagementServiceConfig = {
+  maxAttachmentsItemCount: number;
+  pushNotification: boolean;
+  sendSMS: boolean;
+  verificationSmsExpireTime: number;
+  projectRegistrationTitle: string;
+};
 
 @injectable({scope: BindingScope.REQUEST})
 export class ProjectManagementService {
   static BINDING_KEY = BindingKey.create<ProjectManagementService>(
     `services.${ProjectManagementService.name}`,
   );
+  static CONFIG_BINDING_KEY = BindingKey.create<ProjectManagementServiceConfig>(
+    `services.config.${ProjectManagementService.name}`,
+  );
 
-  static readonly ALLOWED_FILES = [
+  readonly ALLOWED_FILES = [
     'STRUCTURE_MAP',
     'STRUCTURE_CALCULATION',
     'ARCHITECTURAL_MAP',
@@ -101,16 +113,15 @@ export class ProjectManagementService {
   ]
     .map(item =>
       Array.from(
-        {length: MAX_ATTACHMENT_ITEM_COUNT},
+        {length: this.configs.maxAttachmentsItemCount},
         (_, index) => `${item}_${index + 1}`,
       ),
     )
     .flatMap(x => x);
 
-  readonly VERIFICATION_SMS_EXPIRE_TIME = 300;
-  readonly PROJECT_REGISTRATION_TITLE = 'ثبت پروژه';
-
   constructor(
+    @inject(ProjectManagementService.CONFIG_BINDING_KEY)
+    private configs: ProjectManagementServiceConfig,
     @repository(BaseDataRepository) private basedataRepo: BaseDataRepository,
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
     @repository(OfficeRepository) private officeRepo: OfficeRepository,
@@ -126,6 +137,8 @@ export class ProjectManagementService {
     private fileServiceAgent: FileServiceAgentService,
     @inject(PushNotificationAgentService.BINDING_KEY)
     private pushNotifAgent: PushNotificationAgentService,
+    @inject(MessageService.BINDING_KEY)
+    private messageService: MessageService,
   ) {}
 
   async removeProjectStaff(
@@ -182,10 +195,13 @@ export class ProjectManagementService {
     });
     return basedata
       .map(item =>
-        Array.from({length: MAX_ATTACHMENT_ITEM_COUNT}, (_, index) => ({
-          field: `${item.meta?.file_field}_${index + 1}`,
-          id: item.getId(),
-        })),
+        Array.from(
+          {length: this.configs.maxAttachmentsItemCount},
+          (_, index) => ({
+            field: `${item.meta?.file_field}_${index + 1}`,
+            id: item.getId(),
+          }),
+        ),
       )
       .flatMap(x => x);
   }
@@ -480,23 +496,48 @@ export class ProjectManagementService {
     });
 
     // Send push message
-    const msg = `مهندس گرامی
-شما به عنوان مهندس طراح در پروژه ${project.case_no.case_no} انتخاب شده اید
-لطفا برای تایید/عدم تایید به پورتال خود مراجعه فرمایید`;
+    const title = 'سازمان نظام مهندسی ساختمان استان قزوین';
+    const msg = `شما به عنوان مهندس در پروژه ${project.case_no.case_no} انتخاب شده اید
+لطفا برای تایید/عدم تایید به آدرس زیر مراجعه فرمایید
+https://apps.qeng.ir/dashboard
+`;
     const tags = ['PROJECT_SERVICE', 'STAFF_ASSIGNMENT'];
-    const targets = Array.from(new Set(profiles.map(x => x.n_in)));
-    const title = 'درخواست همکاری در پروژه';
-    await this.pushNotifAgent.publish(
-      EnumTargetType.USERS,
-      title,
-      msg,
-      targets,
-      tags,
-      'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
-      'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
-      'https://qeng.ir',
-      true,
-    );
+
+    const sendNotif = () => {
+      if (!this.configs.pushNotification) {
+        return Promise.resolve();
+      }
+      const targets = Array.from(new Set(profiles.map(x => x.n_in)));
+      return this.pushNotifAgent.publish(
+        EnumTargetType.USERS,
+        title,
+        msg,
+        targets,
+        tags,
+        'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
+        'https://qeng.ir/wp-content/uploads/2022/03/qeng-logo.png',
+        'https://qeng.ir',
+        true,
+      );
+    };
+
+    const sendMessages = async () => {
+      if (!this.configs.sendSMS) {
+        return;
+      }
+      const smsTargets = Array.from(new Set(profiles.map(x => x.mobile)));
+      for (const target of smsTargets) {
+        await this.messageService.sendSms(
+          new SmsMessage({
+            sender: 'PROJECT_SERVICE',
+            tag: tags.join(','),
+            receiver: target,
+            body: ['درخواست همکاری در پروژه', msg].join('\n'),
+          }),
+        );
+      }
+    };
+    await Promise.all([sendNotif(), sendMessages()]);
   }
 
   async removeUploadedFile(
@@ -641,7 +682,7 @@ export class ProjectManagementService {
     allowedUser: string,
     fields: string[] = [],
   ): Promise<FileTokenResponse> {
-    const allowedFiles = ProjectManagementService.ALLOWED_FILES.filter(file =>
+    const allowedFiles = this.ALLOWED_FILES.filter(file =>
       fields.includes(file),
     ).map(x => FileServiceAgentService.generateAllowedFile(x));
     if (!allowedFiles.length) {
@@ -691,14 +732,15 @@ export class ProjectManagementService {
 
   async sendProjectRegistrationCode(
     nId: string,
+    sendToLawyer = false,
   ): Promise<BuildingProjectRegistrationCodeDTO> {
     const userProfile = await this.profileRepo.findByNIdOrFail(nId);
     const trackingCode =
       await this.verificationCodeService.generateAndStoreCode(
-        this.PROJECT_REGISTRATION_TITLE,
+        this.configs.projectRegistrationTitle,
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
-        this.VERIFICATION_SMS_EXPIRE_TIME,
+        this.configs.verificationSmsExpireTime,
       );
     return new BuildingProjectRegistrationCodeDTO({
       tracking_code: trackingCode,

@@ -96,6 +96,7 @@ export class ProjectOperatorsController {
   })
   getProjectRegistrationCode(
     @param.path.string('n_id') nId: string,
+    @param.query.boolean('send_to_lawyer') sendTolawyer = false,
   ): Promise<BuildingProjectRegistrationCodeDTO> {
     return this.projectManagementService.sendProjectRegistrationCode(nId);
   }

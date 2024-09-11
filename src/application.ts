@@ -19,7 +19,11 @@ import {
   KeycloakSequence,
 } from './lib-keycloak/src';
 import {SentryComponent, SentryInterceptor} from './lib-sentry/src';
-import {MsSqlService} from './services';
+import {
+  MsSqlService,
+  ProjectManagementService,
+  ProjectManagementServiceConfig,
+} from './services';
 import {config as SqlConfig} from 'mssql';
 import {
   RedisClientOptions,
@@ -68,6 +72,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   authDataSourceConfig: AuthDataSourceConfig;
   fileServiceBaseURL: string;
   pushNotificationDataSourceConfig: PushNotificationDataSourceConfig;
+  projectManagementServiceConfig: ProjectManagementServiceConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -162,5 +167,10 @@ export class ProjectsServiceApplication extends BootMixin(
       baseURL: options.fileServiceBaseURL,
     });
     this.component(FileServiceComponent);
+
+    // Internal Services
+    this.bind(ProjectManagementService.CONFIG_BINDING_KEY).to(
+      options.projectManagementServiceConfig,
+    );
   }
 }

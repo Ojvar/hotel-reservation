@@ -14,6 +14,7 @@ export class MessageService {
   ) {}
 
   async sendSms(sms: SmsMessage): Promise<void> {
+    console.debug(sms);
     await this.rabbitmqProducer.publish(
       'message',
       'sms',

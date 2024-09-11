@@ -118,6 +118,18 @@ export function getApplicationConfig(
       password: process.env.QENG_DB_PASSWORD,
       database: process.env.QENG_DB_DATABASE,
     },
+    projectManagementServiceConfig: {
+      maxAttachmentsItemCount: +(
+        process.env.PRJ_MGR_MAX_ATTACHMENTS_ITEM_COUNT ?? '4'
+      ),
+      pushNotification: process.env.PRJ_MGR_PUSH_NOTIF === 'true',
+      sendSMS: process.env.PRJ_MGR_SEND_SMS === 'true',
+      verificationSmsExpireTime: +(
+        process.env.PRJ_MSG_VERIFICATION_SMS_EXPIRE_TIME ?? '300'
+      ),
+      projectRegistrationTitle:
+        process.env.PROJECT_REGISTRATION_TITLE ?? 'ثبت پروژه',
+    },
     rabbitmqConfig: {
       options: {
         protocol: process.env.RABBITMQ_PROTOCOL,

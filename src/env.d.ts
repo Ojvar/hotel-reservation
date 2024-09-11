@@ -50,5 +50,11 @@ declare namespace NodeJS {
     AUTH_SERVICE_BASE_URL: string;
     FILE_SERVICE_BASE_URL: string;
     PUSH_NOTIFICATION_SERVICE_BASE_URL: string;
+
+    PRJ_MGR_MAX_ATTACHMENTS_ITEM_COUNT: string;
+    PRJ_MGR_PUSH_NOTIF: string;
+    PRJ_MGR_SEND_SMS: string;
+    PRJ_MSG_VERIFICATION_SMS_EXPIRE_TIME: string;
+    PRJ_MSG_PROJECT_REGISTRATION_TITLE: string;
   }
 }
