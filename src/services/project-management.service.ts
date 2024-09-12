@@ -26,6 +26,7 @@ import {
   SignFilesRequestDTO,
   SmsMessage,
   UpdateInvoiceRequestDTO,
+  ValidateFormNumberResultDTO,
 } from '../dto';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
@@ -140,6 +141,50 @@ export class ProjectManagementService {
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
   ) {}
+
+  async validateFormNumber(
+    nId: string,
+    formNo: string,
+  ): Promise<ValidateFormNumberResultDTO> {
+    const uniqueKey = BuildingProject.generateUniqueKey(nId, formNo);
+    const project = await this.buildingProjectRepo.findOne({
+      where: {unique_key: uniqueKey, status: {neq: EnumStatus.DEACTIVE}},
+    });
+    return new ValidateFormNumberResultDTO({
+      is_unique: !project,
+      unique_key: uniqueKey,
+    });
+  }
+
+  private async validateFormNumberByProjectData(
+    data: NewBuildingProjectRequestDTO,
+  ): Promise<string> {
+    // We accept just one delegate owner
+    const delegateOwners = data.owners.filter(x => !!x.is_delegate);
+    const delegateOwner =
+      delegateOwners.length !== 1 ? undefined : delegateOwners[0];
+    const delegateUserId = delegateOwner?.user_id;
+    const delegateProfile =
+      delegateUserId &&
+      (await this.profileRepo.findOne({
+        where: {user_id: delegateUserId},
+      }));
+    if (!delegateUserId || !delegateProfile) {
+      throw new HttpErrors.NotAcceptable(
+        'No delegate owner has been specified',
+      );
+    }
+    const {is_unique, unique_key} = await this.validateFormNumber(
+      delegateProfile.n_in,
+      data.ownership_type.form_number,
+    );
+    if (!is_unique) {
+      throw new HttpErrors.NotAcceptable(
+        `Form number and NationaId is already exists`,
+      );
+    }
+    return unique_key;
+  }
 
   async removeProjectStaff(
     userId: string,
@@ -816,6 +861,9 @@ https://apps.qeng.ir/dashboard
     options: {checkOfficeId: boolean} = {checkOfficeId: true},
   ): Promise<BuildingProjectDTO> {
     const lawyerAttachmentField = 'LAWYER_1';
+
+    // Check project unique key
+    data.unique_key = await this.validateFormNumberByProjectData(data);
 
     // Check uploaded files list , get files info
     const attachments = await this.fileServiceAgent.getAttachments(

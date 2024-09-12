@@ -28,6 +28,16 @@ import {FileInfoDTO} from '../lib-file-service/src';
 import {KEYCLOAK_ID_REGEX} from '../lib-models/src';
 
 @model()
+export class ValidateFormNumberResultDTO extends Model {
+  @property({type: 'boolean'}) is_unique: boolean;
+  @property({type: 'string'}) unique_key: string;
+
+  constructor(data?: Partial<ValidateFormNumberResultDTO>) {
+    super(data);
+  }
+}
+
+@model()
 export class SignFilesRequestDTO extends Model {
   @property.array(String, {
     jsonSchema: {pattern: MONGO_ID_REGEX.source},

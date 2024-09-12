@@ -377,6 +377,9 @@ export class NewBuildingProjectRequestDTO extends Model {
   @property({required: true})
   specification: NewBuildingProjectSpecificationDTO;
 
+  // Invisible fields
+  unique_key: string;
+
   constructor(data?: Partial<NewBuildingProjectRequestDTO>) {
     super(data);
 
@@ -405,6 +408,7 @@ export class NewBuildingProjectRequestDTO extends Model {
     return new BuildingProject({
       created: now,
       updated: now,
+      unique_key: this.unique_key,
       office_id: this.office_id,
       case_no: BuildingProjectCaseNo.fromString(this.case_no ?? '00-0000'),
       case_date: this.case_date,

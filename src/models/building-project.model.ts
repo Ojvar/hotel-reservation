@@ -580,6 +580,8 @@ export class BuildingProject extends Entity {
   updated: ModifyStamp;
   @property({required: true, jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
+  @property({type: 'string'})
+  unique_key?: string;
   @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
   progress_status: EnumProgressStatus;
   @property.array(ProgressStatusItem)
@@ -921,6 +923,15 @@ export class BuildingProject extends Entity {
     this.status = EnumStatus.DEACTIVE;
     this.updated = now;
   }
+
+  static generateUniqueKey = (nId: string, formNo: string) =>
+    [
+      nId,
+      formNo
+        .split(/\D/gi)
+        .filter(x => !!x)
+        .at(-1),
+    ].join('-');
 }
 
 export interface ProjectRelations {

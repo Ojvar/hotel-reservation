@@ -25,6 +25,7 @@ import {
   ProjectSummaryEngineerDTO,
   SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
+  ValidateFormNumberResultDTO,
 } from '../dto';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {
@@ -495,5 +496,27 @@ export class ProjectOperatorsController {
     @param.path.string('auth_pwd') authPwd: string,
   ): Promise<AnyObject> {
     return this.registrationOrg.documentVerification(documentNo, authPwd);
+  }
+
+  @intercept(protect(EnumRoles.NO_BODY))
+  @get(`${BASE_ADDR}/validation/{n_id}/{form_no}`, {
+    tags,
+    summary: "Validating project's form number",
+    description: "Validating project's form number",
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(ValidateFormNumberResultDTO),
+          },
+        },
+      },
+    },
+  })
+  validateFormNumber(
+    @param.path.string('n_id') nId: string,
+    @param.path.string('form_no') formNo: string,
+  ): Promise<ValidateFormNumberResultDTO> {
+    return this.projectManagementService.validateFormNumber(nId, formNo);
   }
 }
