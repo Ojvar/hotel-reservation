@@ -107,6 +107,9 @@ export function getApplicationConfig(
     fileServiceBaseURL: process.env.FILE_SERVICE_BASE_URL,
     authDataSourceConfig: {baseURL: process.env.AUTH_SERVICE_BASE_URL},
     pofileDataSourceConfig: {baseURL: process.env.PROFILE_SERVICE_BASE_URL},
+    registrationOrgDataSourceConfig: {
+      baseURL: process.env.REGISTRATION_ORG_BASE_URL,
+    },
     pushNotificationDataSourceConfig: {
       baseURL: process.env.PUSH_NOTIFICATION_SERVICE_BASE_URL,
     },

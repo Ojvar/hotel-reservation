@@ -18,6 +18,7 @@ import {
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
+  DocumentValidationResultDTO,
   FileTokenRequestDTO,
   NewBuildingProjectRequestDTO,
   NewProjectStaffRequestDTO,
@@ -38,7 +39,12 @@ import {
   EnumStatus,
   MONGO_ID_REGEX,
 } from '../models';
-import {ProjectConverterService, ProjectManagementService} from '../services';
+import {
+  ProjectConverterService,
+  ProjectManagementService,
+  RegistrationOrg,
+  RegistrationOrgProvider,
+} from '../services';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
@@ -51,6 +57,8 @@ export class ProjectOperatorsController {
     private keycloakSecurity: KeycloakSecurity,
     @inject(ProjectConverterService.BINDING_KEY)
     private projectConverterService: ProjectConverterService,
+    @inject(RegistrationOrgProvider.BINDING_KEY)
+    private registrationOrg: RegistrationOrg,
   ) {}
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
@@ -465,5 +473,27 @@ export class ProjectOperatorsController {
       staffId,
       {checkOfficeMembership: true},
     );
+  }
+
+  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+  @get(`${BASE_ADDR}/documents/{document_no}/{auth_pwd}`, {
+    tags,
+    summary: 'Get document validation result',
+    description: 'Get document validation result',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(DocumentValidationResultDTO),
+          },
+        },
+      },
+    },
+  })
+  getDocumentRegistrationDetailOfLawyers(
+    @param.path.string('document_no') documentNo: string,
+    @param.path.string('auth_pwd') authPwd: string,
+  ): Promise<AnyObject> {
+    return this.registrationOrg.documentVerification(documentNo, authPwd);
   }
 }

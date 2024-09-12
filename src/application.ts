@@ -44,6 +44,8 @@ import {
   ProfileDataSourceConfig,
   QengDataSource,
   QengDataSourceConfig,
+  RegistrationOrgDataSource,
+  RegistrationOrgDataSourceConfig,
 } from './datasources';
 import * as sentry from '@sentry/node';
 import {
@@ -73,6 +75,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   fileServiceBaseURL: string;
   pushNotificationDataSourceConfig: PushNotificationDataSourceConfig;
   projectManagementServiceConfig: ProjectManagementServiceConfig;
+  registrationOrgDataSourceConfig: RegistrationOrgDataSourceConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -167,6 +170,11 @@ export class ProjectsServiceApplication extends BootMixin(
       baseURL: options.fileServiceBaseURL,
     });
     this.component(FileServiceComponent);
+
+    // Registration Org datasource
+    this.bind(RegistrationOrgDataSource.CONFIG_BINDING_KEY).to(
+      options.registrationOrgDataSourceConfig,
+    );
 
     // Internal Services
     this.bind(ProjectManagementService.CONFIG_BINDING_KEY).to(
