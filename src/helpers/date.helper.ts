@@ -12,3 +12,8 @@ export const getPersianDate = (date = new Date()) => {
 
 export const getPersianDateParts = (date = new Date()): string[] =>
   getPersianDate(date).split('/');
+
+export const addMonth = (date = new Date(), monthValue = 1): Date => {
+  date = new Date(date);
+  return new Date(date.setMonth(date.getMonth() + monthValue));
+};

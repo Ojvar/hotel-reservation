@@ -28,7 +28,12 @@ import {
   UpdateInvoiceRequestDTO,
   ValidateFormNumberResultDTO,
 } from '../dto';
-import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
+import {
+  addMonth,
+  adjustMin,
+  adjustRange,
+  getPersianDateParts,
+} from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
@@ -141,6 +146,31 @@ export class ProjectManagementService {
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
   ) {}
+
+  async checkAndExpireProjects(
+    userId: string,
+    projectId?: string,
+  ): Promise<void> {
+    const expireDate = addMonth(new Date(), -2);
+    await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'updateAll',
+
+      projectId
+        ? {_id: new ObjectId(projectId)}
+        : {
+            'ownership_type.issue_date': {$lt: expireDate},
+            status: EnumStatus.ACTIVE,
+            progress_status: EnumProgressStatus.OFFICE_DATA_ENTRY,
+          },
+      {
+        $set: {
+          status: EnumStatus.DEACTIVE,
+          updated: new ModifyStamp({by: userId}),
+        },
+      },
+    );
+  }
 
   async validateFormNumber(
     nId: string,

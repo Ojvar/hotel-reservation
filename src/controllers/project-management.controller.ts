@@ -122,4 +122,20 @@ export class ProjectManagementController {
       {checkOfficeMembership: false},
     );
   }
+
+  @post(`${BASE_ADDR}/batch-updates/expire-projects`, {
+    tags,
+    summary: 'Check projects stauts to expire them',
+    description: 'Check projects stauts to expire them',
+    responses: {204: {}},
+  })
+  async checkAndExpireProjects(
+    @param.query.string('project_id') projectId?: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.checkAndExpireProjects(
+      userId,
+      projectId,
+    );
+  }
 }
