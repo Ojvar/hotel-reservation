@@ -105,7 +105,7 @@ export class ProjectOperatorsController {
   })
   getProjectRegistrationCode(
     @param.path.string('n_id') nId: string,
-    @param.query.string('lawyer_nid', {schema: {pattern: /^\d{10}$/.source}})
+    @param.query.string('lawyer_nid')
     lawyerNId = '',
   ): Promise<BuildingProjectRegistrationCodeDTO> {
     return this.projectManagementService.sendProjectRegistrationCode(
