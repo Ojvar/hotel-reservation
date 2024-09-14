@@ -34,8 +34,9 @@ export class OfficeRepository extends DefaultCrudRepository<
             'membership.role': {$in: roles},
             'membership.from': {$lte: now},
             $or: [
-              {'membership.to': {$gte: now}},
               {'membership.to': {$exists: false}},
+              {'membership.to': null},
+              {'membership.to': {$gte: now}},
             ],
           },
         },

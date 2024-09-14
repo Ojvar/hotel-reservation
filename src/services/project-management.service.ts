@@ -477,6 +477,7 @@ export class ProjectManagementService {
                     'membership.from': {$lte: now},
                     $or: [
                       {'members.membership.to': {$exists: false}},
+                      {'members.membership.to': null},
                       {'members.membership.to': {$gte: now}},
                     ],
                   },
@@ -1072,6 +1073,7 @@ https://apps.qeng.ir/dashboard
                 'office.members.membership.from': {$lte: new Date()},
                 $or: [
                   {'members.membership.to': {$exists: false}},
+                  {'members.membership.to': null},
                   {'members.membership.to': {$gte: now}},
                 ],
                 'office.members.membership.role': {
@@ -1508,6 +1510,7 @@ https://apps.qeng.ir/dashboard
           'members.membership.from': {$lte: now},
           $or: [
             {'members.membership.to': {$exists: false}},
+            {'members.membership.to': null},
             {'members.membership.to': {$gte: now}},
           ],
         },
