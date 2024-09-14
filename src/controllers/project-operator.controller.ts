@@ -18,6 +18,8 @@ import {
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
+  BuildingProjectTSItemUnitInfoRequestDTO,
+  BuildingProjectTSItemUnitInfosRequestDTO,
   DocumentValidationResultDTO,
   FileTokenRequestDTO,
   NewBuildingProjectRequestDTO,
@@ -115,7 +117,7 @@ export class ProjectOperatorsController {
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @patch(`${BASE_ADDR}/project/{id}`, {
+  @patch(`${BASE_ADDR}/project/{project_id}`, {
     tags,
     summary: 'Update project',
     description: 'Update project',
@@ -129,11 +131,11 @@ export class ProjectOperatorsController {
   })
   async updateProject(
     @requestBody() body: NewBuildingProjectRequestDTO,
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     body = new NewBuildingProjectRequestDTO(body);
-    return this.projectManagementService.updateProject(userId, id, body);
+    return this.projectManagementService.updateProject(userId, projectId, body);
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
@@ -287,10 +289,14 @@ export class ProjectOperatorsController {
       },
     },
   })
-  getUploadedFiles(
+  async getUploadedFiles(
     @param.path.string('id') id: string,
   ): Promise<BuildingProjectAttachmentsDTO> {
-    return this.projectManagementService.getFilesList(id);
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getFilesList(userId, id, {
+      checkOfficeMembership: false,
+      checkUserAccess: false,
+    });
   }
 
   @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
@@ -516,5 +522,58 @@ export class ProjectOperatorsController {
     @param.path.string('form_no') formNo: string,
   ): Promise<ValidateFormNumberResultDTO> {
     return this.projectManagementService.validateFormNumber(nId, formNo);
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec`, {
+    tags,
+    summary: 'Add technical specification data',
+    description: 'Add technical specification data',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationUnitInfoData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'array',
+            items: getModelSchemaRef(BuildingProjectTSItemUnitInfoRequestDTO),
+          },
+        },
+      },
+    })
+    body: BuildingProjectTSItemUnitInfosRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecUnitInfoItem(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: false},
+    );
+  }
+
+  @del(`${BASE_ADDR}/{project_id}/technical-spec/{tech_spec_item_id}`, {
+    tags,
+    summary: 'Remove technical specification data',
+    description: 'Remove technical specification data',
+    responses: {204: {}},
+  })
+  async removeTechnicalSpecificationData(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('tech_spec_item_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    techSpecItemId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeTechnicalSpecItem(
+      userId,
+      projectId,
+      techSpecItemId,
+      {checkOfficeMembership: true},
+    );
   }
 }

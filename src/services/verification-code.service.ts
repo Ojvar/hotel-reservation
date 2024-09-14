@@ -41,7 +41,7 @@ export class VerificationCodeService {
     postfix: string | number,
     expireTime: number = 180,
     meta: AnyObject = {},
-    lawyer: Profile | undefined = undefined,
+    lawyer?: Profile,
   ): Promise<string> {
     const key = this.getKey([this.C_PRJ_MGR, owner.n_in, postfix]);
 

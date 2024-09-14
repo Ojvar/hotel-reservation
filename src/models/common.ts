@@ -12,4 +12,5 @@ export {
   MONGODB_OBJ_ID,
   REMOVE_ID_SETTING,
   TimestampModelWithId,
+  KEYCLOAK_ID_REGEX,
 } from '../lib-models/src';

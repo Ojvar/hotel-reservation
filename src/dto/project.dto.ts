@@ -162,9 +162,6 @@ export class BuildingNewProjectLawyerDTO extends Model {
   @property({type: 'date', required: false})
   expire_date?: Date;
 
-  // Private fields
-  attachment_id?: string;
-
   constructor(data?: Partial<BuildingNewProjectLawyerDTO>) {
     super(data);
   }
@@ -183,7 +180,6 @@ export class BuildingNewProjectLawyerDTO extends Model {
         : undefined,
       power_of_attorney_number: this.power_of_attorney_number,
       description: this.description,
-      attachment_id: this.attachment_id,
     });
   }
 }

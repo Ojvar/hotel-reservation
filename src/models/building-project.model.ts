@@ -7,6 +7,7 @@ import {
   model,
   property,
 } from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 import {
   EnumStatus,
   EnumStatusValues,
@@ -14,8 +15,11 @@ import {
   REMOVE_ID_SETTING,
   TimestampModelWithId,
 } from './common';
-import {HttpErrors} from '@loopback/rest';
 import {Office} from './office.model';
+
+export enum EnumBuildingProjectTechSpecItems {
+  UNIT_INFO = 'UNIT_INFO',
+}
 
 export enum EnumProgressStatus {
   OFFICE_DATA_ENTRY = 0,
@@ -208,8 +212,6 @@ export class BuildingProjectLawyer extends TimestampModelWithId {
   expire_date?: Date;
   @property({type: 'string', required: true})
   document_no: string;
-  @property({type: 'string', required: false})
-  attachment_id: string;
 
   constructor(data?: Partial<BuildingProjectLawyer>) {
     super(data);
@@ -571,7 +573,7 @@ export class ProgressStatusItem extends TimestampModelWithId {
 export type ProgressStatusItems = ProgressStatusItem[];
 
 @model({...REMOVE_ID_SETTING})
-export class BuildingProjectTSItemUnitTechSpec extends Model {
+export class BuildingProjectTSItemUnitInfo extends Model {
   @property({type: 'number', required: true}) unit_no: number;
   @property({type: 'number', required: true}) floor: number;
   @property({type: 'number', required: true}) area: number;
@@ -588,10 +590,11 @@ export class BuildingProjectTSItemUnitTechSpec extends Model {
   @property({type: 'string', required: true}) storage_location: string;
   @property({type: 'number', required: true}) storage_area: number;
 
-  constructor(data?: BuildingProjectTSItemUnitTechSpec) {
+  constructor(data?: Partial<BuildingProjectTSItemUnitInfo>) {
     super(data);
   }
 }
+export type BuildingProjectTechSpecData = BuildingProjectTSItemUnitInfo;
 
 @model()
 export class BuildingProjectTechSpec extends TimestampModelWithId {
@@ -610,9 +613,13 @@ export class BuildingProjectTechSpec extends TimestampModelWithId {
     super(data);
     this.status = this.status ?? EnumStatus.ACTIVE;
   }
+
+  markAsRemoved(userId: string): void {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: userId});
+  }
 }
 export type BuildingProjectTechSpecs = BuildingProjectTechSpec[];
-export type BuildingProjectTechSpecData = BuildingProjectTSItemUnitTechSpec;
 
 @model({
   name: 'building_projects',
@@ -719,6 +726,14 @@ export class BuildingProject extends Entity {
 
   get mainOwner(): BuildingProjectOwner | undefined {
     return this.ownership.owners.find(owner => owner.is_delegate);
+  }
+
+  get activeTechnicalSpecifications(): BuildingProjectTechSpecs {
+    return (
+      this.technical_specifications?.filter(
+        x => x.status === EnumStatus.ACTIVE,
+      ) ?? []
+    );
   }
 
   addStaff(staffItems: BuildingProjectStaffItems): void {
@@ -995,7 +1010,40 @@ export class BuildingProject extends Entity {
     this.updated = now;
   }
 
-  //addTechnicalSpec(userId: string, )
+  addTechnicalSpecItem(userId: string, data: BuildingProjectTechSpecs): void {
+    const now = new ModifyStamp({by: userId});
+    data = data.map(
+      x =>
+        new BuildingProjectTechSpec({
+          ...x,
+          created: now,
+          updated: now,
+        }),
+    );
+    this.technical_specifications = [
+      ...(this.technical_specifications ?? []),
+      ...data,
+    ];
+    this.updated = now;
+  }
+
+  removeTechnicalSpecItem(userId: string, id: string): void {
+    const items = this.technical_specifications ?? [];
+    const index = items.findIndex(
+      x => x.id?.toString() === id.toString() && x.status === EnumStatus.ACTIVE,
+    );
+    const item =
+      index > -1 ? new BuildingProjectTechSpec(items[index]) : undefined;
+    if (!item) {
+      throw new HttpErrors.NotFound(
+        `Item not found, Specification Item id: ${id}`,
+      );
+    }
+    item.markAsRemoved(userId);
+    items[index] = item;
+    this.technical_specifications = items;
+    this.updated = new ModifyStamp({by: userId});
+  }
 }
 
 export interface ProjectRelations {

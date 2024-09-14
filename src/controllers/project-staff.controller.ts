@@ -8,6 +8,8 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {
+  BuildingProjectAttachmentDTO,
+  BuildingProjectAttachmentsDTO,
   BuildingProjectDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
@@ -156,5 +158,32 @@ export class ProjectStaffController {
   async getStaffRequestList(): Promise<BuildingProjectsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getStaffRequestsListByUserId(userId);
+  }
+
+  @get(`${BASE_ADDR}/{id}/files`, {
+    tags,
+    summary: 'Get projects uploaded files',
+    description: 'Get projects uploaded files',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectAttachmentDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUploadedFiles(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectAttachmentsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getFilesList(userId, id, {
+      checkUserAccess: true,
+      checkOfficeMembership: false,
+    });
   }
 }

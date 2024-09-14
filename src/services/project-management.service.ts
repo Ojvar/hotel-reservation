@@ -18,6 +18,8 @@ import {
   BuildingProjectsDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
+  BuildingProjectTSItemUnitInfoRequestDTO,
+  BuildingProjectTSItemUnitInfosRequestDTO,
   JobCandiateResultDTO,
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
@@ -41,7 +43,9 @@ import {
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectLawyer,
+  BuildingProjectTechSpec,
   Condition,
+  EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
   EnumProgressStatus,
   EnumStatus,
@@ -146,6 +150,70 @@ export class ProjectManagementService {
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
   ) {}
+
+  async addTechnicalSpecUnitInfoItem(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemUnitInfosRequestDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.findActiveProjectOrFail(projectId);
+
+    // Check user access
+    if (options.checkOfficeMembership) {
+      await this.userIsAllowedToProjectForOffice(
+        userId,
+        project.office_id,
+        [
+          EnumOfficeMemberRole.OWNER,
+          EnumOfficeMemberRole.SECRETARY,
+          EnumOfficeMemberRole.CO_FOUNDER,
+        ],
+        [EnumStatus.ACTIVE],
+      );
+    }
+
+    // Add items
+    const now = new ModifyStamp({by: userId});
+    project.addTechnicalSpecItem(
+      userId,
+      data.map(
+        item =>
+          new BuildingProjectTechSpec({
+            created: now,
+            updated: now,
+            status: EnumStatus.ACTIVE,
+            tags: [EnumBuildingProjectTechSpecItems.UNIT_INFO],
+            data: new BuildingProjectTSItemUnitInfoRequestDTO(item).toModel(),
+          }),
+      ),
+    );
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async removeTechnicalSpecItem(
+    userId: string,
+    projectId: string,
+    techSpecItemId: string,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.findActiveProjectOrFail(projectId);
+    // Check user access
+    if (options.checkOfficeMembership) {
+      await this.userIsAllowedToProjectForOffice(
+        userId,
+        project.office_id,
+        [
+          EnumOfficeMemberRole.OWNER,
+          EnumOfficeMemberRole.SECRETARY,
+          EnumOfficeMemberRole.CO_FOUNDER,
+        ],
+        [EnumStatus.ACTIVE],
+      );
+    }
+    project.removeTechnicalSpecItem(userId, techSpecItemId);
+    await this.buildingProjectRepo.update(project);
+  }
 
   async checkAndExpireProjects(
     userId: string,
@@ -627,9 +695,29 @@ https://apps.qeng.ir/dashboard
     await this.buildingProjectRepo.update(project);
   }
 
-  async getFilesList(id: string): Promise<BuildingProjectAttachmentsDTO> {
+  async getFilesList(
+    userId: string,
+    id: string,
+    options: CheckProjectDetailsOptions,
+  ): Promise<BuildingProjectAttachmentsDTO> {
     const aggregate: AnyObject[] = [
       {$match: {_id: new ObjectId(id)}},
+
+      // Check user access
+      ...(!options?.checkUserAccess
+        ? []
+        : [
+            {
+              $match: {
+                staff: {
+                  $elemMatch: {
+                    user_id: userId,
+                    status: {$ne: [EnumStatus.REJECTED, EnumStatus.DEACTIVE]},
+                  },
+                },
+              },
+            },
+          ]),
 
       {$unwind: '$attachments'},
       {$match: {'attachments.status': 6}},
@@ -820,6 +908,7 @@ https://apps.qeng.ir/dashboard
         userProfile,
         EnumRegisterProjectType.REG_PROJECT,
         this.configs.verificationSmsExpireTime,
+        {},
         lawyerProfile,
       );
     return new BuildingProjectRegistrationCodeDTO({
@@ -962,29 +1051,21 @@ https://apps.qeng.ir/dashboard
     }
   }
 
-  getProjectsListByUserId(
-    userId: string,
-    filter: Filter<BuildingProjectFilter> = {},
-  ): Promise<BuildingProjectsDTO> {
-    filter.where = {
-      ...filter.where,
-      status: EnumStatus.ACTIVE,
-      staff: {elemMatch: {user_id: userId, status: EnumStatus.ACCEPTED}},
-    } as object;
-    return this.getProjectsList(filter);
-  }
-
   async getProjectsList(
     filter: Filter<BuildingProjectFilter> = {},
+    {checkUserAccess}: CheckProjectDetailsOptions,
   ): Promise<BuildingProjectsDTO> {
     const {user_id = ''} = (filter.where ?? {}) as AnyObject;
     const aggregate = this.getProjectsListAggregate(filter, {
-      staff: {$elemMatch: {status: EnumStatus.ACCEPTED, user_id}},
+      ...(checkUserAccess
+        ? {staff: {$elemMatch: {status: EnumStatus.ACCEPTED, user_id}}}
+        : {}),
     });
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
       aggregate,
+      {allowDiskUse: true},
     );
     const projects = await pointer.toArray();
     return projects
@@ -1107,6 +1188,7 @@ https://apps.qeng.ir/dashboard
       BuildingProject.modelName,
       'aggregate',
       aggregate,
+      {allowDiskUse: true},
     );
     const project = await pointer.next();
     if (!project) {
@@ -1430,9 +1512,15 @@ https://apps.qeng.ir/dashboard
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
-
+    const {case_no} = where;
     return [
-      {$match: {status, ...matchClause}},
+      {
+        $match: {
+          status,
+          ...matchClause,
+          ...(case_no ? {'case_no.case_no': case_no} : {}),
+        },
+      },
       ...this.projectLookupProfileAggregate,
       {$sort: {'created.at': -1}},
       {$skip: adjustMin(filter.skip ?? 0)},

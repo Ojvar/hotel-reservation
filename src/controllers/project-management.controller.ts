@@ -11,6 +11,8 @@ import {
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
+  BuildingProjectTSItemUnitInfoRequestDTO,
+  BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
   NewBuildingProjectRequestDTO,
 } from '../dto';
@@ -61,6 +63,28 @@ export class ProjectManagementController {
     );
   }
 
+  @get(`${BASE_ADDR}/project/{id}/details`, {
+    tags,
+    summary: 'Get Project details',
+    description: 'Get Project details',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async getProjectDetails(
+    @param.path.string('id') id: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getProjectByUserId(userId, id, {
+      checkUserAccess: false,
+      checkOfficeMembership: false,
+    });
+  }
+
   @get(`${BASE_ADDR}`, {
     tags,
     summary: 'Get all projects list',
@@ -82,7 +106,10 @@ export class ProjectManagementController {
     @param.filter(BuildingProjectFilter)
     filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
-    return this.projectManagementService.getProjectsList(filter);
+    return this.projectManagementService.getProjectsList(filter, {
+      checkUserAccess: false,
+      checkOfficeMembership: false,
+    });
   }
 
   @del(`${BASE_ADDR}/{project_id}`, {
@@ -134,6 +161,59 @@ export class ProjectManagementController {
     return this.projectManagementService.checkAndExpireProjects(
       userId,
       projectId,
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/unit-info`, {
+    tags,
+    summary: 'Add technical specification data',
+    description: 'Add technical specification data',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationUnitInfoData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: {
+            type: 'array',
+            items: getModelSchemaRef(BuildingProjectTSItemUnitInfoRequestDTO),
+          },
+        },
+      },
+    })
+    body: BuildingProjectTSItemUnitInfosRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecUnitInfoItem(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: false},
+    );
+  }
+
+  @del(`${BASE_ADDR}/{project_id}/technical-spec/{tech_spec_item_id}`, {
+    tags,
+    summary: 'Remove technical specification data',
+    description: 'Remove technical specification data',
+    responses: {204: {}},
+  })
+  async removeTechnicalSpecificationData(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('tech_spec_item_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    techSpecItemId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.removeTechnicalSpecItem(
+      userId,
+      projectId,
+      techSpecItemId,
+      {checkOfficeMembership: false},
     );
   }
 }

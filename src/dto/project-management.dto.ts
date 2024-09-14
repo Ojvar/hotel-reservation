@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {AnyObject, Model, model, property} from '@loopback/repository';
+import {FileInfoDTO} from '../lib-file-service/src';
 import {
   BuildingProject,
   BuildingProjectAttachmentItem,
@@ -16,21 +17,158 @@ import {
   BuildingProjectStaffItem,
   BuildingProjectStaffItems,
   BuildingProjectStaffResponse,
+  BuildingProjectTechSpec,
+  BuildingProjectTSItemUnitInfo,
+  EnumBuildingUnitDirection,
+  EnumBuildingUnitDirectionValues,
   EnumProgressStatus,
   EnumProgressStatusValues,
   EnumStatus,
   EnumStatusValues,
+  KEYCLOAK_ID_REGEX,
   ModifyStamp,
   MONGO_ID_REGEX,
   Profile,
 } from '../models';
-import {FileInfoDTO} from '../lib-file-service/src';
-import {KEYCLOAK_ID_REGEX} from '../lib-models/src';
+
+@model()
+export class BuildingProjectTSItemUnitInfoDTO extends Model {
+  @property({type: 'number', required: true})
+  unit_no: number;
+  @property({type: 'number', required: true})
+  floor: number;
+  @property({type: 'number', required: true})
+  area: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumBuildingUnitDirectionValues},
+  })
+  direction: EnumBuildingUnitDirection;
+  @property({type: 'number', required: true})
+  parking_no: number;
+  @property({type: 'string', required: true})
+  parking_location: string;
+  @property({type: 'string', required: true})
+  parking_obstructive: string;
+  @property({type: 'number', required: true})
+  storage_no: number;
+  @property({type: 'string', required: true})
+  storage_location: string;
+  @property({type: 'number', required: true})
+  storage_area: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemUnitInfoDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemUnitInfo,
+  ): BuildingProjectTSItemUnitInfoDTO {
+    return new BuildingProjectTSItemUnitInfoDTO({
+      unit_no: data.unit_no,
+      floor: data.floor,
+      area: data.area,
+      direction: data.direction,
+      storage_no: data.storage_no,
+      storage_area: data.storage_area,
+      storage_location: data.storage_location,
+      parking_no: data.parking_no,
+      parking_location: data.parking_location,
+      parking_obstructive: data.parking_obstructive,
+    });
+  }
+}
+export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
+
+@model()
+export class BuildingProjectTechSpecDTO extends Model {
+  @property({type: 'string'})
+  id: string;
+  @property({type: 'date'})
+  created_at: Date;
+  @property({type: 'date'})
+  updated_at: Date;
+  @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
+  status: EnumStatus;
+  @property.array(String, {required: true})
+  tags: string[];
+  @property({type: 'object', required: true})
+  data: BuildingProjectTechSpecDataDTO;
+
+  constructor(data?: Partial<BuildingProjectTechSpecDTO>) {
+    super(data);
+  }
+
+  static fromModel(data: BuildingProjectTechSpec): BuildingProjectTechSpecDTO {
+    return new BuildingProjectTechSpecDTO({
+      id: data.id,
+      created_at: data.created.at,
+      updated_at: data.updated.at,
+      status: data.status,
+      tags: data.tags,
+      /// TODO: This should be done by selection proper data item type
+      data: BuildingProjectTSItemUnitInfoDTO.fromModel(data.data),
+    });
+  }
+}
+export type BuildingProjectTechSpecsDTO = BuildingProjectTechSpecDTO[];
+
+@model()
+export class BuildingProjectTSItemUnitInfoRequestDTO extends Model {
+  @property({type: 'number', required: true})
+  unit_no: number;
+  @property({type: 'number', required: true})
+  floor: number;
+  @property({type: 'number', required: true})
+  area: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumBuildingUnitDirectionValues},
+  })
+  direction: EnumBuildingUnitDirection;
+  @property({type: 'number', required: true})
+  parking_no: number;
+  @property({type: 'string', required: true})
+  parking_location: string;
+  @property({type: 'string', required: true})
+  parking_obstructive: string;
+  @property({type: 'number', required: true})
+  storage_no: number;
+  @property({type: 'string', required: true})
+  storage_location: string;
+  @property({type: 'number', required: true})
+  storage_area: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemUnitInfoRequestDTO>) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectTSItemUnitInfo {
+    return new BuildingProjectTSItemUnitInfo({
+      unit_no: this.unit_no,
+      floor: this.floor,
+      area: this.area,
+      direction: this.direction,
+      storage_no: this.storage_no,
+      storage_area: this.storage_area,
+      storage_location: this.storage_location,
+      parking_no: this.parking_no,
+      parking_location: this.parking_location,
+      parking_obstructive: this.parking_obstructive,
+    });
+  }
+}
+export type BuildingProjectTSItemUnitInfosRequestDTO =
+  BuildingProjectTSItemUnitInfoRequestDTO[];
 
 @model()
 export class ValidateFormNumberResultDTO extends Model {
-  @property({type: 'boolean'}) is_unique: boolean;
-  @property({type: 'string'}) unique_key: string;
+  @property({type: 'boolean'})
+  is_unique: boolean;
+  @property({type: 'string'})
+  unique_key: string;
 
   constructor(data?: Partial<ValidateFormNumberResultDTO>) {
     super(data);
@@ -489,8 +627,6 @@ export class BuildingProjectLawyerDTO extends Model {
   expire_date?: Date;
   @property({type: 'string', required: true})
   document_no: string;
-  //@property({type: 'string', required: false})
-  attachment_id: string;
 
   constructor(data?: Partial<BuildingProjectLawyerDTO>) {
     super(data);
@@ -511,7 +647,6 @@ export class BuildingProjectLawyerDTO extends Model {
       auth_pwd: data.auth_pwd,
       document_no: data.document_no,
       expire_date: data.expire_date,
-      /// TODO: Add File INfo
       profile: data.profile
         ? new Profile({
             first_name: data?.profile?.first_name,
@@ -696,6 +831,9 @@ export class BuildingProjectDTO extends Model {
   @property.array(BuildingProjectStaffItemDTO, {required: false})
   staff: BuildingProjectStaffItemsDTO;
 
+  @property.array(BuildingProjectTechSpecDTO, {})
+  technical_specifications: BuildingProjectTechSpecsDTO;
+
   constructor(data?: Partial<BuildingProjectDTO>) {
     super(data);
   }
@@ -724,6 +862,9 @@ export class BuildingProjectDTO extends Model {
         data.specification,
       ),
       staff: data.staff?.map(BuildingProjectStaffItemDTO.fromModel),
+      technical_specifications: data.activeTechnicalSpecifications.map(
+        BuildingProjectTechSpecDTO.fromModel,
+      ),
     });
   }
 }
