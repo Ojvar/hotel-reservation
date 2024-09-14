@@ -23,6 +23,16 @@ export enum EnumProgressStatus {
 }
 export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
+export enum EnumBuildingUnitDirection {
+  NORTH = 0,
+  SOUTH = 1,
+  EAST = 2,
+  WEST = 3,
+}
+export const EnumBuildingUnitDirectionValues = Object.values(
+  EnumBuildingUnitDirection,
+);
+
 @model()
 export class BuildingProjectAttachmentSing extends TimestampModelWithId {
   @property({type: 'string', required: true})
@@ -560,6 +570,50 @@ export class ProgressStatusItem extends TimestampModelWithId {
 }
 export type ProgressStatusItems = ProgressStatusItem[];
 
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectTSItemUnitTechSpec extends Model {
+  @property({type: 'number', required: true}) unit_no: number;
+  @property({type: 'number', required: true}) floor: number;
+  @property({type: 'number', required: true}) area: number;
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumBuildingUnitDirectionValues},
+  })
+  direction: EnumBuildingUnitDirection;
+  @property({type: 'number', required: true}) parking_no: number;
+  @property({type: 'string', required: true}) parking_location: string;
+  @property({type: 'string', required: true}) parking_obstructive: string;
+  @property({type: 'number', required: true}) storage_no: number;
+  @property({type: 'string', required: true}) storage_location: string;
+  @property({type: 'number', required: true}) storage_area: number;
+
+  constructor(data?: BuildingProjectTSItemUnitTechSpec) {
+    super(data);
+  }
+}
+
+@model()
+export class BuildingProjectTechSpec extends TimestampModelWithId {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property.array(String, {required: true})
+  tags: string[];
+  @property({type: 'object', required: true})
+  data: BuildingProjectTechSpecData;
+
+  constructor(data?: Partial<BuildingProjectTechSpec>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+}
+export type BuildingProjectTechSpecs = BuildingProjectTechSpec[];
+export type BuildingProjectTechSpecData = BuildingProjectTSItemUnitTechSpec;
+
 @model({
   name: 'building_projects',
   settings: {
@@ -620,6 +674,11 @@ export class BuildingProject extends Entity {
   attachments: BuildingProjectAttachmentItems;
   @property.array(BuildingProjectStaffItem, {required: false})
   staff?: BuildingProjectStaffItems;
+  @property.array(BuildingProjectTechSpec, {
+    required: false,
+    default: [],
+  })
+  technical_specifications?: BuildingProjectTechSpecs;
 
   constructor(data?: Partial<BuildingProject>) {
     super(data);
@@ -644,7 +703,19 @@ export class BuildingProject extends Entity {
     this.progress_status_history =
       this.progress_status_history?.map(item => new ProgressStatusItem(item)) ??
       [];
+    this.technical_specifications = this.technical_specifications?.map(
+      ts => new BuildingProjectTechSpec(ts),
+    );
   }
+
+  static generateUniqueKey = (nId: string, formNo: string) =>
+    [
+      nId,
+      formNo
+        .split(/\D/gi)
+        .filter(x => !!x)
+        .at(-1),
+    ].join('-');
 
   get mainOwner(): BuildingProjectOwner | undefined {
     return this.ownership.owners.find(owner => owner.is_delegate);
@@ -924,14 +995,7 @@ export class BuildingProject extends Entity {
     this.updated = now;
   }
 
-  static generateUniqueKey = (nId: string, formNo: string) =>
-    [
-      nId,
-      formNo
-        .split(/\D/gi)
-        .filter(x => !!x)
-        .at(-1),
-    ].join('-');
+  //addTechnicalSpec(userId: string, )
 }
 
 export interface ProjectRelations {
