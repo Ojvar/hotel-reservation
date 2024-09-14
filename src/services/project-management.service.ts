@@ -888,31 +888,10 @@ https://apps.qeng.ir/dashboard
     nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
-    fileToken = '',
     options: {checkOfficeId: boolean} = {checkOfficeId: true},
   ): Promise<BuildingProjectDTO> {
-    const lawyerAttachmentField = 'LAWYER_1';
-
     // Check project unique key
     data.unique_key = await this.validateFormNumberByProjectData(data);
-
-    // Check uploaded files list , get files info
-    const attachments = await this.fileServiceAgent.getAttachments(
-      userId,
-      fileToken,
-    );
-
-    // Just accept allowed attachments
-    const allowedAttachmentsFields = [lawyerAttachmentField];
-    if (
-      !attachments?.uploaded_files.some(
-        file => !allowedAttachmentsFields.includes(file.fieldname),
-      )
-    ) {
-      throw new HttpErrors.NotAcceptable(
-        'Invalid attachments data, extra fileds',
-      );
-    }
 
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
@@ -946,13 +925,6 @@ https://apps.qeng.ir/dashboard
       data.case_no = await this.generateNewCaseNo(year);
     }
 
-    // Setup attachments
-    if (data.lawyer) {
-      data.lawyer.attachment_id = attachments.uploaded_files
-        .find(x => x.fieldname === lawyerAttachmentField)
-        ?.id.toString();
-    }
-
     const newProject = await this.buildingProjectRepo.create(
       data.toModel(userId, {}),
     );
@@ -961,11 +933,6 @@ https://apps.qeng.ir/dashboard
         nId,
         EnumRegisterProjectType.REG_PROJECT,
       );
-    }
-
-    // Commit files
-    if (fileToken) {
-      await this.fileServiceAgent.commit(userId, fileToken);
     }
 
     return BuildingProjectDTO.fromModel(newProject);

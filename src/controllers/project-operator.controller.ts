@@ -153,7 +153,6 @@ export class ProjectOperatorsController {
     @requestBody() body: NewBuildingProjectRequestDTO,
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
-    @param.header.string('file-token') fileToken = '',
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.createNewProject(
@@ -161,7 +160,6 @@ export class ProjectOperatorsController {
       nId,
       verificationCode,
       new NewBuildingProjectRequestDTO(body),
-      fileToken,
       {checkOfficeId: true},
     );
   }
