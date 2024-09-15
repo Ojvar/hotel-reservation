@@ -119,7 +119,6 @@ export class ProjectManagementService {
     'ELEVATOR_CONTRACT',
     'ELEVATOR_DETAILS',
     'BUILDING_SKETCH',
-    'LAWYER',
   ]
     .map(item =>
       Array.from(

@@ -958,13 +958,20 @@ export class BuildingProject extends Entity {
       }
 
       const userStaff = this.staff?.find(staff => {
-        const fieldId = fileFieldMapper.find(
-          f => f.id.toString() === staff.field_id.toString(),
-        )?.field;
+        const fieldId =
+          fileFieldMapper.find(
+            f => f.id.toString() === staff.field_id.toString(),
+          )?.field ?? '';
+
+        // Extract category part of fields
+        const [fileFieldCategory] = file.field.split('_');
+        const [fieldCategory] = fieldId.split('_');
+
+        // Check criteria
         return (
           staff.user_id === userId &&
           staff.status !== EnumStatus.DEACTIVE &&
-          fieldId === file.field
+          fieldCategory === fileFieldCategory
         );
       });
       if (!userStaff) {
