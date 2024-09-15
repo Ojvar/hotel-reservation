@@ -74,12 +74,13 @@ export class VerificationCodeService {
 
     // Send sms
     const ownerName = owner.first_name + ' ' + owner.last_name;
-    const msg = `سازمان نظرام مهندسی ساختمان استان قزوین
+    const seconds = Math.floor(expireTime / 60).toFixed(0);
+    const msg = `سازمان نظام مهندسی ساختمان استان قزوین
 مالک گرامی، ${ownerName} (${owner.n_in})
 کد تایید جهت ${title}
 ${code}
 
-مهلت اعتبار ${expireTime / 60} دقیقه
+مهلت اعتبار ${seconds} دقیقه
 `;
     const smsMessage = new SmsMessage({
       sender: this.C_PROJECT_MANAGMENET_SMS_SENDER,
