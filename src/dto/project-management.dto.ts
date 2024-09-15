@@ -862,7 +862,7 @@ export class BuildingProjectDTO extends Model {
         data.specification,
       ),
       staff: data.staff?.map(BuildingProjectStaffItemDTO.fromModel),
-      technical_specifications: data.activeTechnicalSpecifications.map(
+      technical_specifications: data.activeTechnicalSpecifications?.map(
         BuildingProjectTechSpecDTO.fromModel,
       ),
     });
