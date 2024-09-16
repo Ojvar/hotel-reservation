@@ -11,6 +11,7 @@ import {
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
+  BuildingProjectTSItemLaboratoryRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
@@ -161,6 +162,33 @@ export class ProjectManagementController {
     return this.projectManagementService.checkAndExpireProjects(
       userId,
       projectId,
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory`, {
+    tags,
+    summary: 'Add technical specification data (Laboratory)',
+    description: 'Add technical specification data (Laboratory)',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationLaboratoryData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(BuildingProjectTSItemLaboratoryRequestDTO),
+        },
+      },
+    })
+    body: BuildingProjectTSItemLaboratoryRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecLaboratory(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: false},
     );
   }
 

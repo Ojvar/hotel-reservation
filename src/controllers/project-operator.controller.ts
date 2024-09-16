@@ -18,6 +18,7 @@ import {
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
+  BuildingProjectTSItemLaboratoryRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   DocumentValidationResultDTO,
@@ -524,10 +525,10 @@ export class ProjectOperatorsController {
     return this.projectManagementService.validateFormNumber(nId, formNo);
   }
 
-  @post(`${BASE_ADDR}/{project_id}/technical-spec`, {
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/unit-info`, {
     tags,
-    summary: 'Add technical specification data',
-    description: 'Add technical specification data',
+    summary: 'Add technical specification data (Unit info)',
+    description: 'Add technical specification data (Unit info)',
     responses: {204: {}},
   })
   async addTechnicalSpecificationUnitInfoData(
@@ -547,6 +548,33 @@ export class ProjectOperatorsController {
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.addTechnicalSpecUnitInfoItem(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: false},
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory`, {
+    tags,
+    summary: 'Add technical specification data (Laboratory)',
+    description: 'Add technical specification data (Laboratory)',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationLaboratoryData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(BuildingProjectTSItemLaboratoryRequestDTO),
+        },
+      },
+    })
+    body: BuildingProjectTSItemLaboratoryRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecLaboratory(
       userId,
       projectId,
       body,
