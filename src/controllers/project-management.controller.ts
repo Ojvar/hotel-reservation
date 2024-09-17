@@ -5,7 +5,6 @@ import {
   get,
   getModelSchemaRef,
   param,
-  patch,
   post,
   requestBody,
 } from '@loopback/rest';
