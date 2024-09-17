@@ -19,6 +19,7 @@ import {Office} from './office.model';
 
 export enum EnumBuildingProjectTechSpecItems {
   UNIT_INFO = 'UNIT_INFO',
+  LABORATORY = 'LABORATORY',
 }
 
 export enum EnumProgressStatus {
@@ -594,7 +595,31 @@ export class BuildingProjectTSItemUnitInfo extends Model {
     super(data);
   }
 }
-export type BuildingProjectTechSpecData = BuildingProjectTSItemUnitInfo;
+
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectTSItemLaboratory extends Model {
+  @property({type: 'number', required: true}) consumption_rate: number;
+  @property({type: 'number', required: true}) wc_rate: number;
+  @property({type: 'number', required: true}) concrete_fundation: number;
+  @property({type: 'number', required: true}) concrete_column: number;
+  @property({type: 'number', required: true}) concrete_roof: number;
+  @property({type: 'number', required: true}) fundation_total: number;
+  @property({type: 'number', required: true}) shear_wall_floor: number;
+  @property({type: 'number', required: true}) shear_wall_total: number;
+  @property({type: 'number', required: true}) column_floor: number;
+  @property({type: 'number', required: true}) column_total: number;
+  @property({type: 'number', required: true}) root_floor: number;
+  @property({type: 'number', required: true}) root_total: number;
+  @property({type: 'number', required: true}) total: number;
+  @property({type: 'boolean', required: true}) calculated_mix_design: boolean;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratory>) {
+    super(data);
+  }
+}
+export type BuildingProjectTechSpecData =
+  | BuildingProjectTSItemUnitInfo
+  | BuildingProjectTSItemLaboratory;
 
 @model()
 export class BuildingProjectTechSpec extends TimestampModelWithId {
@@ -1020,18 +1045,23 @@ export class BuildingProject extends Entity {
   addTechnicalSpecItem(userId: string, data: BuildingProjectTechSpecs): void {
     const now = new ModifyStamp({by: userId});
     data = data.map(
-      x =>
-        new BuildingProjectTechSpec({
-          ...x,
-          created: now,
-          updated: now,
-        }),
+      x => new BuildingProjectTechSpec({...x, created: now, updated: now}),
     );
     this.technical_specifications = [
       ...(this.technical_specifications ?? []),
       ...data,
     ];
     this.updated = now;
+  }
+
+  getActiveTechnicalItems(
+    tag: EnumBuildingProjectTechSpecItems,
+  ): BuildingProjectTechSpecs {
+    return (
+      this.technical_specifications?.filter(
+        x => x.tags.includes(tag) && x.status === EnumStatus.ACTIVE,
+      ) ?? []
+    );
   }
 
   removeTechnicalSpecItem(userId: string, id: string): void {
