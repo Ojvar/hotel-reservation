@@ -178,11 +178,7 @@ export class ProjectManagementService {
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY,
     );
-    if (labItem) {
-      throw new HttpErrors.NotAcceptable(
-        `Laboratory item already exists, Item id: ${labItem.id?.toString()}`,
-      );
-    }
+    labItem?.markAsRemoved(userId);
 
     // Add new item
     const now = new ModifyStamp({by: userId});
