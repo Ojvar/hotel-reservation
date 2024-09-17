@@ -18,7 +18,9 @@ import {
   BuildingProjectStaffItems,
   BuildingProjectStaffResponse,
   BuildingProjectTechSpec,
+  BuildingProjectTSItemLaboratory,
   BuildingProjectTSItemUnitInfo,
+  EnumBuildingProjectTechSpecItems,
   EnumBuildingUnitDirection,
   EnumBuildingUnitDirectionValues,
   EnumProgressStatus,
@@ -82,6 +84,51 @@ export class BuildingProjectTSItemUnitInfoDTO extends Model {
 export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
 
 @model()
+export class BuildingProjectTSItemLaboratoryDTO extends Model {
+  @property({type: 'number', required: true}) consumption_rate: number;
+  @property({type: 'number', required: true}) wc_rate: number;
+  @property({type: 'number', required: true}) concrete_fundation: number;
+  @property({type: 'number', required: true}) concrete_column: number;
+  @property({type: 'number', required: true}) concrete_roof: number;
+  @property({type: 'number', required: true}) fundation_total: number;
+  @property({type: 'number', required: true}) shear_wall_floor: number;
+  @property({type: 'number', required: true}) shear_wall_total: number;
+  @property({type: 'number', required: true}) column_floor: number;
+  @property({type: 'number', required: true}) column_total: number;
+  @property({type: 'number', required: true}) root_floor: number;
+  @property({type: 'number', required: true}) root_total: number;
+  @property({type: 'number', required: true}) total: number;
+  @property({type: 'boolean', required: true}) calculated_mix_design: boolean;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemLaboratory,
+  ): BuildingProjectTSItemLaboratoryDTO {
+    return new BuildingProjectTSItemLaboratoryDTO({
+      consumption_rate: data.consumption_rate,
+      wc_rate: data.wc_rate,
+      concrete_fundation: data.concrete_fundation,
+      concrete_column: data.concrete_column,
+      concrete_roof: data.concrete_roof,
+      fundation_total: data.fundation_total,
+      shear_wall_floor: data.shear_wall_floor,
+      shear_wall_total: data.shear_wall_total,
+      column_floor: data.column_floor,
+      column_total: data.column_total,
+      root_floor: data.root_floor,
+      root_total: data.root_total,
+      total: data.total,
+      calculated_mix_design: data.calculated_mix_design,
+    });
+  }
+}
+export type BuildingProjectTSItemLaboratoriesDTO =
+  BuildingProjectTSItemLaboratoryDTO[];
+
+@model()
 export class BuildingProjectTechSpecDTO extends Model {
   @property({type: 'string'})
   id: string;
@@ -93,26 +140,91 @@ export class BuildingProjectTechSpecDTO extends Model {
   status: EnumStatus;
   @property.array(String, {required: true})
   tags: string[];
-  @property({type: 'object', required: true})
-  data: BuildingProjectTechSpecDataDTO;
+  @property({type: 'object', required: false})
+  data?: BuildingProjectTSItemUnitInfoDTO | BuildingProjectTSItemLaboratoryDTO;
 
   constructor(data?: Partial<BuildingProjectTechSpecDTO>) {
     super(data);
   }
 
   static fromModel(data: BuildingProjectTechSpec): BuildingProjectTechSpecDTO {
+    const itemData = {
+      [EnumBuildingProjectTechSpecItems.UNIT_INFO]:
+        BuildingProjectTSItemUnitInfoDTO.fromModel(
+          data.data as BuildingProjectTSItemUnitInfo,
+        ),
+      [EnumBuildingProjectTechSpecItems.LABORATORY]:
+        BuildingProjectTSItemLaboratoryDTO.fromModel(
+          data.data as BuildingProjectTSItemLaboratory,
+        ),
+    }[data.tags.join('')];
+
     return new BuildingProjectTechSpecDTO({
       id: data.id,
       created_at: data.created.at,
       updated_at: data.updated.at,
       status: data.status,
       tags: data.tags,
-      /// TODO: This should be done by selection proper data item type
-      data: BuildingProjectTSItemUnitInfoDTO.fromModel(data.data),
+      data: itemData,
     });
   }
 }
 export type BuildingProjectTechSpecsDTO = BuildingProjectTechSpecDTO[];
+
+@model()
+export class BuildingProjectTSItemLaboratoryRequestDTO extends Model {
+  @property({type: 'number', required: true})
+  consumption_rate: number;
+  @property({type: 'number', required: true})
+  wc_rate: number;
+  @property({type: 'number', required: true})
+  concrete_fundation: number;
+  @property({type: 'number', required: true})
+  concrete_column: number;
+  @property({type: 'number', required: true})
+  concrete_roof: number;
+  @property({type: 'number', required: true})
+  fundation_total: number;
+  @property({type: 'number', required: true})
+  shear_wall_floor: number;
+  @property({type: 'number', required: true})
+  shear_wall_total: number;
+  @property({type: 'number', required: true})
+  column_floor: number;
+  @property({type: 'number', required: true})
+  column_total: number;
+  @property({type: 'number', required: true})
+  root_floor: number;
+  @property({type: 'number', required: true})
+  root_total: number;
+  @property({type: 'number', required: true})
+  total: number;
+  @property({type: 'boolean', required: true})
+  calculated_mix_design: boolean;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryRequestDTO>) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectTSItemLaboratory {
+    return new BuildingProjectTSItemLaboratory({
+      consumption_rate: this.consumption_rate,
+      wc_rate: this.wc_rate,
+      concrete_fundation: this.concrete_fundation,
+      concrete_column: this.concrete_column,
+      concrete_roof: this.concrete_roof,
+      fundation_total: this.fundation_total,
+      shear_wall_floor: this.shear_wall_floor,
+      shear_wall_total: this.shear_wall_total,
+      column_floor: this.column_floor,
+      column_total: this.column_total,
+      root_floor: this.root_floor,
+      root_total: this.root_total,
+      total: this.total,
+      calculated_mix_design: this.calculated_mix_design,
+    });
+  }
+}
 
 @model()
 export class BuildingProjectTSItemUnitInfoRequestDTO extends Model {

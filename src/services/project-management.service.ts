@@ -18,6 +18,8 @@ import {
   BuildingProjectsDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
+  BuildingProjectTSItemLaboratoryDTO,
+  BuildingProjectTSItemLaboratoryRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   JobCandiateResultDTO,
@@ -149,6 +151,48 @@ export class ProjectManagementService {
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
   ) {}
+
+  async addTechnicalSpecLaboratory(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemLaboratoryDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.findActiveProjectOrFail(projectId);
+
+    // Check user access
+    if (options.checkOfficeMembership) {
+      await this.userIsAllowedToProjectForOffice(
+        userId,
+        project.office_id,
+        [
+          EnumOfficeMemberRole.OWNER,
+          EnumOfficeMemberRole.SECRETARY,
+          EnumOfficeMemberRole.CO_FOUNDER,
+        ],
+        [EnumStatus.ACTIVE],
+      );
+    }
+
+    // Check older and active laboratory record
+    const [labItem] = project.getActiveTechnicalItems(
+      EnumBuildingProjectTechSpecItems.LABORATORY,
+    );
+    labItem?.markAsRemoved(userId);
+
+    // Add new item
+    const now = new ModifyStamp({by: userId});
+    project.addTechnicalSpecItem(userId, [
+      new BuildingProjectTechSpec({
+        created: now,
+        updated: now,
+        status: EnumStatus.ACTIVE,
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY],
+        data: new BuildingProjectTSItemLaboratoryRequestDTO(data).toModel(),
+      }),
+    ]);
+    await this.buildingProjectRepo.update(project);
+  }
 
   async addTechnicalSpecUnitInfoItem(
     userId: string,
