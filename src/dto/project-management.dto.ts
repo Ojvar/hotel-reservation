@@ -85,20 +85,34 @@ export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
 
 @model()
 export class BuildingProjectTSItemLaboratoryDTO extends Model {
-  @property({type: 'number', required: true}) consumption_rate: number;
-  @property({type: 'number', required: true}) wc_rate: number;
-  @property({type: 'number', required: true}) concrete_fundation: number;
-  @property({type: 'number', required: true}) concrete_column: number;
-  @property({type: 'number', required: true}) concrete_roof: number;
-  @property({type: 'number', required: true}) fundation_total: number;
-  @property({type: 'number', required: true}) shear_wall_floor: number;
-  @property({type: 'number', required: true}) shear_wall_total: number;
-  @property({type: 'number', required: true}) column_floor: number;
-  @property({type: 'number', required: true}) column_total: number;
-  @property({type: 'number', required: true}) root_floor: number;
-  @property({type: 'number', required: true}) root_total: number;
-  @property({type: 'number', required: true}) total: number;
-  @property({type: 'boolean', required: true}) calculated_mix_design: boolean;
+  @property({type: 'number', required: true})
+  consumption_rate: number;
+  @property({type: 'number', required: true})
+  wc_rate: number;
+  @property({type: 'number', required: true})
+  concrete_fundation: number;
+  @property({type: 'number', required: true})
+  concrete_column: number;
+  @property({type: 'number', required: true})
+  concrete_roof: number;
+  @property({type: 'number', required: true})
+  fundation_total: number;
+  @property({type: 'number', required: true})
+  shear_wall_floor: number;
+  @property({type: 'number', required: true})
+  shear_wall_total: number;
+  @property({type: 'number', required: true})
+  column_floor: number;
+  @property({type: 'number', required: true})
+  column_total: number;
+  @property({type: 'number', required: true})
+  roof_floor: number;
+  @property({type: 'number', required: true})
+  roof_total: number;
+  @property({type: 'number', required: true})
+  total: number;
+  @property({type: 'boolean', required: true})
+  calculated_mix_design: boolean;
 
   constructor(data?: Partial<BuildingProjectTSItemLaboratoryDTO>) {
     super(data);
@@ -118,8 +132,8 @@ export class BuildingProjectTSItemLaboratoryDTO extends Model {
       shear_wall_total: data.shear_wall_total,
       column_floor: data.column_floor,
       column_total: data.column_total,
-      root_floor: data.root_floor,
-      root_total: data.root_total,
+      roof_floor: data.roof_floor,
+      roof_total: data.roof_total,
       total: data.total,
       calculated_mix_design: data.calculated_mix_design,
     });
@@ -194,9 +208,9 @@ export class BuildingProjectTSItemLaboratoryRequestDTO extends Model {
   @property({type: 'number', required: true})
   column_total: number;
   @property({type: 'number', required: true})
-  root_floor: number;
+  roof_floor: number;
   @property({type: 'number', required: true})
-  root_total: number;
+  roof_total: number;
   @property({type: 'number', required: true})
   total: number;
   @property({type: 'boolean', required: true})
@@ -218,8 +232,8 @@ export class BuildingProjectTSItemLaboratoryRequestDTO extends Model {
       shear_wall_total: this.shear_wall_total,
       column_floor: this.column_floor,
       column_total: this.column_total,
-      root_floor: this.root_floor,
-      root_total: this.root_total,
+      roof_floor: this.roof_floor,
+      roof_total: this.roof_total,
       total: this.total,
       calculated_mix_design: this.calculated_mix_design,
     });

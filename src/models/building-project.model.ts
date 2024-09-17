@@ -608,8 +608,8 @@ export class BuildingProjectTSItemLaboratory extends Model {
   @property({type: 'number', required: true}) shear_wall_total: number;
   @property({type: 'number', required: true}) column_floor: number;
   @property({type: 'number', required: true}) column_total: number;
-  @property({type: 'number', required: true}) root_floor: number;
-  @property({type: 'number', required: true}) root_total: number;
+  @property({type: 'number', required: true}) roof_floor: number;
+  @property({type: 'number', required: true}) roof_total: number;
   @property({type: 'number', required: true}) total: number;
   @property({type: 'boolean', required: true}) calculated_mix_design: boolean;
 

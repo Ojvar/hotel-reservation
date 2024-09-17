@@ -185,7 +185,7 @@
       "field": "FacadeAluminium"
     }
   ],
-  "root_coat_types": [
+  "roof_coat_types": [
     {
       "id": "644674dabb66034ed84a3066",
       "field": "RoofCoatTar"

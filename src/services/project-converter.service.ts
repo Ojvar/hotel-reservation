@@ -254,7 +254,7 @@ WHERE   CaseNo = '${caseNo}'
         descriptions: {
           roof_other: data.RoofOther,
           facade_other: data.FacadeOther,
-          root_cover_other: data.RoofCoatOther,
+          roof_cover_other: data.RoofCoatOther,
           win_other: data.WinOther,
           heating_other: data.HeatingOthere,
           cooling_other: data.CoolingOther,
@@ -300,7 +300,7 @@ WHERE   CaseNo = '${caseNo}'
         building_frontages: basedata.facade_type
           .filter(x => data[x.field] === true)
           .map(x => x.id),
-        roof_cover_types: basedata.root_coat_types
+        roof_cover_types: basedata.roof_coat_types
           .filter(x => data[x.field] === true)
           .map(x => x.id),
         window_types: basedata.window_types

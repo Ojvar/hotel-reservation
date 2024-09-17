@@ -18,7 +18,6 @@ import {
   BuildingProjectsDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
-  BuildingProjectTSItemLaboratoryDTO,
   BuildingProjectTSItemLaboratoryRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
@@ -155,7 +154,7 @@ export class ProjectManagementService {
   async addTechnicalSpecLaboratory(
     userId: string,
     projectId: string,
-    data: BuildingProjectTSItemLaboratoryDTO,
+    data: BuildingProjectTSItemLaboratoryRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
     const project = await this.findActiveProjectOrFail(projectId);
