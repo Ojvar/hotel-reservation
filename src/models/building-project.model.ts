@@ -761,6 +761,20 @@ export class BuildingProject extends Entity {
     );
   }
 
+  signRelatedFiles(
+    operatorId: string,
+    userId: string,
+    attachemntField: string,
+  ): void {
+    const [attachemntFieldCategory] = attachemntField.split('_');
+    this.attachments
+      .filter(a => {
+        const [fieldCategory] = a.field.split('_');
+        return fieldCategory === attachemntFieldCategory;
+      })
+      .forEach(a => a.signByUser(operatorId, userId));
+  }
+
   addStaff(staffItems: BuildingProjectStaffItems): void {
     const requestedUsers = staffItems.reduce<Record<string, string>>(
       (res, item) => ({...res, [item.user_id]: item.field_id.toString()}),
@@ -951,7 +965,7 @@ export class BuildingProject extends Entity {
     status: EnumStatus,
     description?: string,
     validateUser = true,
-  ): void {
+  ): BuildingProjectStaffItem {
     const staff = this.staff?.find(
       s => s.id?.toString() === staffId && s.status === EnumStatus.PENDING,
     );
@@ -966,6 +980,7 @@ export class BuildingProject extends Entity {
       );
     }
     staff.setResponse(userId, status, description);
+    return staff;
   }
 
   signAttachments(

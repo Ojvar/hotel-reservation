@@ -509,13 +509,17 @@ export class ProjectManagementService {
     validateUser: boolean,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
-    project.setStaffResponse(
+    const staff = project.setStaffResponse(
       userId,
       staffId,
       data.status,
       data.description,
       validateUser,
     );
+
+    // Sign related attachments
+    const staffField = await this.basedataRepo.findById(staff.field_id);
+    project.signRelatedFiles(userId, staff.user_id, staffField.key);
     await this.buildingProjectRepo.update(project);
 
     // Send RMQ Message
