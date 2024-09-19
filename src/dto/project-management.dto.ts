@@ -19,6 +19,7 @@ import {
   BuildingProjectStaffResponse,
   BuildingProjectTechSpec,
   BuildingProjectTSItemLaboratoryConcrete,
+  BuildingProjectTSItemLaboratoryTensile,
   BuildingProjectTSItemLaboratoryWelding,
   BuildingProjectTSItemUnitInfo,
   EnumBuildingProjectTechSpecItems,
@@ -83,6 +84,38 @@ export class BuildingProjectTSItemUnitInfoDTO extends Model {
   }
 }
 export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
+
+@model()
+export class BuildingProjectTSItemLaboratoryTensileDTO extends Model {
+  @property({type: 'string', required: true})
+  profile_type: string;
+  @property({type: 'string', required: true})
+  rebar_manufacture: string;
+  @property({type: 'string', required: true})
+  rebar_type: string;
+  @property({type: 'object', itemType: 'number', required: true})
+  rebars: Record<string, number>;
+  @property({type: 'number', required: true})
+  tests_count: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryTensileDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemLaboratoryTensile,
+  ): BuildingProjectTSItemLaboratoryTensileDTO {
+    return new BuildingProjectTSItemLaboratoryTensileDTO({
+      tests_count: data.tests_count,
+      rebar_type: data.rebar_type,
+      profile_type: data.profile_type,
+      rebar_manufacture: data.rebar_manufacture,
+      rebars: data.rebars,
+    });
+  }
+}
+export type BuildingProjectTSItemLaboratoryTensilesDTO =
+  BuildingProjectTSItemLaboratoryTensileDTO[];
 
 @model()
 export class BuildingProjectTSItemLaboratoryWeldingDTO extends Model {
@@ -194,7 +227,8 @@ export class BuildingProjectTechSpecDTO extends Model {
   data?:
     | BuildingProjectTSItemUnitInfoDTO
     | BuildingProjectTSItemLaboratoryConcreteDTO
-    | BuildingProjectTSItemLaboratoryWeldingDTO;
+    | BuildingProjectTSItemLaboratoryWeldingDTO
+    | BuildingProjectTSItemLaboratoryTensileDTO;
 
   constructor(data?: Partial<BuildingProjectTechSpecDTO>) {
     super(data);
@@ -214,6 +248,10 @@ export class BuildingProjectTechSpecDTO extends Model {
         BuildingProjectTSItemLaboratoryWeldingDTO.fromModel(
           data.data as BuildingProjectTSItemLaboratoryWelding,
         ),
+      [EnumBuildingProjectTechSpecItems.LABORATORY_TENSILE]:
+        BuildingProjectTSItemLaboratoryTensileDTO.fromModel(
+          data.data as BuildingProjectTSItemLaboratoryTensile,
+        ),
     }[data.tags.join('')];
 
     return new BuildingProjectTechSpecDTO({
@@ -227,6 +265,36 @@ export class BuildingProjectTechSpecDTO extends Model {
   }
 }
 export type BuildingProjectTechSpecsDTO = BuildingProjectTechSpecDTO[];
+
+@model()
+export class BuildingProjectTSItemLaboratoryTensileRequestDTO extends Model {
+  @property({type: 'string', required: true})
+  profile_type: string;
+  @property({type: 'string', required: true})
+  rebar_manufacture: string;
+  @property({type: 'string', required: true})
+  rebar_type: string;
+  @property({type: 'object', itemType: 'number', required: true})
+  rebars: Record<string, number>;
+  @property({type: 'number', required: true})
+  tests_count: number;
+
+  constructor(
+    data?: Partial<BuildingProjectTSItemLaboratoryTensileRequestDTO>,
+  ) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectTSItemLaboratoryTensile {
+    return new BuildingProjectTSItemLaboratoryTensile({
+      rebar_manufacture: this.rebar_manufacture,
+      profile_type: this.profile_type,
+      rebar_type: this.rebar_type,
+      tests_count: this.tests_count,
+      rebars: this.rebars ?? {},
+    });
+  }
+}
 
 @model()
 export class BuildingProjectTSItemLaboratoryWeldingRequestDTO extends Model {

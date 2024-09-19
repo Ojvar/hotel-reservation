@@ -21,6 +21,7 @@ export enum EnumBuildingProjectTechSpecItems {
   UNIT_INFO = 'UNIT_INFO',
   LABORATORY_CONCRETE = 'LABORATORY_CONCRETE',
   LABORATORY_WELDING = 'LABORATORY_WELDING',
+  LABORATORY_TENSILE = 'LABORATORY_TENSILE',
 }
 
 export enum EnumProgressStatus {
@@ -661,10 +662,29 @@ export class BuildingProjectTSItemLaboratoryWelding extends Model {
     super(data);
   }
 }
+
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectTSItemLaboratoryTensile extends Model {
+  @property({type: 'string', required: true})
+  profile_type: string;
+  @property({type: 'string', required: true})
+  rebar_manufacture: string;
+  @property({type: 'string', required: true})
+  rebar_type: string;
+  @property({type: 'object', itemType: 'number', required: true})
+  rebars: Record<string, number>;
+  @property({type: 'number', required: true})
+  tests_count: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryTensile>) {
+    super(data);
+  }
+}
 export type BuildingProjectTechSpecData =
   | BuildingProjectTSItemUnitInfo
   | BuildingProjectTSItemLaboratoryConcrete
-  | BuildingProjectTSItemLaboratoryWelding;
+  | BuildingProjectTSItemLaboratoryWelding
+  | BuildingProjectTSItemLaboratoryTensile;
 
 @model()
 export class BuildingProjectTechSpec extends TimestampModelWithId {

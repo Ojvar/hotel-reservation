@@ -19,6 +19,7 @@ import {
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
   BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+  BuildingProjectTSItemLaboratoryTensileRequestDTO,
   BuildingProjectTSItemLaboratoryWeldingRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
@@ -174,6 +175,40 @@ export class ProjectManagementService {
     }
 
     return project;
+  }
+
+  async addTechnicalSpecLaboratoryTensile(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemLaboratoryTensileRequestDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.getProjectByIdByCheckUserAccessLevel(
+      userId,
+      projectId,
+      options,
+    );
+
+    // Check older and active laboratory record
+    const [labItem] = project.getActiveTechnicalItems(
+      EnumBuildingProjectTechSpecItems.LABORATORY_TENSILE,
+    );
+    labItem?.markAsRemoved(userId);
+
+    // Add new item
+    const now = new ModifyStamp({by: userId});
+    project.addTechnicalSpecItem(userId, [
+      new BuildingProjectTechSpec({
+        created: now,
+        updated: now,
+        status: EnumStatus.ACTIVE,
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_TENSILE],
+        data: new BuildingProjectTSItemLaboratoryTensileRequestDTO(
+          data,
+        ).toModel(),
+      }),
+    ]);
+    await this.buildingProjectRepo.update(project);
   }
 
   async addTechnicalSpecLaboratoryWelding(
