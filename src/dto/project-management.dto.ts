@@ -18,7 +18,8 @@ import {
   BuildingProjectStaffItems,
   BuildingProjectStaffResponse,
   BuildingProjectTechSpec,
-  BuildingProjectTSItemLaboratory,
+  BuildingProjectTSItemLaboratoryConcrete,
+  BuildingProjectTSItemLaboratoryWelding,
   BuildingProjectTSItemUnitInfo,
   EnumBuildingProjectTechSpecItems,
   EnumBuildingUnitDirection,
@@ -84,7 +85,42 @@ export class BuildingProjectTSItemUnitInfoDTO extends Model {
 export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
 
 @model()
-export class BuildingProjectTSItemLaboratoryDTO extends Model {
+export class BuildingProjectTSItemLaboratoryWeldingDTO extends Model {
+  @property({type: 'string', required: true})
+  braced_frame: string;
+  @property({type: 'number', required: true})
+  vt: number;
+  @property({type: 'number', required: true})
+  pt: number;
+  @property({type: 'number', required: true})
+  mt: number;
+  @property({type: 'number', required: true})
+  ut: number;
+  @property({type: 'number', required: true})
+  coating_thickness: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryWeldingDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemLaboratoryWelding,
+  ): BuildingProjectTSItemLaboratoryWeldingDTO {
+    return new BuildingProjectTSItemLaboratoryWeldingDTO({
+      braced_frame: data.braced_frame,
+      vt: data.vt,
+      pt: data.pt,
+      mt: data.mt,
+      ut: data.ut,
+      coating_thickness: data.coating_thickness,
+    });
+  }
+}
+export type BuildingProjectTSItemLaboratoryWeldingsDTO =
+  BuildingProjectTSItemLaboratoryWeldingDTO[];
+
+@model()
+export class BuildingProjectTSItemLaboratoryConcreteDTO extends Model {
   @property({type: 'number', required: true})
   consumption_rate: number;
   @property({type: 'number', required: true})
@@ -114,14 +150,14 @@ export class BuildingProjectTSItemLaboratoryDTO extends Model {
   @property({type: 'boolean', required: true})
   calculated_mix_design: boolean;
 
-  constructor(data?: Partial<BuildingProjectTSItemLaboratoryDTO>) {
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryConcreteDTO>) {
     super(data);
   }
 
   static fromModel(
-    data: BuildingProjectTSItemLaboratory,
-  ): BuildingProjectTSItemLaboratoryDTO {
-    return new BuildingProjectTSItemLaboratoryDTO({
+    data: BuildingProjectTSItemLaboratoryConcrete,
+  ): BuildingProjectTSItemLaboratoryConcreteDTO {
+    return new BuildingProjectTSItemLaboratoryConcreteDTO({
       consumption_rate: data.consumption_rate,
       wc_rate: data.wc_rate,
       concrete_fundation: data.concrete_fundation,
@@ -139,8 +175,8 @@ export class BuildingProjectTSItemLaboratoryDTO extends Model {
     });
   }
 }
-export type BuildingProjectTSItemLaboratoriesDTO =
-  BuildingProjectTSItemLaboratoryDTO[];
+export type BuildingProjectTSItemLaboratoryConcretesDTO =
+  BuildingProjectTSItemLaboratoryConcreteDTO[];
 
 @model()
 export class BuildingProjectTechSpecDTO extends Model {
@@ -155,7 +191,10 @@ export class BuildingProjectTechSpecDTO extends Model {
   @property.array(String, {required: true})
   tags: string[];
   @property({type: 'object', required: false})
-  data?: BuildingProjectTSItemUnitInfoDTO | BuildingProjectTSItemLaboratoryDTO;
+  data?:
+    | BuildingProjectTSItemUnitInfoDTO
+    | BuildingProjectTSItemLaboratoryConcreteDTO
+    | BuildingProjectTSItemLaboratoryWeldingDTO;
 
   constructor(data?: Partial<BuildingProjectTechSpecDTO>) {
     super(data);
@@ -168,8 +207,12 @@ export class BuildingProjectTechSpecDTO extends Model {
           data.data as BuildingProjectTSItemUnitInfo,
         ),
       [EnumBuildingProjectTechSpecItems.LABORATORY]:
-        BuildingProjectTSItemLaboratoryDTO.fromModel(
-          data.data as BuildingProjectTSItemLaboratory,
+        BuildingProjectTSItemLaboratoryConcreteDTO.fromModel(
+          data.data as BuildingProjectTSItemLaboratoryConcrete,
+        ),
+      [EnumBuildingProjectTechSpecItems.WELDING]:
+        BuildingProjectTSItemLaboratoryWeldingDTO.fromModel(
+          data.data as BuildingProjectTSItemLaboratoryWelding,
         ),
     }[data.tags.join('')];
 
@@ -186,7 +229,40 @@ export class BuildingProjectTechSpecDTO extends Model {
 export type BuildingProjectTechSpecsDTO = BuildingProjectTechSpecDTO[];
 
 @model()
-export class BuildingProjectTSItemLaboratoryRequestDTO extends Model {
+export class BuildingProjectTSItemLaboratoryWeldingRequestDTO extends Model {
+  @property({type: 'string', required: true})
+  braced_frame: string;
+  @property({type: 'number', required: true})
+  vt: number;
+  @property({type: 'number', required: true})
+  pt: number;
+  @property({type: 'number', required: true})
+  mt: number;
+  @property({type: 'number', required: true})
+  ut: number;
+  @property({type: 'number', required: true})
+  coating_thickness: number;
+
+  constructor(
+    data?: Partial<BuildingProjectTSItemLaboratoryWeldingRequestDTO>,
+  ) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectTSItemLaboratoryWelding {
+    return new BuildingProjectTSItemLaboratoryWelding({
+      braced_frame: this.braced_frame,
+      vt: this.vt,
+      pt: this.pt,
+      mt: this.mt,
+      ut: this.ut,
+      coating_thickness: this.coating_thickness,
+    });
+  }
+}
+
+@model()
+export class BuildingProjectTSItemLaboratoryConcreteRequestDTO extends Model {
   @property({type: 'number', required: true})
   consumption_rate: number;
   @property({type: 'number', required: true})
@@ -216,12 +292,12 @@ export class BuildingProjectTSItemLaboratoryRequestDTO extends Model {
   @property({type: 'boolean', required: true})
   calculated_mix_design: boolean;
 
-  constructor(data?: Partial<BuildingProjectTSItemLaboratoryRequestDTO>) {
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryConcreteDTO>) {
     super(data);
   }
 
-  toModel(): BuildingProjectTSItemLaboratory {
-    return new BuildingProjectTSItemLaboratory({
+  toModel(): BuildingProjectTSItemLaboratoryConcrete {
+    return new BuildingProjectTSItemLaboratoryConcreteDTO({
       consumption_rate: this.consumption_rate,
       wc_rate: this.wc_rate,
       concrete_fundation: this.concrete_fundation,

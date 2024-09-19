@@ -18,7 +18,8 @@ import {
   BuildingProjectsDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
-  BuildingProjectTSItemLaboratoryRequestDTO,
+  BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+  BuildingProjectTSItemLaboratoryWeldingRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   JobCandiateResultDTO,
@@ -151,12 +152,11 @@ export class ProjectManagementService {
     private messageService: MessageService,
   ) {}
 
-  async addTechnicalSpecLaboratory(
+  private async getProjectByIdByCheckUserAccessLevel(
     userId: string,
     projectId: string,
-    data: BuildingProjectTSItemLaboratoryRequestDTO,
     options: CheckOfficeAccessOptions,
-  ): Promise<void> {
+  ): Promise<BuildingProject> {
     const project = await this.findActiveProjectOrFail(projectId);
 
     // Check user access
@@ -173,6 +173,55 @@ export class ProjectManagementService {
       );
     }
 
+    return project;
+  }
+
+  async addTechnicalSpecLaboratoryWelding(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemLaboratoryWeldingRequestDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.getProjectByIdByCheckUserAccessLevel(
+      userId,
+      projectId,
+      options,
+    );
+
+    // Check older and active laboratory record
+    const [labItem] = project.getActiveTechnicalItems(
+      EnumBuildingProjectTechSpecItems.WELDING,
+    );
+    labItem?.markAsRemoved(userId);
+
+    // Add new item
+    const now = new ModifyStamp({by: userId});
+    project.addTechnicalSpecItem(userId, [
+      new BuildingProjectTechSpec({
+        created: now,
+        updated: now,
+        status: EnumStatus.ACTIVE,
+        tags: [EnumBuildingProjectTechSpecItems.WELDING],
+        data: new BuildingProjectTSItemLaboratoryWeldingRequestDTO(
+          data,
+        ).toModel(),
+      }),
+    ]);
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async addTechnicalSpecLaboratoryConcrete(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.getProjectByIdByCheckUserAccessLevel(
+      userId,
+      projectId,
+      options,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY,
@@ -187,7 +236,9 @@ export class ProjectManagementService {
         updated: now,
         status: EnumStatus.ACTIVE,
         tags: [EnumBuildingProjectTechSpecItems.LABORATORY],
-        data: new BuildingProjectTSItemLaboratoryRequestDTO(data).toModel(),
+        data: new BuildingProjectTSItemLaboratoryConcreteRequestDTO(
+          data,
+        ).toModel(),
       }),
     ]);
     await this.buildingProjectRepo.update(project);

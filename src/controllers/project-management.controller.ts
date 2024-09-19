@@ -11,7 +11,8 @@ import {
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
-  BuildingProjectTSItemLaboratoryRequestDTO,
+  BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+  BuildingProjectTSItemLaboratoryWeldingRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
@@ -165,26 +166,57 @@ export class ProjectManagementController {
     );
   }
 
-  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory`, {
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory/concrete`, {
     tags,
-    summary: 'Add technical specification data (Laboratory)',
-    description: 'Add technical specification data (Laboratory)',
+    summary: 'Add technical specification data (Laboratory / Concrete)',
+    description: 'Add technical specification data (Laboratory / Concrete)',
     responses: {204: {}},
   })
-  async addTechnicalSpecificationLaboratoryData(
+  async addTechnicalSpecificationLaboratoryConcreteData(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(BuildingProjectTSItemLaboratoryRequestDTO),
+          schema: getModelSchemaRef(
+            BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+          ),
         },
       },
     })
-    body: BuildingProjectTSItemLaboratoryRequestDTO,
+    body: BuildingProjectTSItemLaboratoryConcreteRequestDTO,
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.addTechnicalSpecLaboratory(
+    return this.projectManagementService.addTechnicalSpecLaboratoryConcrete(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: false},
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory/welding`, {
+    tags,
+    summary: 'Add technical specification data (Laboratory / Welding)',
+    description: 'Add technical specification data (Laboratory, Welding)',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationLaboratoryWeldingData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(
+            BuildingProjectTSItemLaboratoryWeldingRequestDTO,
+          ),
+        },
+      },
+    })
+    body: BuildingProjectTSItemLaboratoryWeldingRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecLaboratoryWelding(
       userId,
       projectId,
       body,

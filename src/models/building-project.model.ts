@@ -20,6 +20,7 @@ import {Office} from './office.model';
 export enum EnumBuildingProjectTechSpecItems {
   UNIT_INFO = 'UNIT_INFO',
   LABORATORY = 'LABORATORY',
+  WELDING = 'WELDING',
 }
 
 export enum EnumProgressStatus {
@@ -575,21 +576,30 @@ export type ProgressStatusItems = ProgressStatusItem[];
 
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectTSItemUnitInfo extends Model {
-  @property({type: 'number', required: true}) unit_no: number;
-  @property({type: 'number', required: true}) floor: number;
-  @property({type: 'number', required: true}) area: number;
+  @property({type: 'number', required: true})
+  unit_no: number;
+  @property({type: 'number', required: true})
+  floor: number;
+  @property({type: 'number', required: true})
+  area: number;
   @property({
     type: 'number',
     required: true,
     jsonSchema: {enum: EnumBuildingUnitDirectionValues},
   })
   direction: EnumBuildingUnitDirection;
-  @property({type: 'number', required: true}) parking_no: number;
-  @property({type: 'string', required: true}) parking_location: string;
-  @property({type: 'string', required: true}) parking_obstructive: string;
-  @property({type: 'number', required: true}) storage_no: number;
-  @property({type: 'string', required: true}) storage_location: string;
-  @property({type: 'number', required: true}) storage_area: number;
+  @property({type: 'number', required: true})
+  parking_no: number;
+  @property({type: 'string', required: true})
+  parking_location: string;
+  @property({type: 'string', required: true})
+  parking_obstructive: string;
+  @property({type: 'number', required: true})
+  storage_no: number;
+  @property({type: 'string', required: true})
+  storage_location: string;
+  @property({type: 'number', required: true})
+  storage_area: number;
 
   constructor(data?: Partial<BuildingProjectTSItemUnitInfo>) {
     super(data);
@@ -597,29 +607,64 @@ export class BuildingProjectTSItemUnitInfo extends Model {
 }
 
 @model({...REMOVE_ID_SETTING})
-export class BuildingProjectTSItemLaboratory extends Model {
-  @property({type: 'number', required: true}) consumption_rate: number;
-  @property({type: 'number', required: true}) wc_rate: number;
-  @property({type: 'number', required: true}) concrete_fundation: number;
-  @property({type: 'number', required: true}) concrete_column: number;
-  @property({type: 'number', required: true}) concrete_roof: number;
-  @property({type: 'number', required: true}) fundation_total: number;
-  @property({type: 'number', required: true}) shear_wall_floor: number;
-  @property({type: 'number', required: true}) shear_wall_total: number;
-  @property({type: 'number', required: true}) column_floor: number;
-  @property({type: 'number', required: true}) column_total: number;
-  @property({type: 'number', required: true}) roof_floor: number;
-  @property({type: 'number', required: true}) roof_total: number;
-  @property({type: 'number', required: true}) total: number;
-  @property({type: 'boolean', required: true}) calculated_mix_design: boolean;
+export class BuildingProjectTSItemLaboratoryConcrete extends Model {
+  @property({type: 'number', required: true})
+  consumption_rate: number;
+  @property({type: 'number', required: true})
+  wc_rate: number;
+  @property({type: 'number', required: true})
+  concrete_fundation: number;
+  @property({type: 'number', required: true})
+  concrete_column: number;
+  @property({type: 'number', required: true})
+  concrete_roof: number;
+  @property({type: 'number', required: true})
+  fundation_total: number;
+  @property({type: 'number', required: true})
+  shear_wall_floor: number;
+  @property({type: 'number', required: true})
+  shear_wall_total: number;
+  @property({type: 'number', required: true})
+  column_floor: number;
+  @property({type: 'number', required: true})
+  column_total: number;
+  @property({type: 'number', required: true})
+  roof_floor: number;
+  @property({type: 'number', required: true})
+  roof_total: number;
+  @property({type: 'number', required: true})
+  total: number;
+  @property({type: 'boolean', required: true})
+  calculated_mix_design: boolean;
 
-  constructor(data?: Partial<BuildingProjectTSItemLaboratory>) {
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryConcrete>) {
+    super(data);
+  }
+}
+
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectTSItemLaboratoryWelding extends Model {
+  @property({type: 'string', required: true})
+  braced_frame: string;
+  @property({type: 'number', required: true})
+  vt: number;
+  @property({type: 'number', required: true})
+  pt: number;
+  @property({type: 'number', required: true})
+  mt: number;
+  @property({type: 'number', required: true})
+  ut: number;
+  @property({type: 'number', required: true})
+  coating_thickness: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryWelding>) {
     super(data);
   }
 }
 export type BuildingProjectTechSpecData =
   | BuildingProjectTSItemUnitInfo
-  | BuildingProjectTSItemLaboratory;
+  | BuildingProjectTSItemLaboratoryConcrete
+  | BuildingProjectTSItemLaboratoryWelding;
 
 @model()
 export class BuildingProjectTechSpec extends TimestampModelWithId {
