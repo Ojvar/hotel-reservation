@@ -23,6 +23,7 @@ export enum EnumBuildingProjectTechSpecItems {
   LABORATORY_WELDING = 'LABORATORY_WELDING',
   LABORATORY_TENSILE = 'LABORATORY_TENSILE',
   LABORATORY_POLYSTYRENE = 'LABORATORY_POLYSTYRENE',
+  LABORATORY_ELECTRICITY = 'LABORATORY_ELECTRICITY',
 }
 
 export enum EnumProgressStatus {
@@ -695,12 +696,25 @@ export class BuildingProjectTSItemLaboratoryPolystyrene extends Model {
     super(data);
   }
 }
+
+@model({...REMOVE_ID_SETTING})
+export class BuildingProjectTSItemLaboratoryElectricity extends Model {
+  @property({type: 'number', required: true})
+  required_samples_count: number;
+  @property({type: 'number', required: true})
+  earth_pit_count: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryElectricity>) {
+    super(data);
+  }
+}
 export type BuildingProjectTechSpecData =
   | BuildingProjectTSItemUnitInfo
   | BuildingProjectTSItemLaboratoryConcrete
   | BuildingProjectTSItemLaboratoryWelding
   | BuildingProjectTSItemLaboratoryTensile
-  | BuildingProjectTSItemLaboratoryPolystyrene;
+  | BuildingProjectTSItemLaboratoryPolystyrene
+  | BuildingProjectTSItemLaboratoryElectricity;
 
 @model()
 export class BuildingProjectTechSpec extends TimestampModelWithId {

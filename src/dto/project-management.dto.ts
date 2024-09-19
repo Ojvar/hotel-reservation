@@ -19,6 +19,7 @@ import {
   BuildingProjectStaffResponse,
   BuildingProjectTechSpec,
   BuildingProjectTSItemLaboratoryConcrete,
+  BuildingProjectTSItemLaboratoryElectricity,
   BuildingProjectTSItemLaboratoryPolystyrene,
   BuildingProjectTSItemLaboratoryTensile,
   BuildingProjectTSItemLaboratoryWelding,
@@ -87,6 +88,55 @@ export class BuildingProjectTSItemUnitInfoDTO extends Model {
 export type BuildingProjectTechSpecDataDTO = BuildingProjectTSItemUnitInfoDTO;
 
 @model()
+export class BuildingProjectTSItemLaboratoryElectricityDTO extends Model {
+  @property({type: 'number', required: true})
+  required_samples_count: number;
+  @property({type: 'number', required: true})
+  earth_pit_count: number;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryElectricityDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemLaboratoryElectricity,
+  ): BuildingProjectTSItemLaboratoryElectricityDTO {
+    return new BuildingProjectTSItemLaboratoryElectricityDTO({
+      required_samples_count: data.required_samples_count,
+      earth_pit_count: data.earth_pit_count,
+    });
+  }
+}
+export type BuildingProjectTSItemLaboratoryElectrictiesDTO =
+  BuildingProjectTSItemLaboratoryElectricityDTO[];
+
+@model()
+export class BuildingProjectTSItemLaboratoryPolystyreneDTO extends Model {
+  @property({type: 'number', required: true})
+  samples_count: number;
+  @property({type: 'string', required: true})
+  water_absorption: string;
+  @property({type: 'string', required: true})
+  dimensional_stability_test: string;
+
+  constructor(data?: Partial<BuildingProjectTSItemLaboratoryPolystyreneDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectTSItemLaboratoryPolystyrene,
+  ): BuildingProjectTSItemLaboratoryPolystyreneDTO {
+    return new BuildingProjectTSItemLaboratoryPolystyreneDTO({
+      samples_count: data.samples_count,
+      water_absorption: data.water_absorption,
+      dimensional_stability_test: data.dimensional_stability_test,
+    });
+  }
+}
+export type BuildingProjectTSItemLaboratoryPolystyrenesDTO =
+  BuildingProjectTSItemLaboratoryPolystyreneDTO[];
+
+@model()
 export class BuildingProjectTSItemLaboratoryTensileDTO extends Model {
   @property({type: 'string', required: true})
   profile_type: string;
@@ -117,32 +167,6 @@ export class BuildingProjectTSItemLaboratoryTensileDTO extends Model {
 }
 export type BuildingProjectTSItemLaboratoryTensilesDTO =
   BuildingProjectTSItemLaboratoryTensileDTO[];
-
-@model()
-export class BuildingProjectTSItemLaboratoryPolystyreneDTO extends Model {
-  @property({type: 'number', required: true})
-  samples_count: number;
-  @property({type: 'string', required: true})
-  water_absorption: string;
-  @property({type: 'string', required: true})
-  dimensional_stability_test: string;
-
-  constructor(data?: Partial<BuildingProjectTSItemLaboratoryPolystyreneDTO>) {
-    super(data);
-  }
-
-  static fromModel(
-    data: BuildingProjectTSItemLaboratoryPolystyrene,
-  ): BuildingProjectTSItemLaboratoryPolystyreneDTO {
-    return new BuildingProjectTSItemLaboratoryPolystyreneDTO({
-      samples_count: data.samples_count,
-      water_absorption: data.water_absorption,
-      dimensional_stability_test: data.dimensional_stability_test,
-    });
-  }
-}
-export type BuildingProjectTSItemLaboratoryPolystyrenesDTO =
-  BuildingProjectTSItemLaboratoryPolystyreneDTO[];
 
 @model()
 export class BuildingProjectTSItemLaboratoryWeldingDTO extends Model {
@@ -256,7 +280,8 @@ export class BuildingProjectTechSpecDTO extends Model {
     | BuildingProjectTSItemLaboratoryConcreteDTO
     | BuildingProjectTSItemLaboratoryWeldingDTO
     | BuildingProjectTSItemLaboratoryTensileDTO
-    | BuildingProjectTSItemLaboratoryPolystyreneDTO;
+    | BuildingProjectTSItemLaboratoryPolystyreneDTO
+    | BuildingProjectTSItemLaboratoryElectricityDTO;
 
   constructor(data?: Partial<BuildingProjectTechSpecDTO>) {
     super(data);
@@ -284,6 +309,10 @@ export class BuildingProjectTechSpecDTO extends Model {
         BuildingProjectTSItemLaboratoryPolystyreneDTO.fromModel(
           data.data as BuildingProjectTSItemLaboratoryPolystyrene,
         ),
+      [EnumBuildingProjectTechSpecItems.LABORATORY_ELECTRICITY]:
+        BuildingProjectTSItemLaboratoryElectricityDTO.fromModel(
+          data.data as BuildingProjectTSItemLaboratoryElectricity,
+        ),
     }[data.tags.join('')];
 
     return new BuildingProjectTechSpecDTO({
@@ -297,6 +326,27 @@ export class BuildingProjectTechSpecDTO extends Model {
   }
 }
 export type BuildingProjectTechSpecsDTO = BuildingProjectTechSpecDTO[];
+
+@model()
+export class BuildingProjectTSItemLaboratoryElectrictyRequestDTO extends Model {
+  @property({type: 'number', required: true})
+  required_samples_count: number;
+  @property({type: 'number', required: true})
+  earth_pit_count: number;
+
+  constructor(
+    data?: Partial<BuildingProjectTSItemLaboratoryElectrictyRequestDTO>,
+  ) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectTSItemLaboratoryElectricityDTO {
+    return new BuildingProjectTSItemLaboratoryElectricity({
+      earth_pit_count: this.earth_pit_count,
+      required_samples_count: this.required_samples_count,
+    });
+  }
+}
 
 @model()
 export class BuildingProjectTSItemLaboratoryPolystyreneRequestDTO extends Model {

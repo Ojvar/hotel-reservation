@@ -19,6 +19,7 @@ import {
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
   BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+  BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
   BuildingProjectTSItemLaboratoryPolystyreneRequestDTO,
   BuildingProjectTSItemLaboratoryTensileRequestDTO,
   BuildingProjectTSItemLaboratoryWeldingRequestDTO,
@@ -667,6 +668,35 @@ export class ProjectOperatorsController {
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.addTechnicalSpecLaboratoryPolystyrene(
+      userId,
+      projectId,
+      body,
+      {checkOfficeMembership: true},
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/technical-spec/laboratory/electricity`, {
+    tags,
+    summary: 'Add technical specification data (Laboratory / Electricty)',
+    description: 'Add technical specification data (Laboratory, Electricty)',
+    responses: {204: {}},
+  })
+  async addTechnicalSpecificationLaboratoryElectrictyData(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(
+            BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
+          ),
+        },
+      },
+    })
+    body: BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.addTechnicalSpecLaboratoryElectricty(
       userId,
       projectId,
       body,

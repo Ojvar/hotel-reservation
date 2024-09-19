@@ -19,6 +19,7 @@ import {
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
   BuildingProjectTSItemLaboratoryConcreteRequestDTO,
+  BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
   BuildingProjectTSItemLaboratoryPolystyreneRequestDTO,
   BuildingProjectTSItemLaboratoryTensileRequestDTO,
   BuildingProjectTSItemLaboratoryWeldingRequestDTO,
@@ -178,6 +179,40 @@ export class ProjectManagementService {
     return project;
   }
 
+  async addTechnicalSpecLaboratoryElectricty(
+    userId: string,
+    projectId: string,
+    data: BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
+    options: CheckOfficeAccessOptions,
+  ): Promise<void> {
+    const project = await this.getProjectByIdByCheckUserAccessLevel(
+      userId,
+      projectId,
+      options,
+    );
+
+    // Check older and active laboratory record
+    const [labItem] = project.getActiveTechnicalItems(
+      EnumBuildingProjectTechSpecItems.LABORATORY_ELECTRICITY,
+    );
+    labItem?.markAsRemoved(userId);
+
+    // Add new item
+    const now = new ModifyStamp({by: userId});
+    project.addTechnicalSpecItem(userId, [
+      new BuildingProjectTechSpec({
+        created: now,
+        updated: now,
+        status: EnumStatus.ACTIVE,
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_ELECTRICITY],
+        data: new BuildingProjectTSItemLaboratoryElectrictyRequestDTO(
+          data,
+        ).toModel(),
+      }),
+    ]);
+    await this.buildingProjectRepo.update(project);
+  }
+
   async addTechnicalSpecLaboratoryPolystyrene(
     userId: string,
     projectId: string,
@@ -203,7 +238,7 @@ export class ProjectManagementService {
         created: now,
         updated: now,
         status: EnumStatus.ACTIVE,
-        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_TENSILE],
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_POLYSTYRENE],
         data: new BuildingProjectTSItemLaboratoryPolystyreneRequestDTO(
           data,
         ).toModel(),
