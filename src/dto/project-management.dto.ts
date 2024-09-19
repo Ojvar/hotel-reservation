@@ -206,11 +206,11 @@ export class BuildingProjectTechSpecDTO extends Model {
         BuildingProjectTSItemUnitInfoDTO.fromModel(
           data.data as BuildingProjectTSItemUnitInfo,
         ),
-      [EnumBuildingProjectTechSpecItems.LABORATORY]:
+      [EnumBuildingProjectTechSpecItems.LABORATORY_CONCRETE]:
         BuildingProjectTSItemLaboratoryConcreteDTO.fromModel(
           data.data as BuildingProjectTSItemLaboratoryConcrete,
         ),
-      [EnumBuildingProjectTechSpecItems.WELDING]:
+      [EnumBuildingProjectTechSpecItems.LABORATORY_WELDING]:
         BuildingProjectTSItemLaboratoryWeldingDTO.fromModel(
           data.data as BuildingProjectTSItemLaboratoryWelding,
         ),

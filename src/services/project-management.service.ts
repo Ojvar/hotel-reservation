@@ -190,7 +190,7 @@ export class ProjectManagementService {
 
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
-      EnumBuildingProjectTechSpecItems.WELDING,
+      EnumBuildingProjectTechSpecItems.LABORATORY_WELDING,
     );
     labItem?.markAsRemoved(userId);
 
@@ -201,7 +201,7 @@ export class ProjectManagementService {
         created: now,
         updated: now,
         status: EnumStatus.ACTIVE,
-        tags: [EnumBuildingProjectTechSpecItems.WELDING],
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_WELDING],
         data: new BuildingProjectTSItemLaboratoryWeldingRequestDTO(
           data,
         ).toModel(),
@@ -224,7 +224,7 @@ export class ProjectManagementService {
 
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
-      EnumBuildingProjectTechSpecItems.LABORATORY,
+      EnumBuildingProjectTechSpecItems.LABORATORY_CONCRETE,
     );
     labItem?.markAsRemoved(userId);
 
@@ -235,7 +235,7 @@ export class ProjectManagementService {
         created: now,
         updated: now,
         status: EnumStatus.ACTIVE,
-        tags: [EnumBuildingProjectTechSpecItems.LABORATORY],
+        tags: [EnumBuildingProjectTechSpecItems.LABORATORY_CONCRETE],
         data: new BuildingProjectTSItemLaboratoryConcreteRequestDTO(
           data,
         ).toModel(),

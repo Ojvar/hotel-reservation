@@ -19,8 +19,8 @@ import {Office} from './office.model';
 
 export enum EnumBuildingProjectTechSpecItems {
   UNIT_INFO = 'UNIT_INFO',
-  LABORATORY = 'LABORATORY',
-  WELDING = 'WELDING',
+  LABORATORY_CONCRETE = 'LABORATORY_CONCRETE',
+  LABORATORY_WELDING = 'LABORATORY_WELDING',
 }
 
 export enum EnumProgressStatus {
