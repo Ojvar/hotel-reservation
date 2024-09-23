@@ -32,7 +32,7 @@ import {MONGO_ID_REGEX} from '../models';
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_MANAGER))
 export class ProjectManagementController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
