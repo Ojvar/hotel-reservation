@@ -19,7 +19,6 @@ import {
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
-  NewBuildingProjectRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -42,33 +41,33 @@ export class ProjectManagementController {
     private keycloakSecurity: KeycloakSecurity,
   ) {}
 
-  @post(`${BASE_ADDR}/new-project`, {
-    tags,
-    summary: 'Create a new project',
-    description: 'Create a new project',
-    responses: {
-      200: {
-        content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-        },
-      },
-    },
-  })
-  async createNewProject(
-    @requestBody() body: NewBuildingProjectRequestDTO,
-  ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    body = new NewBuildingProjectRequestDTO(body);
-    return this.projectManagementService.createNewProject(
-      userId,
-      undefined,
-      undefined,
-      body,
-      {checkOfficeId: false},
-    );
-  }
+  //@post(`${BASE_ADDR}/new-project`, {
+  //  tags,
+  //  summary: 'Create a new project',
+  //  description: 'Create a new project',
+  //  responses: {
+  //    200: {
+  //      content: {
+  //        'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+  //      },
+  //    },
+  //  },
+  //})
+  //async createNewProject(
+  //  @requestBody() body: NewBuildingProjectRequestDTO,
+  //): Promise<BuildingProjectDTO> {
+  //  const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+  //  body = new NewBuildingProjectRequestDTO(body);
+  //  return this.projectManagementService.createNewProject(
+  //    userId,
+  //    undefined,
+  //    undefined,
+  //    body,
+  //    {checkOfficeId: false},
+  //  );
+  //}
 
-  @get(`${BASE_ADDR}/project/{id}/details`, {
+  @get(`${BASE_ADDR}/project/{project_id}/details`, {
     tags,
     summary: 'Get Project details',
     description: 'Get Project details',
@@ -81,13 +80,17 @@ export class ProjectManagementController {
     },
   })
   async getProjectDetails(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectByUserId(userId, id, {
-      checkUserAccess: false,
-      checkOfficeMembership: false,
-    });
+    return this.projectManagementService.getProjectDetailsById(
+      userId,
+      projectId,
+      {
+        checkUserAccess: false,
+        checkOfficeMembership: false,
+      },
+    );
   }
 
   @get(`${BASE_ADDR}`, {

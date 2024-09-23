@@ -23,16 +23,26 @@ export class Office extends BaseOffice {
     super(data);
   }
 
-  checkUserAccess(userId: string): boolean {
-    return !!this.members.find(
-      m =>
-        m.user_id === userId &&
-        m.status === EnumStatus.ACTIVE &&
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ].includes(m.membership.role),
+  checkUserAccess(
+    userId: string,
+    userAccessLevels: EnumOfficeMemberRole[] = [
+      EnumOfficeMemberRole.OWNER,
+      EnumOfficeMemberRole.SECRETARY,
+      EnumOfficeMemberRole.CO_FOUNDER,
+    ],
+    allowedStatus: EnumStatus[] = [EnumStatus.ACTIVE],
+  ): boolean {
+    const now = +new Date();
+    return (
+      allowedStatus.includes(this.status) &&
+      !!this.members.find(
+        m =>
+          m.user_id === userId &&
+          m.status === EnumStatus.ACTIVE &&
+          userAccessLevels.includes(m.membership.role) &&
+          +m.membership.from <= now &&
+          +(m.membership.to ?? now) >= now,
+      )
     );
   }
 
