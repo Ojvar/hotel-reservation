@@ -1193,7 +1193,8 @@ export class BuildingProject extends Entity {
   }
 }
 
-export interface ProjectRelations {
+export interface BuildingProjectRelations {
   office?: Office;
 }
-export type ProjectWithRelations = BuildingProject & ProjectRelations;
+export type BuildingProjectWithRelations = BuildingProject &
+  BuildingProjectRelations;

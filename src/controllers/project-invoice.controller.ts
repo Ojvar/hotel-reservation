@@ -18,7 +18,7 @@ import {AnyObject, Filter} from '@loopback/repository';
 const BASE_ADDR = '/projects/{project_id}/invoices';
 const tags = ['Projects.Invoice'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_MANAGER))
 export class ProjectInvoiceController {
   constructor(
     @inject(KeycloakSecurityProvider.BINDING_KEY)

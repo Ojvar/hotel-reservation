@@ -3,7 +3,6 @@ import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {AnyObject, Filter, repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
-import lodash from 'lodash';
 import {
   AddNewJobRequestDTO,
   BuildingGroupDTO,
@@ -40,11 +39,14 @@ import {
   adjustMin,
   adjustRange,
   getPersianDateParts,
+  getPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
+  BaseData,
   BuildingGroup,
+  BuildingGroupRelations,
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectLawyer,
@@ -113,6 +115,14 @@ export class ProjectManagementService {
     `services.config.${ProjectManagementService.name}`,
   );
 
+  readonly ALLOWED_OFFICE_MEMBERSHIP_RULES = [
+    EnumOfficeMemberRole.OWNER,
+    EnumOfficeMemberRole.SECRETARY,
+    EnumOfficeMemberRole.CO_FOUNDER,
+  ];
+
+  readonly ALLOWED_STAFF_STATUS = [EnumStatus.ACCEPTED, EnumStatus.PENDING];
+
   readonly ALLOWED_FILES = [
     'STRUCTURE_MAP',
     'STRUCTURE_CALCULATION',
@@ -155,40 +165,16 @@ export class ProjectManagementService {
     private messageService: MessageService,
   ) {}
 
-  private async getProjectByIdByCheckUserAccessLevel(
-    userId: string,
-    projectId: string,
-    options: CheckOfficeAccessOptions,
-  ): Promise<BuildingProject> {
-    const project = await this.findActiveProjectOrFail(projectId);
-
-    // Check user access
-    if (options.checkOfficeMembership) {
-      await this.userIsAllowedToProjectForOffice(
-        userId,
-        project.office_id,
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ],
-        [EnumStatus.ACTIVE],
-      );
-    }
-
-    return project;
-  }
-
   async addTechnicalSpecLaboratoryElectricty(
     userId: string,
     projectId: string,
     data: BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.getProjectByIdByCheckUserAccessLevel(
+    const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
-      options,
+      {...options, removeRelations: true},
     );
 
     // Check older and active laboratory record
@@ -219,10 +205,10 @@ export class ProjectManagementService {
     data: BuildingProjectTSItemLaboratoryPolystyreneRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.getProjectByIdByCheckUserAccessLevel(
+    const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
-      options,
+      {...options, removeRelations: true},
     );
 
     // Check older and active laboratory record
@@ -253,10 +239,10 @@ export class ProjectManagementService {
     data: BuildingProjectTSItemLaboratoryTensileRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.getProjectByIdByCheckUserAccessLevel(
+    const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
-      options,
+      {...options, removeRelations: true},
     );
 
     // Check older and active laboratory record
@@ -287,10 +273,10 @@ export class ProjectManagementService {
     data: BuildingProjectTSItemLaboratoryWeldingRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.getProjectByIdByCheckUserAccessLevel(
+    const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
-      options,
+      {...options, removeRelations: true},
     );
 
     // Check older and active laboratory record
@@ -321,10 +307,10 @@ export class ProjectManagementService {
     data: BuildingProjectTSItemLaboratoryConcreteRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.getProjectByIdByCheckUserAccessLevel(
+    const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
-      options,
+      {...options, removeRelations: true},
     );
 
     // Check older and active laboratory record
@@ -355,21 +341,17 @@ export class ProjectManagementService {
     data: BuildingProjectTSItemUnitInfosRequestDTO,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.findActiveProjectOrFail(projectId);
-
     // Check user access
-    if (options.checkOfficeMembership) {
-      await this.userIsAllowedToProjectForOffice(
-        userId,
-        project.office_id,
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ],
-        [EnumStatus.ACTIVE],
-      );
-    }
+    const [project] = await this.checkProjectUserAccessLevel(
+      userId,
+      projectId,
+      {
+        ...options,
+        removeRelations: true,
+        allowedOfficeStatus: [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
+        allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
+      },
+    );
 
     // Add items
     const now = new ModifyStamp({by: userId});
@@ -395,20 +377,16 @@ export class ProjectManagementService {
     techSpecItemId: string,
     options: CheckOfficeAccessOptions,
   ): Promise<void> {
-    const project = await this.findActiveProjectOrFail(projectId);
-    // Check user access
-    if (options.checkOfficeMembership) {
-      await this.userIsAllowedToProjectForOffice(
-        userId,
-        project.office_id,
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ],
-        [EnumStatus.ACTIVE],
-      );
-    }
+    const [project] = await this.checkProjectUserAccessLevel(
+      userId,
+      projectId,
+      {
+        ...options,
+        removeRelations: true,
+        allowedOfficeStatus: [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
+        allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
+      },
+    );
     project.removeTechnicalSpecItem(userId, techSpecItemId);
     await this.buildingProjectRepo.update(project);
   }
@@ -490,7 +468,7 @@ export class ProjectManagementService {
   ): Promise<void> {
     const project = await this.findActiveProjectOrFail(projectId);
     if (checkOfficeMembership) {
-      await this.getProjectByCheckingPrivileges(
+      await this.getOfficeByCheckingPrivileges(
         userId,
         projectId,
         project.office_id.toString(),
@@ -507,7 +485,7 @@ export class ProjectManagementService {
   ): Promise<void> {
     const project = await this.findActiveProjectOrFail(projectId);
     if (checkOfficeMembership) {
-      await this.getProjectByCheckingPrivileges(
+      await this.getOfficeByCheckingPrivileges(
         userId,
         projectId,
         project.office_id.toString(),
@@ -582,33 +560,30 @@ export class ProjectManagementService {
       projectId,
       options,
     );
-    const conditionsBaseData = await this.basedataRepo.find({
-      where: {category: 'BUILDING_GROUP_CONDITIONS'},
-    });
-    const buildingGroups = await this.buildingGroupRepo.find({
-      where: {status: EnumStatus.ACTIVE},
-      include: ['buildingGroupCondition'],
-    });
+    const conditionsBaseData = await this.getBaseDataByCategory(
+      'BUILDING_GROUP_CONDITIONS',
+    );
+    const buildingGroups = await this.getBuildingGroups();
+
+    // Get basedata with specified category
+    const getBaseData = (id: string): BaseData | undefined =>
+      conditionsBaseData.find(b => b.id?.toString() === id.toString());
 
     // Filter building group
-    const sortFunc = (a: BuildingGroup, b: BuildingGroup) =>
-      +b.conditions![0].min - +a.conditions![0].min;
-    let queue = buildingGroups
-      .filter(bg => bg.parent_id === null)
-      .sort(sortFunc);
+    let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
     let selectedBuildingGroup: BuildingGroup | null = null;
     while (queue.length > 0) {
       const currentBuildingGroup = queue.find(bGroup => {
         const conditions = bGroup.conditions?.map(c => ({
           ...c,
-          value:
-            conditionsBaseData.find(x => x.id?.toString() === c.key.toString())
-              ?.key ?? '',
+          value: getBaseData(c.key.toString())?.key ?? '',
         }));
         return !conditions?.length
           ? true
           : conditions?.some(cond =>
-              new Condition(cond).checkValue(lodash.get(project, cond.value)),
+              new Condition(cond).checkValue(
+                getPropertyByString(project, cond.value) as string,
+              ),
             );
       });
       if (!currentBuildingGroup) {
@@ -617,7 +592,7 @@ export class ProjectManagementService {
       const parent_id = currentBuildingGroup.id?.toString();
       queue = buildingGroups
         .filter(bGroup => parent_id === bGroup.parent_id?.toString())
-        .sort(sortFunc);
+        .sort(this.sortFunc);
       selectedBuildingGroup = currentBuildingGroup;
     }
 
@@ -647,11 +622,12 @@ export class ProjectManagementService {
     );
     const projects = await pointer.toArray();
     if (showUsersRequests) {
-      for (const project of projects) {
-        project.staff = project.staff?.filter(
-          (staff: AnyObject) => staff.user_id === userId,
-        );
-      }
+      projects.forEach(
+        (project: AnyObject) =>
+          (project.staff = project.staff?.filter(
+            (staff: AnyObject) => staff.user_id === userId,
+          )),
+      );
     }
     return projects.map(BuildingProjectDTO.fromModel);
   }
@@ -686,20 +662,19 @@ export class ProjectManagementService {
 
   async commitState(
     userId: string,
-    id: string,
+    projectId: string,
     state: EnumProgressStatus,
   ): Promise<void> {
-    const project = await this.buildingProjectRepo.findById(id, {
-      include: ['office'],
-    });
-    if (!project.office?.checkUserAccess(userId)) {
-      throw new HttpErrors.Unauthorized('Insufficent access level');
-    }
+    const [project] = await this.checkProjectUserAccessLevel(
+      userId,
+      projectId,
+      {removeRelations: true},
+    );
+
+    // Update project's state
     project.commitState(userId, state);
     project.updated = new ModifyStamp({by: userId});
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    const {office, ...updatedProject} = project;
-    await this.buildingProjectRepo.update(new BuildingProject(updatedProject));
+    await this.buildingProjectRepo.update(project);
 
     // Send RMQ Message
     await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
@@ -707,63 +682,21 @@ export class ProjectManagementService {
 
   async getProjectStaffList(
     userId: string,
-    id: string,
-    staffStatuses = [EnumStatus.ACTIVE],
-    {checkOfficeMembership, checkUserAccess}: CheckProjectDetailsOptions = {
-      checkUserAccess: true,
-      checkOfficeMembership: true,
-    },
+    projectId: string,
+    staffStatuses = [EnumStatus.ACTIVE, EnumStatus.PENDING],
+    options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProjectStaffItemsDTO> {
-    const now = new Date();
+    // Check for super-user access level
+    options = {checkUserAccess: true, checkOfficeMembership: false, ...options};
+    const [project] = await this.checkProjectUserAccessLevel(
+      userId,
+      projectId,
+      {...options, staffStatuses},
+    );
+
     const aggregate = [
-      {$match: {_id: new ObjectId(id)}},
-
-      ...(!checkOfficeMembership
-        ? []
-        : [
-            // Office
-            {
-              $lookup: {
-                from: 'offices',
-                localField: 'office_id',
-                foreignField: '_id',
-                as: 'office',
-              },
-            },
-            {$set: {office: {$first: '$office'}}},
-            {
-              $match: {
-                'office.members': {
-                  $elemMatch: {
-                    user_id: userId,
-                    status: {$in: staffStatuses},
-                    'membership.role': {
-                      $in: [
-                        EnumOfficeMemberRole.OWNER,
-                        EnumOfficeMemberRole.SECRETARY,
-                        EnumOfficeMemberRole.CO_FOUNDER,
-                      ],
-                    },
-                    'membership.from': {$lte: now},
-                    $or: [
-                      {'members.membership.to': {$exists: false}},
-                      {'members.membership.to': null},
-                      {'members.membership.to': {$gte: now}},
-                    ],
-                  },
-                },
-              },
-            },
-          ]),
-
-      // Unwind over staff
+      {$match: {_id: new ObjectId(projectId)}},
       {$unwind: '$staff'},
-      {
-        $match: {
-          ...(checkUserAccess ? {'staff.user_id': userId} : {}),
-          'staff.status': {$ne: EnumStatus.DEACTIVE},
-        },
-      },
 
       // Lookup over profiles
       {
@@ -812,10 +745,10 @@ export class ProjectManagementService {
       'aggregate',
       aggregate,
     );
-    const project = await pointer.next();
+    const projectData = await pointer.next();
     return !project
       ? []
-      : project.staff.map(BuildingProjectStaffItemDTO.fromModel);
+      : projectData.staff.map(BuildingProjectStaffItemDTO.fromModel);
   }
 
   async addProjectStaff(
@@ -899,28 +832,18 @@ https://apps.qeng.ir/dashboard
 
   async getFilesList(
     userId: string,
-    id: string,
+    projectId: string,
     options: CheckProjectDetailsOptions,
+    staffStatuses: EnumStatus[] = [EnumStatus.ACCEPTED, EnumStatus.PENDING],
   ): Promise<BuildingProjectAttachmentsDTO> {
+    // Check for super-user access level
+    await this.checkProjectUserAccessLevel(userId, projectId, {
+      ...options,
+      staffStatuses,
+    });
+
     const aggregate: AnyObject[] = [
-      {$match: {_id: new ObjectId(id)}},
-
-      // Check user access
-      ...(!options?.checkUserAccess
-        ? []
-        : [
-            {
-              $match: {
-                staff: {
-                  $elemMatch: {
-                    user_id: userId,
-                    status: {$ne: [EnumStatus.REJECTED, EnumStatus.DEACTIVE]},
-                  },
-                },
-              },
-            },
-          ]),
-
+      {$match: {_id: new ObjectId(projectId)}},
       {$unwind: '$attachments'},
       {$match: {'attachments.status': 6}},
 
@@ -942,9 +865,7 @@ https://apps.qeng.ir/dashboard
       },
       {
         $set: {
-          'attachments.signes.profile': {
-            $first: '$attachments.signes.profile',
-          },
+          'attachments.signes.profile': {$first: '$attachments.signes.profile'},
         },
       },
       //  { $match: { "attachments.signes.profile.user_id": { $exists: true } } },
@@ -1045,9 +966,13 @@ https://apps.qeng.ir/dashboard
   }
 
   async getFileToken(
+    operatorId: string,
+    officeId: string,
     allowedUser: string,
     fields: string[] = [],
   ): Promise<FileTokenResponse> {
+    await this.checkOfficeUserAccessLevel(operatorId, officeId);
+
     const allowedFiles = this.ALLOWED_FILES.filter(file =>
       fields.includes(file),
     ).map(x => FileServiceAgentService.generateAllowedFile(x));
@@ -1097,13 +1022,18 @@ https://apps.qeng.ir/dashboard
   }
 
   async sendProjectRegistrationCode(
+    operatorId: string,
+    officeId: string,
     nId: string,
     lawyerNid = '',
   ): Promise<BuildingProjectRegistrationCodeDTO> {
+    await this.checkOfficeUserAccessLevel(operatorId, officeId);
+
     const userProfile = await this.profileRepo.findByNIdOrFail(nId);
     const lawyerProfile = lawyerNid
       ? await this.profileRepo.findByNIdOrFail(lawyerNid)
       : undefined;
+
     const trackingCode =
       await this.verificationCodeService.generateAndStoreCode(
         this.configs.projectRegistrationTitle,
@@ -1113,6 +1043,7 @@ https://apps.qeng.ir/dashboard
         {},
         lawyerProfile,
       );
+
     return new BuildingProjectRegistrationCodeDTO({
       tracking_code: trackingCode,
     });
@@ -1120,25 +1051,23 @@ https://apps.qeng.ir/dashboard
 
   async updateProject(
     userId: string,
-    id: string,
+    projectId: string,
     data: NewBuildingProjectRequestDTO,
-    options: {checkOfficeId: boolean} = {checkOfficeId: true},
-    allowedStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
+    options: {checkOfficeMembership: boolean} = {checkOfficeMembership: true},
+    allowedProjectProgressStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
-    if (options.checkOfficeId) {
-      await this.userIsAllowedToProjectForOffice(
-        userId,
-        data.office_id,
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ],
-        [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
-      );
-    }
-    const oldProject = await this.buildingProjectRepo.findById(id);
-    if (!allowedStatus.includes(oldProject.progress_status)) {
+    const [oldProject] = await this.checkProjectUserAccessLevel(
+      userId,
+      projectId,
+      {
+        ...options,
+        removeRelations: true,
+        allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
+        allowedOfficeStatus: [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
+      },
+    );
+
+    if (!allowedProjectProgressStatus.includes(oldProject.progress_status)) {
       throw new HttpErrors.UnprocessableEntity(
         'Invalid project progress status',
       );
@@ -1176,14 +1105,23 @@ https://apps.qeng.ir/dashboard
 
   async createNewProject(
     userId: string,
+    officeId: string,
     nId: string | undefined,
     verificationCode: number | undefined,
     data: NewBuildingProjectRequestDTO,
-    options: {checkOfficeId: boolean} = {checkOfficeId: true},
+    options: Partial<{checkOfficeId: boolean}> = {},
   ): Promise<BuildingProjectDTO> {
-    // Check project unique key
+    options = {checkOfficeId: true, ...options};
+
+    // Check user's office access access
+    if (options.checkOfficeId) {
+      await this.checkOfficeUserAccessLevel(userId, officeId);
+    }
+
+    // Generate and Check project's unique key
     data.unique_key = await this.validateFormNumberByProjectData(data);
 
+    // Check verification code stored in the redis
     const shouldVerify = verificationCode && nId;
     if (shouldVerify) {
       const laywerProfile = data.lawyer
@@ -1199,18 +1137,6 @@ https://apps.qeng.ir/dashboard
       );
     }
 
-    if (options.checkOfficeId) {
-      await this.userIsAllowedToProjectForOffice(
-        userId,
-        data.office_id,
-        [
-          EnumOfficeMemberRole.OWNER,
-          EnumOfficeMemberRole.SECRETARY,
-          EnumOfficeMemberRole.CO_FOUNDER,
-        ],
-        [EnumStatus.ACTIVE],
-      );
-    }
     if (!data.case_no) {
       const year = +getPersianDateParts()[0].slice(-2);
       data.case_no = await this.generateNewCaseNo(year);
@@ -1219,6 +1145,8 @@ https://apps.qeng.ir/dashboard
     const newProject = await this.buildingProjectRepo.create(
       data.toModel(userId, {}),
     );
+
+    // Remove verification code stored in the redis
     if (shouldVerify) {
       await this.verificationCodeService.removeVerificationCodeByNId(
         nId,
@@ -1229,38 +1157,23 @@ https://apps.qeng.ir/dashboard
     return BuildingProjectDTO.fromModel(newProject);
   }
 
-  async userIsAllowedToProjectForOffice(
-    userId: string,
-    officeId: string | undefined,
-    allowedRoles: EnumOfficeMemberRole[],
-    allowedStatus: EnumStatus[],
-  ): Promise<void> {
-    if (!officeId) {
-      throw new HttpErrors.UnprocessableEntity('Invalid Office Id');
-    }
-    const offices = await this.officeRepo.getOfficesByUserMembership(
-      userId,
-      allowedRoles,
-    );
-    const office = offices?.find(currentOffice => {
-      return (
-        currentOffice.id?.toString() === officeId.toString() &&
-        allowedStatus.includes(currentOffice.status)
-      );
-    });
-    if (!office?.getMemberDataByUserId(userId)) {
-      throw new HttpErrors.NotAcceptable('User access denined to the office');
-    }
-  }
-
   async getProjectsList(
     filter: Filter<BuildingProjectFilter> = {},
-    {checkUserAccess}: CheckProjectDetailsOptions,
+    options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProjectsDTO> {
+    options = {checkOfficeMembership: false, checkUserAccess: true, ...options};
+
     const {user_id = ''} = (filter.where ?? {}) as AnyObject;
     const aggregate = this.getProjectsListAggregate(filter, {
-      ...(checkUserAccess
-        ? {staff: {$elemMatch: {status: EnumStatus.ACCEPTED, user_id}}}
+      ...(options.checkUserAccess
+        ? {
+            staff: {
+              $elemMatch: {
+                status: this.ALLOWED_STAFF_STATUS,
+                user_id,
+              },
+            },
+          }
         : {}),
     });
     const pointer = await this.buildingProjectRepo.execute(
@@ -1277,67 +1190,18 @@ https://apps.qeng.ir/dashboard
 
   async getProjectByUserIdRaw(
     userId: string,
-    id: string,
-    {checkOfficeMembership, checkUserAccess}: CheckProjectDetailsOptions = {
-      checkUserAccess: true,
-      checkOfficeMembership: true,
-    },
+    projectId: string,
+    options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProject> {
-    const now = new Date();
-    const aggregate = [
-      {
-        $match: {
-          _id: new ObjectId(id),
-          ...(checkUserAccess
-            ? {
-                staff: {
-                  $elemMatch: {
-                    user_id: userId,
-                    status: {$in: [EnumStatus.ACCEPTED, EnumStatus.PENDING]},
-                  },
-                },
-              }
-            : {}),
-        },
-      },
+    options = {checkUserAccess: true, checkOfficeMembership: false, ...options};
 
-      // Check user access
-      {
-        $lookup: {
-          from: 'offices',
-          localField: 'office_id',
-          foreignField: '_id',
-          as: 'office',
-        },
-      },
-      {$set: {office: {$first: '$office'}}},
-      {$unwind: '$office.members'},
-      ...(checkOfficeMembership
-        ? [
-            {
-              $match: {
-                'office.members.user_id': userId,
-                'office.members.status': {
-                  $in: [EnumStatus.ACTIVE, EnumStatus.PENDING],
-                },
-                'office.members.membership.from': {$lte: new Date()},
-                $or: [
-                  {'members.membership.to': {$exists: false}},
-                  {'members.membership.to': null},
-                  {'members.membership.to': {$gte: now}},
-                ],
-                'office.members.membership.role': {
-                  $in: [
-                    EnumOfficeMemberRole.OWNER,
-                    EnumOfficeMemberRole.SECRETARY,
-                    EnumOfficeMemberRole.CO_FOUNDER,
-                  ],
-                },
-              },
-            },
-          ]
-        : []),
-      {$unset: ['office']},
+    await this.checkProjectUserAccessLevel(userId, projectId, {
+      ...options,
+      removeRelations: true,
+    });
+
+    const aggregate = [
+      {$match: {_id: new ObjectId(projectId)}},
 
       // Get profiles
       {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
@@ -1401,15 +1265,6 @@ https://apps.qeng.ir/dashboard
     return new BuildingProject(project);
   }
 
-  async getProjectByUserId(
-    userId: string,
-    id: string,
-    options?: CheckProjectDetailsOptions,
-  ): Promise<BuildingProjectDTO> {
-    const project = await this.getProjectByUserIdRaw(userId, id, options);
-    return BuildingProjectDTO.fromModel(project);
-  }
-
   async addNewInvoice(
     userId: string,
     id: string,
@@ -1443,26 +1298,27 @@ https://apps.qeng.ir/dashboard
     const invoicesConditions = {
       ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
     };
-    const jobsCondition: AnyObject = {};
-    if (jobResult) {
-      jobsCondition['result'] = jobResult;
-    }
-    if (jobInvoice) {
-      jobsCondition['invoice_id'] = new ObjectId(jobInvoice as string);
-    }
-
-    const aggregate = [
-      {
-        $match: {
-          status: EnumStatus.ACTIVE,
-          ...(projectId ? {_id: new ObjectId(projectId)} : {}),
-        },
-      },
-      {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
+    const jobsCondition: AnyObject = {
+      ...(jobResult ? {result: jobResult} : {}),
+      ...(jobInvoice ? {invoice_id: new ObjectId(jobInvoice as string)} : {}),
+    };
+    const customConditions = [
       ...(Object.keys(invoicesConditions).length ? [invoicesConditions] : []),
       ...(Object.keys(jobsCondition).length
         ? [{$match: {jobs: {$elemMatch: jobsCondition}}}]
         : []),
+    ];
+
+    const aggregate = [
+      {
+        $match: projectId
+          ? {_id: new ObjectId(projectId)}
+          : {status: EnumStatus.ACTIVE},
+      },
+      {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
+      ...customConditions,
+
+      // Group invoices ans states
       {
         $group: {
           _id: '$_id',
@@ -1471,29 +1327,46 @@ https://apps.qeng.ir/dashboard
           all_states: {$push: '$states'},
         },
       },
-      {
-        $replaceRoot: {
-          newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']},
-        },
-      },
+      {$replaceRoot: {newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']}}},
       {$set: {states: '$all_states', invoices: '$all_invoices'}},
       {$unset: ['all_states', 'all_invoices', 'mergedFields']},
+
+      // Lookup profiles
+      {$unwind: '$ownership.owners'},
       {
         $lookup: {
           from: 'profiles',
           localField: 'ownership.owners.user_id',
           foreignField: 'user_id',
-          as: 'owners_profile',
+          as: 'ownership.owneres.profile',
         },
       },
+
+      // Lookup lawyers
+      {$unwind: '$lawyers'},
       {
         $lookup: {
           from: 'profiles',
           localField: 'lawyers.user_id',
           foreignField: 'user_id',
-          as: 'lawyers_profile',
+          as: 'lawyers.profile',
         },
       },
+
+      // Regroup data
+      {
+        $group: {
+          _id: '$_id',
+          mergedFields: '$$ROOT',
+          all_lawyers: {$push: '$lawyers'},
+          all_ownerships: {$push: '$ownership'},
+        },
+      },
+      {$replaceRoot: {newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']}}},
+      {$set: {lawyers: '$all_lawyers', ownership: '$all_ownerships'}},
+      {$unset: ['all_lawyers', 'all_ownerships', 'mergedFields']},
+
+      // Lookup basedata
       {
         $lookup: {
           from: 'basedata',
@@ -1503,6 +1376,7 @@ https://apps.qeng.ir/dashboard
         },
       },
       {$set: {ownership_info: {$first: '$ownership_info'}}},
+
       {$sort: {'created.at': 1}},
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
@@ -1514,53 +1388,41 @@ https://apps.qeng.ir/dashboard
     );
     const result = await pointer.toArray();
 
-    const getProfile = (userId: string, profiles: AnyObject[]): AnyObject => {
-      const profile = profiles.find(x => x.user_id === userId) ?? {};
-      return {
-        n_in: profile.n_in,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        mobile: profile.mobile,
-      };
-    };
+    const getProfile = (profile: Profile): AnyObject => ({
+      n_in: profile.n_in,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      mobile: profile.mobile,
+    });
 
-    const output = result.map((r: AnyObject) => ({
+    return result.map((r: AnyObject) => ({
       ...r,
       _id: undefined,
       id: r._id.toString(),
       case_no: r.case_no.case_no,
       ownership: {
         ...r.ownership,
-        owners: r.ownership.owners.map((o: AnyObject) => ({
-          ...o,
-          profile: getProfile(o.user_id, r.owners_profile),
+        owners: r.ownership.owners.map((owner: AnyObject) => ({
+          ...owner,
+          profile: getProfile(owner.profile),
         })),
-        lawyers: r.lawyers.map((l: AnyObject) => ({
-          ...l,
-          profile: getProfile(l.user_id, r.lawyers_profile),
+        lawyers: r.lawyers.map((lawyer: AnyObject) => ({
+          ...lawyer,
+          profile: getProfile(lawyer.profile),
         })),
         ownership_type: {
           ...r.ownership_type,
           ownership_type: r.ownership_info.key,
         },
       },
-      owners_profile: undefined,
-      lawyers_profile: undefined,
-      ownership_info: undefined,
     }));
-
-    return output;
   }
 
-  private async getProjectByCheckingPrivileges(
+  private async getOfficeByCheckingPrivileges(
     userId: string,
     projectId: string,
     officeId: string,
-    allowedRoles = [
-      EnumOfficeMemberRole.OWNER,
-      EnumOfficeMemberRole.SECRETARY,
-      EnumOfficeMemberRole.CO_FOUNDER,
-    ],
+    allowedRoles = this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
   ) {
     // Check office membership data
     const offices = await this.officeRepo.getOfficesByUserMembership(
@@ -1617,11 +1479,10 @@ https://apps.qeng.ir/dashboard
         from: 'profiles',
         localField: 'ownership.owners.user_id',
         foreignField: 'user_id',
-        as: 'ownerProfile',
+        as: 'ownership.owners.profile',
       },
     },
-    {$addFields: {'ownership.owners.profile': {$first: '$ownerProfile'}}},
-    {$unset: ['ownerProfile']},
+    {$set: {'ownership.owners.profile': {$first: '$ownership.owners.profile'}}},
 
     // Lawyers
     {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
@@ -1630,11 +1491,10 @@ https://apps.qeng.ir/dashboard
         from: 'profiles',
         localField: 'lawyers.user_id',
         foreignField: 'user_id',
-        as: 'lawyerProfile',
+        as: 'lawyers.profile',
       },
     },
-    {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
-    {$unset: ['lawyerProfile']},
+    {$set: {'lawyers.profile': {$first: '$lawyers.profile'}}},
 
     // Unwind over staff
     {$unwind: {path: '$staff', preserveNullAndEmptyArrays: true}},
@@ -1712,9 +1572,8 @@ https://apps.qeng.ir/dashboard
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
     matchClause: AnyObject = {},
   ): AnyObject[] {
-    const where: AnyObject = filter.where ?? {};
-    const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
-    const {case_no} = where;
+    const {case_no, status = EnumStatus.ACTIVE} = (filter.where ??
+      {}) as AnyObject;
     return [
       {
         $match: {
@@ -1724,7 +1583,6 @@ https://apps.qeng.ir/dashboard
         },
       },
       ...this.projectLookupProfileAggregate,
-      {$sort: {'created.at': -1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
@@ -1756,11 +1614,7 @@ https://apps.qeng.ir/dashboard
         $match: {
           'members.user_id': userId,
           'members.membership.role': {
-            $in: [
-              EnumOfficeMemberRole.OWNER,
-              EnumOfficeMemberRole.SECRETARY,
-              EnumOfficeMemberRole.CO_FOUNDER,
-            ],
+            $in: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
           },
           'members.status': EnumStatus.ACTIVE,
           'members.membership.status': EnumStatus.ACTIVE,
@@ -1790,5 +1644,91 @@ https://apps.qeng.ir/dashboard
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
     ];
+  }
+
+  private async checkOfficeUserAccessLevel(
+    userId: string,
+    officeId: string,
+    accessLevels: EnumOfficeMemberRole[] = this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
+  ): Promise<Office> {
+    const office = await this.officeRepo.findById(officeId);
+    if (!office.checkUserAccess(userId, accessLevels)) {
+      throw new HttpErrors.Unauthorized('Insufficent user access level');
+    }
+    return office;
+  }
+
+  private async checkProjectUserAccessLevel(
+    userId: string,
+    projectId: string,
+    options: Partial<
+      CheckProjectDetailsOptions & {
+        removeRelations: boolean;
+        staffStatuses: EnumStatus[];
+        allowedOfficeMembershipRules: EnumOfficeMemberRole[];
+        allowedOfficeStatus: EnumStatus[];
+      }
+    > = {},
+  ): Promise<[BuildingProject, Partial<CheckProjectDetailsOptions>]> {
+    // Create a clone
+    options = {
+      removeRelations: true,
+      staffStatuses: [EnumStatus.ACTIVE, EnumStatus.PENDING],
+      allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
+      allowedOfficeStatus: [EnumStatus.ACCEPTED, EnumStatus.SUSPENDED],
+      ...options,
+    };
+
+    // Check for super-user access level
+    const project = await this.buildingProjectRepo.findById(projectId, {
+      include: ['office'],
+    });
+    if (options.checkOfficeMembership) {
+      const isSuperUser = !!project.office?.checkUserAccess(
+        userId,
+        options.allowedOfficeMembershipRules,
+        options.allowedOfficeStatus,
+      );
+      if (!isSuperUser) {
+        throw new HttpErrors.Unauthorized('Insufficient user access level');
+      }
+      options = {...options, checkUserAccess: false};
+    }
+    if (options.checkUserAccess) {
+      const isAllowed = project.staff?.some(
+        staff =>
+          staff.user_id === userId &&
+          options.staffStatuses?.includes(staff.status),
+      );
+      if (!isAllowed) {
+        throw new HttpErrors.Unauthorized('Insufficient user access level');
+      }
+    }
+
+    if (options.removeRelations) {
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      const {office, ...newProject} = project;
+      return [new BuildingProject(newProject), options];
+    }
+    return [project, options];
+  }
+
+  private getBaseDataByCategory(category: string): Promise<BaseData[]> {
+    return this.basedataRepo.find({
+      where: {category},
+    });
+  }
+
+  private async getBuildingGroups(): Promise<
+    (BuildingGroup & BuildingGroupRelations)[]
+  > {
+    return this.buildingGroupRepo.find({
+      where: {status: EnumStatus.ACTIVE},
+      include: ['buildingGroupCondition'],
+    });
+  }
+
+  private sortFunc(a: BuildingGroup, b: BuildingGroup) {
+    return +b.conditions![0].min - +a.conditions![0].min;
   }
 }
