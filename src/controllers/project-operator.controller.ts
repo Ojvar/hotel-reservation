@@ -294,15 +294,19 @@ export class ProjectOperatorsController {
     responses: {204: {}},
   })
   async removeUploadedFile(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
     @param.path.string('file_id', {
       schema: {pattern: MONGO_ID_REGEX.source},
     })
     fileId: string,
   ) {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.removeUploadedFile(userId, id, fileId);
+    await this.projectManagementService.removeUploadedFile(
+      userId,
+      projectId,
+      fileId,
+    );
   }
 
   @get(`${BASE_ADDR}/{project_id}`, {

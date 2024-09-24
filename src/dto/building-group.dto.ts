@@ -68,7 +68,7 @@ export class BuildingGroupDTO extends Model {
   parent_id: string | null;
   @property({type: 'string', required: false})
   resolution_id?: string;
-  @property({})
+  @property({required: false})
   buildingGroupCondition?: BuildingGroupCondition;
 
   constructor(data?: Partial<BuildingGroupDTO>) {

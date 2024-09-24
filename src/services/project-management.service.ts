@@ -3,7 +3,6 @@ import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {AnyObject, Filter, repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
-import lodash from 'lodash';
 import {
   AddNewJobRequestDTO,
   BuildingGroupDTO,
@@ -40,11 +39,14 @@ import {
   adjustMin,
   adjustRange,
   getPersianDateParts,
+  getPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
+  BaseData,
   BuildingGroup,
+  BuildingGroupRelations,
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectLawyer,
@@ -558,33 +560,30 @@ export class ProjectManagementService {
       projectId,
       options,
     );
-    const conditionsBaseData = await this.basedataRepo.find({
-      where: {category: 'BUILDING_GROUP_CONDITIONS'},
-    });
-    const buildingGroups = await this.buildingGroupRepo.find({
-      where: {status: EnumStatus.ACTIVE},
-      include: ['buildingGroupCondition'],
-    });
+    const conditionsBaseData = await this.getBaseDataByCategory(
+      'BUILDING_GROUP_CONDITIONS',
+    );
+    const buildingGroups = await this.getBuildingGroups();
+
+    // Get basedata with specified category
+    const getBaseData = (id: string): BaseData | undefined =>
+      conditionsBaseData.find(b => b.id?.toString() === id.toString());
 
     // Filter building group
-    const sortFunc = (a: BuildingGroup, b: BuildingGroup) =>
-      +b.conditions![0].min - +a.conditions![0].min;
-    let queue = buildingGroups
-      .filter(bg => bg.parent_id === null)
-      .sort(sortFunc);
+    let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
     let selectedBuildingGroup: BuildingGroup | null = null;
     while (queue.length > 0) {
       const currentBuildingGroup = queue.find(bGroup => {
         const conditions = bGroup.conditions?.map(c => ({
           ...c,
-          value:
-            conditionsBaseData.find(x => x.id?.toString() === c.key.toString())
-              ?.key ?? '',
+          value: getBaseData(c.key.toString())?.key ?? '',
         }));
         return !conditions?.length
           ? true
           : conditions?.some(cond =>
-              new Condition(cond).checkValue(lodash.get(project, cond.value)),
+              new Condition(cond).checkValue(
+                getPropertyByString(project, cond.value) as string,
+              ),
             );
       });
       if (!currentBuildingGroup) {
@@ -593,7 +592,7 @@ export class ProjectManagementService {
       const parent_id = currentBuildingGroup.id?.toString();
       queue = buildingGroups
         .filter(bGroup => parent_id === bGroup.parent_id?.toString())
-        .sort(sortFunc);
+        .sort(this.sortFunc);
       selectedBuildingGroup = currentBuildingGroup;
     }
 
@@ -1382,7 +1381,6 @@ https://apps.qeng.ir/dashboard
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
-    console.debug(JSON.stringify(aggregate, null, 1));
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -1713,5 +1711,24 @@ https://apps.qeng.ir/dashboard
       return [new BuildingProject(newProject), options];
     }
     return [project, options];
+  }
+
+  private getBaseDataByCategory(category: string): Promise<BaseData[]> {
+    return this.basedataRepo.find({
+      where: {category},
+    });
+  }
+
+  private async getBuildingGroups(): Promise<
+    (BuildingGroup & BuildingGroupRelations)[]
+  > {
+    return this.buildingGroupRepo.find({
+      where: {status: EnumStatus.ACTIVE},
+      include: ['buildingGroupCondition'],
+    });
+  }
+
+  private sortFunc(a: BuildingGroup, b: BuildingGroup) {
+    return +b.conditions![0].min - +a.conditions![0].min;
   }
 }
