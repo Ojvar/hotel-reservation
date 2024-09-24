@@ -11,7 +11,7 @@ import {
   BuildingProjectJobResult,
   ModifyStamp,
   Office,
-  ProjectRelations,
+  BuildingProjectRelations,
 } from '../models';
 import {OfficeRepository} from './office.repository';
 import {AddNewJobRequestDTO, JobCandiateResultDTO} from '../dto';
@@ -19,7 +19,7 @@ import {AddNewJobRequestDTO, JobCandiateResultDTO} from '../dto';
 export class BuildingProjectRepository extends DefaultCrudRepository<
   BuildingProject,
   typeof BuildingProject.prototype.id,
-  ProjectRelations
+  BuildingProjectRelations
 > {
   public readonly office: BelongsToAccessor<
     Office,

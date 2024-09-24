@@ -46,12 +46,18 @@ export class ProjectMeController {
   })
   async getProjectsList(
     @param.filter(BuildingProjectFilter)
-    filter: Filter<BuildingProjectFilter> = {limit: 100, skip: 0, where: {}},
+    filter: Filter<BuildingProjectFilter> = {},
   ): Promise<BuildingProjectsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectsList(
-      {...filter, where: {...filter.where, user_id: userId}},
-      {checkUserAccess: true, checkOfficeMembership: false},
-    );
+    filter = {
+      limit: 100,
+      skip: 0,
+      ...filter,
+      where: {...filter.where, user_id: userId},
+    };
+    return this.projectManagementService.getProjectsList(filter, {
+      checkUserAccess: true,
+      checkOfficeMembership: false,
+    });
   }
 }

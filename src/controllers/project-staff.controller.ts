@@ -37,7 +37,7 @@ export class ProjectStaffController {
     private keycloakSecurity: KeycloakSecurity,
   ) {}
 
-  @get(`${BASE_ADDR}/{id}/staff`, {
+  @get(`${BASE_ADDR}/{project_id}/staff`, {
     tags,
     summary: 'Get staff list',
     description: 'Get staff list',
@@ -55,17 +55,14 @@ export class ProjectStaffController {
     },
   })
   async getStaffList(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectStaffItemsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getProjectStaffList(
       userId,
-      id,
-      [EnumStatus.ACTIVE],
-      {
-        checkOfficeMembership: false,
-        checkUserAccess: true,
-      },
+      projectId,
+      [EnumStatus.ACTIVE, EnumStatus.PENDING],
+      {checkOfficeMembership: false, checkUserAccess: true},
     );
   }
 
@@ -104,16 +101,17 @@ export class ProjectStaffController {
     },
   })
   async getProjectDetails(
-    @param.path.string('project_id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectByUserId(userId, id, {
-      checkUserAccess: true,
-      checkOfficeMembership: false,
-    });
+    return this.projectManagementService.getProjectDetailsById(
+      userId,
+      projectId,
+      {checkUserAccess: true, checkOfficeMembership: false},
+    );
   }
 
-  @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
+  @patch(`${BASE_ADDR}/{project_id}/staff/{staff_id}/response`, {
     tags,
     summary: 'Set staff response',
     description: 'Set staff response',
@@ -121,8 +119,8 @@ export class ProjectStaffController {
   })
   async setStaffResponse(
     @requestBody() body: SetBuildingProjectStaffResponseDTO,
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
     @param.path.string('staff_id', {
       schema: {pattern: MONGO_ID_REGEX.source},
     })
@@ -131,7 +129,7 @@ export class ProjectStaffController {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.setStaffResponse(
       userId,
-      id,
+      projectId,
       staffId,
       body,
       true,
@@ -160,7 +158,7 @@ export class ProjectStaffController {
     return this.projectManagementService.getStaffRequestsListByUserId(userId);
   }
 
-  @get(`${BASE_ADDR}/{id}/files`, {
+  @get(`${BASE_ADDR}/{project_id}/files`, {
     tags,
     summary: 'Get projects uploaded files',
     description: 'Get projects uploaded files',
@@ -178,10 +176,10 @@ export class ProjectStaffController {
     },
   })
   async getUploadedFiles(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectAttachmentsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getFilesList(userId, id, {
+    return this.projectManagementService.getFilesList(userId, projectId, {
       checkUserAccess: true,
       checkOfficeMembership: false,
     });

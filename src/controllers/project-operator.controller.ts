@@ -48,28 +48,26 @@ import {
   MONGO_ID_REGEX,
 } from '../models';
 import {
-  ProjectConverterService,
   ProjectManagementService,
   RegistrationOrg,
   RegistrationOrgProvider,
 } from '../services';
 
-const BASE_ADDR = '/projects/operators';
+const BASE_ADDR = '/projects/operators/{office_id}';
 const tags = ['Projects.Operators'];
 
+@intercept(protect(EnumRoles.NO_BODY))
 export class ProjectOperatorsController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
     private projectManagementService: ProjectManagementService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
-    @inject(ProjectConverterService.BINDING_KEY)
-    private projectConverterService: ProjectConverterService,
     @inject(RegistrationOrgProvider.BINDING_KEY)
     private registrationOrg: RegistrationOrg,
   ) {}
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @post(`${BASE_ADDR}/file-token`, {
     tags,
     summary: 'Generate file-upload token',
@@ -85,17 +83,19 @@ export class ProjectOperatorsController {
   })
   async getFileToken(
     @requestBody() body: FileTokenRequestDTO,
+    @param.path.string('office_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    officeId: string,
   ): Promise<FileTokenResponse> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getFileToken(
+      userId,
+      officeId,
       userId,
       body.allowed_files ?? [],
     );
   }
 
-  @intercept(
-    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
-  )
+  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @get(`${BASE_ADDR}/project/verification-code/{n_id}`, {
     tags,
     summary: 'Get validation code to registrating new project',
@@ -110,18 +110,23 @@ export class ProjectOperatorsController {
       },
     },
   })
-  getProjectRegistrationCode(
+  async getProjectRegistrationCode(
+    @param.path.string('office_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    officeId: string,
     @param.path.string('n_id') nId: string,
     @param.query.string('lawyer_nid')
     lawyerNId = '',
   ): Promise<BuildingProjectRegistrationCodeDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.sendProjectRegistrationCode(
+      userId,
+      officeId,
       nId,
       lawyerNId,
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @patch(`${BASE_ADDR}/project/{project_id}`, {
     tags,
     summary: 'Update project',
@@ -136,14 +141,18 @@ export class ProjectOperatorsController {
   })
   async updateProject(
     @requestBody() body: NewBuildingProjectRequestDTO,
-    @param.path.string('project_id') projectId: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    body = new NewBuildingProjectRequestDTO(body);
-    return this.projectManagementService.updateProject(userId, projectId, body);
+    return this.projectManagementService.updateProject(
+      userId,
+      projectId,
+      new NewBuildingProjectRequestDTO(body),
+    );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',
@@ -158,12 +167,15 @@ export class ProjectOperatorsController {
   })
   async createNewProject(
     @requestBody() body: NewBuildingProjectRequestDTO,
+    @param.path.string('office_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    officeId: string,
     @param.path.string('n_id') nId: string,
     @param.path.string('verification_code') verificationCode: number,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.createNewProject(
       userId,
+      officeId,
       nId,
       verificationCode,
       new NewBuildingProjectRequestDTO(body),
@@ -171,29 +183,6 @@ export class ProjectOperatorsController {
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @post(`${BASE_ADDR}/import/{case_no}`, {
-    tags,
-    summary: 'Import specified project',
-    description: 'Import specified project',
-    responses: {
-      200: {
-        content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-        },
-      },
-    },
-  })
-  async importProject(
-    @param.path.string('case_no') caseNo: string,
-  ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectConverterService.importProject(userId, caseNo);
-  }
-
-  @intercept(
-    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
-  )
   @get(`${BASE_ADDR}/invoices-list`, {
     tags,
     summary: 'Get all invioces of projects',
@@ -219,8 +208,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getAllInvoices(undefined, filter);
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @patch(`${BASE_ADDR}/{id}/invoices/{invoice_id}`, {
+  @patch(`${BASE_ADDR}/{project_id}/invoices/{invoice_id}`, {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
@@ -228,20 +216,19 @@ export class ProjectOperatorsController {
   })
   async updateInvoice(
     @requestBody() body: UpdateInvoiceRequestDTO,
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
     @param.path.string('invoice_id') invoiceId: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.updateProjectInvoice(
       userId,
-      id,
+      projectId,
       invoiceId,
       new UpdateInvoiceRequestDTO(body),
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @post(`${BASE_ADDR}/{id}/jobs`, {
+  @post(`${BASE_ADDR}/{project_id}/jobs`, {
     tags,
     summary: 'Update an invoice',
     description: 'Update an invoice',
@@ -249,35 +236,31 @@ export class ProjectOperatorsController {
   })
   async addNewJob(
     @requestBody() body: AddNewJobRequestDTO,
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.addNewJob(userId, id, body);
+    await this.projectManagementService.addNewJob(userId, projectId, body);
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @patch(`${BASE_ADDR}/{id}/attachments/commit`, {
+  @patch(`${BASE_ADDR}/{project_id}/attachments/commit`, {
     tags,
     summary: 'Save uploaded files',
     description: 'Save uploaded files',
     responses: {204: {}},
   })
   async saveAttachments(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
     @param.header.string('file-token') fileToken = '',
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.commitUploadedFiles(
       userId,
-      id,
+      projectId,
       fileToken,
     );
   }
 
-  @intercept(
-    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
-  )
-  @get(`${BASE_ADDR}/{id}/files`, {
+  @get(`${BASE_ADDR}/{project_id}/files`, {
     tags,
     summary: 'Get projects uploaded files',
     description: 'Get projects uploaded files',
@@ -295,38 +278,38 @@ export class ProjectOperatorsController {
     },
   })
   async getUploadedFiles(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<BuildingProjectAttachmentsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getFilesList(userId, id, {
-      checkOfficeMembership: false,
+    return this.projectManagementService.getFilesList(userId, projectId, {
+      checkOfficeMembership: true,
       checkUserAccess: false,
     });
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @del(`${BASE_ADDR}/{id}/files/{file_id}`, {
+  @del(`${BASE_ADDR}/{project_id}/files/{file_id}`, {
     tags,
     summary: 'Remove an uploaed file',
     description: 'Remove an uploaed file',
     responses: {204: {}},
   })
   async removeUploadedFile(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
     @param.path.string('file_id', {
       schema: {pattern: MONGO_ID_REGEX.source},
     })
     fileId: string,
   ) {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.removeUploadedFile(userId, id, fileId);
+    await this.projectManagementService.removeUploadedFile(
+      userId,
+      projectId,
+      fileId,
+    );
   }
 
-  @intercept(
-    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
-  )
-  @get(`${BASE_ADDR}/{id}`, {
+  @get(`${BASE_ADDR}/{project_id}`, {
     tags,
     summary: 'Get Project details',
     description: 'Get Project details',
@@ -339,19 +322,16 @@ export class ProjectOperatorsController {
     },
   })
   async getProjectDetails(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') id: string,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.getProjectByUserId(userId, id, {
+    return this.projectManagementService.getProjectDetailsById(userId, id, {
       checkUserAccess: false,
       checkOfficeMembership: true,
     });
   }
 
-  @intercept(
-    protect([EnumRoles.PROJECTS_SERVIE_OPERATORS, EnumRoles.READONLY_OPERATOR]),
-  )
-  @get(`${BASE_ADDR}/{id}/staff`, {
+  @get(`${BASE_ADDR}/{project_id}/staff`, {
     tags,
     summary: 'Get staff list',
     description: 'Get staff list',
@@ -369,22 +349,18 @@ export class ProjectOperatorsController {
     },
   })
   async getStaffList(
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') id: string,
   ): Promise<BuildingProjectStaffItemsDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getProjectStaffList(
       userId,
       id,
-      [EnumStatus.ACTIVE],
-      {
-        checkOfficeMembership: true,
-        checkUserAccess: false,
-      },
+      [EnumStatus.ACTIVE, EnumStatus.PENDING],
+      {checkOfficeMembership: true, checkUserAccess: false},
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @post(`${BASE_ADDR}/{id}/staff`, {
+  @post(`${BASE_ADDR}/{project_id}/staff`, {
     tags,
     summary: 'Add new staff',
     description: 'Add new staff',
@@ -392,37 +368,35 @@ export class ProjectOperatorsController {
   })
   async addStaff(
     @requestBody() body: NewProjectStaffRequestDTO,
-    @param.path.string('id') id: string,
+    @param.path.string('project_id') projectId: string,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.addProjectStaff(
       userId,
-      id,
+      projectId,
       new NewProjectStaffRequestDTO(body),
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @patch(`${BASE_ADDR}/{id}/state/commit/{state}`, {
+  @patch(`${BASE_ADDR}/{project_id}/state/commit/{state}`, {
     tags,
     summary: 'Commit project state',
     description: 'Commit project state',
     responses: {204: {}},
   })
   async commitProjectState(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
     @param.path.number('state', {
       schema: {enum: EnumProgressStatusValues},
     })
     state: EnumProgressStatus,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.commitState(userId, id, state);
+    await this.projectManagementService.commitState(userId, projectId, state);
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
-  @patch(`${BASE_ADDR}/{id}/staff/{staff_id}/response`, {
+  @patch(`${BASE_ADDR}/{project_id}/staff/{staff_id}/response`, {
     tags,
     summary: 'Set staff response (operator level)',
     description: 'Set staff response (operator level)',
@@ -430,8 +404,8 @@ export class ProjectOperatorsController {
   })
   async setStaffResponse(
     @requestBody() body: SetBuildingProjectStaffResponseDTO,
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
     @param.path.string('staff_id', {
       schema: {pattern: MONGO_ID_REGEX.source},
     })
@@ -440,14 +414,13 @@ export class ProjectOperatorsController {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.setStaffResponse(
       userId,
-      id,
+      projectId,
       staffId,
       body,
       false,
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @del(`${BASE_ADDR}/{project_id}`, {
     tags,
     summary: 'Remove project',
@@ -463,7 +436,6 @@ export class ProjectOperatorsController {
     });
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @del(`${BASE_ADDR}/{project_id}/staff/{staff_id}`, {
     tags,
     summary: 'Remove staff from a project',
@@ -485,7 +457,6 @@ export class ProjectOperatorsController {
     );
   }
 
-  @intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
   @get(`${BASE_ADDR}/documents/{document_no}/{auth_pwd}`, {
     tags,
     summary: 'Get document validation result',
@@ -507,7 +478,6 @@ export class ProjectOperatorsController {
     return this.registrationOrg.documentVerification(documentNo, authPwd);
   }
 
-  @intercept(protect(EnumRoles.NO_BODY))
   @get(`${BASE_ADDR}/validation/{n_id}/{form_no}`, {
     tags,
     summary: "Validating project's form number",

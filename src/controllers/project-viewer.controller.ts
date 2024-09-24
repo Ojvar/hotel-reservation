@@ -12,7 +12,7 @@ import {BuildingProjectDTO} from '../dto';
 const BASE_ADDR = '/projects/services';
 const tags = ['Projects.Services'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_CLIENTS))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_CLIENTS))
 export class ProjectViewerController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
@@ -36,10 +36,7 @@ export class ProjectViewerController {
     return this.projectManagementService.getProjectDetailsById(
       userId,
       projectId,
-      {
-        checkOfficeMembership: false,
-        checkUserAccess: false,
-      },
+      {checkOfficeMembership: false, checkUserAccess: false},
     );
   }
 }

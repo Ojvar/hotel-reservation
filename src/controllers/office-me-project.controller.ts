@@ -46,7 +46,7 @@ export class OfficeMeProjectController {
     return this.projectManagementService.getUserOfficeProjects(userId, filter);
   }
 
-  @get(`${BASE_ADDR}/{id}/building-groups`, {
+  @get(`${BASE_ADDR}/{project_id}/building-group`, {
     tags,
     summary: "Get project's building group conditions",
     description: "Get project's building group conditions",
@@ -61,13 +61,13 @@ export class OfficeMeProjectController {
     },
   })
   async getBuildingGroupConditionByProject(
-    @param.path.string('id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    id: string,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
   ): Promise<BuildingGroupDTO | null> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.getBuildingGroupConditionByProject(
       userId,
-      id,
+      projectId,
     );
   }
 }
