@@ -165,6 +165,14 @@ export class ProjectManagementService {
     private messageService: MessageService,
   ) {}
 
+  async autoAssignEngineerToProject(
+    userId: string,
+    projectId: string,
+    fieldId: string,
+  ): Promise<void> {
+    ////
+  }
+
   async addTechnicalSpecLaboratoryElectricty(
     userId: string,
     projectId: string,

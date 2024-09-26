@@ -11,3 +11,4 @@ export * from './file-agent.service';
 export * from './building-project-rmq-agent.service';
 export * from './push-notification-agent.service';
 export * from './registration-org.service';
+export * from './wordpress.service';

@@ -369,4 +369,23 @@ export class ProjectManagementController {
       {checkOfficeMembership: false},
     );
   }
+
+  @post(`${BASE_ADDR}/{project_id}/engineers/auto-assign/{field_id}`, {
+    tags,
+    summary: 'Auto assign an engineer',
+    description: 'Auto assign an engineer (of specified field) to the project',
+    responses: {204: {}},
+  })
+  async autoAssignEngineer(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('field_id') fieldId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.autoAssignEngineerToProject(
+      userId,
+      projectId,
+      fieldId,
+    );
+  }
 }
