@@ -1683,7 +1683,7 @@ https://apps.qeng.ir/dashboard
       removeRelations: true,
       staffStatuses: [EnumStatus.ACTIVE, EnumStatus.PENDING],
       allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
-      allowedOfficeStatus: [EnumStatus.ACCEPTED, EnumStatus.SUSPENDED],
+      allowedOfficeStatus: [EnumStatus.ACTIVE],
       ...options,
     };
 
