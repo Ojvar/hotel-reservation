@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
   BuildingProjectDTO,
@@ -13,12 +13,12 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
+import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_MANAGER))
 export class ProjectManagementController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)
@@ -51,6 +51,29 @@ export class ProjectManagementController {
       body,
       {checkOfficeId: false},
     );
+  }
+
+  @get(`${BASE_ADDR}/case-no/{case_no}`, {
+    tags,
+    summary: 'Get all projects list',
+    description: 'Get all projects list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getProjectsByCaseNo(
+    @param.path.string('case_no') caseNo: string,
+  ): Promise<BuildingProjectsDTO> {
+    return this.projectMangementService.getProjectByCaseNo(caseNo);
   }
 
   @get(`${BASE_ADDR}`, {

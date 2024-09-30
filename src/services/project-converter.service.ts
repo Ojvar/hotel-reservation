@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {HttpErrors} from '@loopback/rest';
-import {MsSqlService} from './ms-sql.service';
-import basedata from '../basedata.json';
-import {ProfileService, ProfileServiceProvider} from './profile.service';
-import {KeycloakAgentService} from '../lib-keycloak/src';
-import {AuthService, AuthServiceProvider} from './auth.service';
 import {AnyObject, repository} from '@loopback/repository';
-import {BuildingProjectRepository} from '../repositories';
+import {HttpErrors} from '@loopback/rest';
+import basedata from '../basedata.json';
 import {
   BuildingProjectDTO,
   NewBuildingProjectRequestDTO,
   PlanControlProject,
 } from '../dto';
+import {KeycloakAgentService} from '../lib-keycloak/src';
+import {BuildingProjectRepository} from '../repositories';
+import {AuthService, AuthServiceProvider} from './auth.service';
+import {MsSqlService} from './ms-sql.service';
+import {ProfileService, ProfileServiceProvider} from './profile.service';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {

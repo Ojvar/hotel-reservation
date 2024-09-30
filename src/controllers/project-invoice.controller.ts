@@ -1,24 +1,24 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import {inject, intercept} from '@loopback/context';
+import {AnyObject, Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {
+  BuildingProjectInvoiceDTO,
+  BuildingProjectInvoiceFilter,
+  NewBuildingProjectInvoiceRequestDTO,
+} from '../dto';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {inject, intercept} from '@loopback/context';
 import {ProjectManagementService} from '../services';
-import {
-  BuildingProjectInvoiceDTO,
-  BuildingProjectInvoiceFilter,
-  NewBuildingProjectInvoiceRequestDTO,
-} from '../dto';
-import {AnyObject, Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/projects/{project_id}/invoices';
 const tags = ['Projects.Invoice'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_MANAGER))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_MANAGER))
 export class ProjectInvoiceController {
   constructor(
     @inject(KeycloakSecurityProvider.BINDING_KEY)

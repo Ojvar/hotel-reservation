@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectConverterService, ProjectManagementService} from '../services';
+import {AnyObject, Filter} from '@loopback/repository';
 import {
   del,
   get,
@@ -19,20 +19,20 @@ import {
   ProjectSummaryEngineerDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
+import {FileTokenResponse} from '../lib-file-service/src';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {AnyObject, Filter} from '@loopback/repository';
-import {FileTokenResponse} from '../lib-file-service/src';
 import {MONGO_ID_REGEX} from '../models';
+import {ProjectConverterService, ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/operators';
 const tags = ['Projects.Operators'];
 
-@intercept(protect(EnumRoles.PROJECTS_SERVIE_OPERATORS))
+@intercept(protect(EnumRoles.PROJECTS_SERVICE_OPERATORS))
 export class ProjectOperatorsController {
   constructor(
     @inject(ProjectManagementService.BINDING_KEY)

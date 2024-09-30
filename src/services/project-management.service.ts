@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
+import {AnyObject, Filter, repository} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
+import {ObjectId} from 'bson';
 import {
   AddNewJobRequestDTO,
   BuildingProjectAttachmentDTO,
@@ -15,14 +18,8 @@ import {
   NewBuildingProjectRequestDTO,
   UpdateInvoiceRequestDTO,
 } from '../dto';
-import {AnyObject, Filter, repository} from '@loopback/repository';
-import {
-  BuildingProjectRepository,
-  OfficeRepository,
-  ProfileRepository,
-} from '../repositories';
-import {VerificationCodeService} from './verification-code.service';
 import {adjustMin, adjustRange, getPersianDateParts} from '../helpers';
+import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
 import {
   BuildingProject,
   BuildingProjectAttachmentItem,
@@ -31,10 +28,13 @@ import {
   ModifyStamp,
   Office,
 } from '../models';
-import {ObjectId} from 'bson';
-import {HttpErrors} from '@loopback/rest';
-import {FileInfoDTO, FileTokenResponse} from '../lib-file-service/src';
+import {
+  BuildingProjectRepository,
+  OfficeRepository,
+  ProfileRepository,
+} from '../repositories';
 import {FileServiceAgentService} from './file-agent.service';
+import {VerificationCodeService} from './verification-code.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -284,6 +284,19 @@ export class ProjectManagementService {
       .map(BuildingProjectDTO.fromModel);
   }
 
+  async getProjectByCaseNo(caseNo: string): Promise<BuildingProjectsDTO> {
+    const aggregate = this.getProjectByCaseNoAggregate(caseNo);
+    const pointer = await this.buildingProjectRepo.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const projects = await pointer.toArray();
+    return projects
+      .map((p: AnyObject) => new BuildingProject(p))
+      .map(BuildingProjectDTO.fromModel);
+  }
+
   async getProjectByUserId(
     userId: string,
     id: string,
@@ -417,10 +430,14 @@ export class ProjectManagementService {
       tags: invoiceTags,
       job_invoice: jobInvoice,
       job_result: jobResult,
+      case_no: searchCaseNo,
+      has_job: hasJob,
     } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
-      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+      ...(invoiceTags
+        ? {$match: {'invoices.invoice.tags': {$in: invoiceTags}}}
+        : {}),
     };
     const jobsCondition: AnyObject = {};
     if (jobResult) {
@@ -434,7 +451,10 @@ export class ProjectManagementService {
       {
         $match: {
           status: EnumStatus.ACTIVE,
+          invoices: {$gt: {$size: 0}},
           ...(projectId ? {_id: new ObjectId(projectId)} : {}),
+          ...(searchCaseNo ? {'case_no.case_no': searchCaseNo} : {}),
+          ...(hasJob ? {jobs: {$size: 0}} : {}),
         },
       },
       {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
@@ -486,6 +506,7 @@ export class ProjectManagementService {
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
+
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -550,62 +571,60 @@ export class ProjectManagementService {
 
   private projectLookupProfileAggregate = [
     // Owners
-    {$unwind: '$ownership.owners'},
-    {
-      $lookup: {
-        from: 'profiles',
-        localField: 'ownership.owners.user_id',
-        foreignField: 'user_id',
-        as: 'ownerProfile',
-      },
-    },
-    {
-      $addFields: {
-        'ownership.owners.profile': {$first: '$ownerProfile'},
-      },
-    },
-    {$unset: ['ownerProfile']},
-
-    // Lawyers
-    {$unwind: '$lawyers'},
-    {
-      $lookup: {
-        from: 'profiles',
-        localField: 'lawyers.user_id',
-        foreignField: 'user_id',
-        as: 'lawyerProfile',
-      },
-    },
-    {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
-    {$unset: ['lawyerProfile']},
-
+    // {$unwind: '$ownership.owners'},
+    // {
+    //   $lookup: {
+    //     from: 'profiles',
+    //     localField: 'ownership.owners.user_id',
+    //     foreignField: 'user_id',
+    //     as: 'ownerProfile',
+    //   },
+    // },
+    // {
+    //   $addFields: {
+    //     'ownership.owners.profile': {$first: '$ownerProfile'},
+    //   },
+    // },
+    // {$unset: ['ownerProfile']},
+    // // Lawyers
+    // {$unwind: '$lawyers'},
+    // {
+    //   $lookup: {
+    //     from: 'profiles',
+    //     localField: 'lawyers.user_id',
+    //     foreignField: 'user_id',
+    //     as: 'lawyerProfile',
+    //   },
+    // },
+    // {$addFields: {'lawyers.profile': {$first: '$lawyerProfile'}}},
+    // {$unset: ['lawyerProfile']},
     // Regroup data
-    {
-      $group: {
-        _id: '$_id',
-        all_owners: {$push: '$ownership.owners'},
-        all_lawyers: {$push: '$lawyers'},
-        other_fields: {$first: '$$ROOT'},
-      },
-    },
-    {
-      $replaceRoot: {
-        newRoot: {
-          $mergeObjects: [
-            '$other_fields',
-            {
-              lawyers: '$all_lawyers',
-              ownership: {
-                $mergeObjects: [
-                  '$other_fields.ownership',
-                  {owners: '$all_owners'},
-                ],
-              },
-            },
-          ],
-        },
-      },
-    },
+    // {
+    //   $group: {
+    //     _id: '$_id',
+    //     all_owners: {$push: '$ownership.owners'},
+    //     all_lawyers: {$push: '$lawyers'},
+    //     other_fields: {$first: '$$ROOT'},
+    //   },
+    // },
+    // {
+    //   $replaceRoot: {
+    //     newRoot: {
+    //       $mergeObjects: [
+    //         '$other_fields',
+    //         {
+    //           lawyers: '$all_lawyers',
+    //           ownership: {
+    //             $mergeObjects: [
+    //               '$other_fields.ownership',
+    //               {owners: '$all_owners'},
+    //             ],
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   },
+    // },
   ];
 
   getProjectsListAggregate(
@@ -613,13 +632,30 @@ export class ProjectManagementService {
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const status: EnumStatus = where.status ?? EnumStatus.ACTIVE;
+    const caseNo = where.case_no ? {'case_no.case_no': where.case_no} : {};
 
     return [
-      {$match: {status}},
+      {
+        $match: {
+          status,
+          ...caseNo,
+        },
+      },
       ...this.projectLookupProfileAggregate,
       {$sort: {'projects._id': 1}},
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
+      {$set: {id: '$_id'}},
+    ];
+  }
+  getProjectByCaseNoAggregate(caseNo: string): AnyObject[] {
+    return [
+      {
+        $match: {
+          'case_no.case_no': caseNo,
+        },
+      },
+      ...this.projectLookupProfileAggregate,
       {$set: {id: '$_id'}},
     ];
   }

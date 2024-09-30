@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {AnyObject, Model, model, property} from '@loopback/repository';
+import {FileInfoDTO} from '../lib-file-service/src';
 import {
   BuildingProject,
   BuildingProjectAttachmentItem,
@@ -18,7 +19,6 @@ import {
   EnumStatusValues,
   Profile,
 } from '../models';
-import {FileInfoDTO} from '../lib-file-service/src';
 
 @model()
 export class FileTokenRequestDTO extends Model {
@@ -45,6 +45,8 @@ export class BuildingProjectFilter extends Model {
   office_id: string;
   @property({type: 'string', required: true})
   user_id: string;
+  @property({type: 'string', required: true})
+  case_no: string;
 
   constructor(data?: Partial<BuildingProjectFilter>) {
     super(data);
