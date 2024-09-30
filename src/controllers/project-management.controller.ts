@@ -42,32 +42,6 @@ export class ProjectManagementController {
     private keycloakSecurity: KeycloakSecurity,
   ) {}
 
-  //@post(`${BASE_ADDR}/new-project`, {
-  //  tags,
-  //  summary: 'Create a new project',
-  //  description: 'Create a new project',
-  //  responses: {
-  //    200: {
-  //      content: {
-  //        'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-  //      },
-  //    },
-  //  },
-  //})
-  //async createNewProject(
-  //  @requestBody() body: NewBuildingProjectRequestDTO,
-  //): Promise<BuildingProjectDTO> {
-  //  const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-  //  body = new NewBuildingProjectRequestDTO(body);
-  //  return this.projectManagementService.createNewProject(
-  //    userId,
-  //    undefined,
-  //    undefined,
-  //    body,
-  //    {checkOfficeId: false},
-  //  );
-  //}
-
   @get(`${BASE_ADDR}/project/{project_id}/details`, {
     tags,
     summary: 'Get Project details',
