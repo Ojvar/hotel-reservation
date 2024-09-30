@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {Filter} from '@loopback/repository';
 import {
   del,
   get,
@@ -8,6 +8,9 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
+import {MONGO_ID_REGEX} from '../models';
+import {ProjectManagementService} from '../services';
+
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
@@ -26,8 +29,6 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
-import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
@@ -367,25 +368,6 @@ export class ProjectManagementController {
       projectId,
       techSpecItemId,
       {checkOfficeMembership: false},
-    );
-  }
-
-  @post(`${BASE_ADDR}/{project_id}/engineers/auto-assign/{field_id}`, {
-    tags,
-    summary: 'Auto assign an engineer',
-    description: 'Auto assign an engineer (of specified field) to the project',
-    responses: {204: {}},
-  })
-  async autoAssignEngineer(
-    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    projectId: string,
-    @param.path.string('field_id') fieldId: string,
-  ): Promise<void> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.autoAssignEngineerToProject(
-      userId,
-      projectId,
-      fieldId,
     );
   }
 }
