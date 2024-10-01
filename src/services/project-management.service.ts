@@ -34,6 +34,7 @@ import {
   UpdateInvoiceRequestDTO,
   ValidateFormNumberResultDTO,
 } from '../dto';
+
 import {
   addMonth,
   adjustMin,
@@ -67,11 +68,12 @@ import {
   OfficeRepository,
   ProfileRepository,
 } from '../repositories';
+
 import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
 import {FileServiceAgentService} from './file-agent.service';
+import {MessageService} from './message.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
 import {VerificationCodeService} from './verification-code.service';
-import {MessageService} from './message.service';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -164,14 +166,6 @@ export class ProjectManagementService {
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
   ) {}
-
-  async autoAssignEngineerToProject(
-    userId: string,
-    projectId: string,
-    fieldId: string,
-  ): Promise<void> {
-    ////
-  }
 
   async addTechnicalSpecLaboratoryElectricty(
     userId: string,
@@ -1301,10 +1295,14 @@ https://apps.qeng.ir/dashboard
       tags: invoiceTags,
       job_invoice: jobInvoice,
       job_result: jobResult,
+      case_no: searchCaseNo,
+      has_job: hasJob,
     } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
-      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+      ...(invoiceTags
+        ? {$match: {'invoices.invoice.tags': {$in: invoiceTags}}}
+        : {}),
     };
     const jobsCondition: AnyObject = {
       ...(jobResult ? {result: jobResult} : {}),
@@ -1321,7 +1319,12 @@ https://apps.qeng.ir/dashboard
       {
         $match: projectId
           ? {_id: new ObjectId(projectId)}
-          : {status: EnumStatus.ACTIVE},
+          : {
+              status: EnumStatus.ACTIVE,
+              invoices: {$gt: {$size: 0}},
+              ...(searchCaseNo ? {'case_no.case_no': searchCaseNo} : {}),
+              ...(hasJob ? {jobs: {$size: 0}} : {}),
+            },
       },
       {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
       ...customConditions,
@@ -1389,6 +1392,7 @@ https://apps.qeng.ir/dashboard
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
+
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -1582,6 +1586,7 @@ https://apps.qeng.ir/dashboard
   ): AnyObject[] {
     const {case_no, status = EnumStatus.ACTIVE} = (filter.where ??
       {}) as AnyObject;
+
     return [
       {
         $match: {
@@ -1593,6 +1598,17 @@ https://apps.qeng.ir/dashboard
       ...this.projectLookupProfileAggregate,
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
+      {$set: {id: '$_id'}},
+    ];
+  }
+  getProjectByCaseNoAggregate(caseNo: string): AnyObject[] {
+    return [
+      {
+        $match: {
+          'case_no.case_no': caseNo,
+        },
+      },
+      ...this.projectLookupProfileAggregate,
       {$set: {id: '$_id'}},
     ];
   }

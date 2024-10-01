@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {HttpErrors} from '@loopback/rest';
-import {MsSqlService} from './ms-sql.service';
-import basedata from '../basedata.json';
-import {ProfileService, ProfileServiceProvider} from './profile.service';
-import {KeycloakAgentService} from '../lib-keycloak/src';
-import {AuthService, AuthServiceProvider} from './auth.service';
 import {AnyObject, repository} from '@loopback/repository';
-import {BuildingProjectRepository, OfficeRepository} from '../repositories';
+import {HttpErrors} from '@loopback/rest';
+import basedata from '../basedata.json';
 import {
   BuildingProjectDTO,
   NewBuildingProjectRequestDTO,
   PlanControlProject,
 } from '../dto';
+import {KeycloakAgentService} from '../lib-keycloak/src';
 import {Office} from '../models';
+import {BuildingProjectRepository, OfficeRepository} from '../repositories';
+import {AuthService, AuthServiceProvider} from './auth.service';
+import {MsSqlService} from './ms-sql.service';
+import {ProfileService, ProfileServiceProvider} from './profile.service';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {
@@ -36,31 +36,6 @@ export class ProjectConverterService {
     @inject(KeycloakAgentService.BINDING_KEY)
     private keycloakAgentService: KeycloakAgentService,
   ) {}
-
-  //async fixProjectsOfficeId(): Promise<void> {
-  //  const projects = await this.buildingProjectRepo.find();
-  //  for (const project of projects) {
-  //    const {
-  //      recordset: [oldProject],
-  //    } = await this.sqlService.runQueryWithResult<PlanControlProject>(
-  //      this.projectDetailsQueryByCaseNo(project.case_no.case_no),
-  //    );
-  //    if (!oldProject) {
-  //      console.error(`Project Not found, case-no: ${project.case_no.case_no}`);
-  //      continue;
-  //    }
-  //
-  //    // convert project new-style
-  //    const office = await this.getOfficeById(oldProject.OfficeId ?? '');
-  //    if (!office) {
-  //      console.error(`Office not found, office id: ${oldProject.OfficeId}`);
-  //      continue;
-  //    }
-  //
-  //    project.office_id = office.getId().toString();
-  //    await this.buildingProjectRepo.update(project);
-  //  }
-  //}
 
   private projectDetailsQueryByCaseNo = (caseNo: string): string => `
 SELECT  p.*
