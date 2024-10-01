@@ -69,7 +69,10 @@ import {
   ProfileRepository,
 } from '../repositories';
 
-import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
+import {
+  BuildingProjectRmqAgentService,
+  EnumBuildingProjectRmqMessageType,
+} from './building-project-rmq-agent.service';
 import {FileServiceAgentService} from './file-agent.service';
 import {MessageService} from './message.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
@@ -201,7 +204,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -211,8 +214,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryPolystyrene(
@@ -235,7 +246,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -245,8 +256,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryTensile(
@@ -269,7 +288,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -279,8 +298,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryWelding(
@@ -303,7 +330,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -313,8 +340,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryConcrete(
@@ -337,7 +372,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -347,8 +382,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecUnitInfoItem(
@@ -371,20 +414,25 @@ export class ProjectManagementService {
 
     // Add items
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(
-      userId,
-      data.map(
-        item =>
-          new BuildingProjectTechSpec({
-            created: now,
-            updated: now,
-            status: EnumStatus.ACTIVE,
-            tags: [EnumBuildingProjectTechSpecItems.UNIT_INFO],
-            data: new BuildingProjectTSItemUnitInfoRequestDTO(item).toModel(),
-          }),
-      ),
+    const techSpecItems = data.map(
+      item =>
+        new BuildingProjectTechSpec({
+          created: now,
+          updated: now,
+          status: EnumStatus.ACTIVE,
+          tags: [EnumBuildingProjectTechSpecItems.UNIT_INFO],
+          data: new BuildingProjectTSItemUnitInfoRequestDTO(item).toModel(),
+        }),
     );
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async removeTechnicalSpecItem(
@@ -405,6 +453,13 @@ export class ProjectManagementService {
     );
     project.removeTechnicalSpecItem(userId, techSpecItemId);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItemId,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_REMOVE,
+    );
   }
 
   async checkAndExpireProjects(
