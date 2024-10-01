@@ -1223,20 +1223,24 @@ export class BuildingProjectDTO extends Model {
       updated_at: data.updated.at,
       case_no: data.case_no.case_no,
       case_date: data.case_date,
-      address: BuildingProjectLocationAddressDTO.fromModel(data.address),
-      ownership_type: BuildingProjectOwnershipTypeDTO.fromModel(
-        data.ownership_type,
-      ),
-      building_site_location: BuildingProjectBuildingSiteLocationDTO.fromModel(
-        data.building_site_location,
-      ),
+      address: data.address
+        ? BuildingProjectLocationAddressDTO.fromModel(data.address)
+        : undefined,
+      ownership_type: data.ownership_type
+        ? BuildingProjectOwnershipTypeDTO.fromModel(data.ownership_type)
+        : undefined,
+      building_site_location: data.building_site_location
+        ? BuildingProjectBuildingSiteLocationDTO.fromModel(
+            data.building_site_location,
+          )
+        : undefined,
       project_usage_description: data.project_usage_description,
       project_usage_types: data.project_usage_types,
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
       ownership: BuildingProjectOwnershipDTO.fromModel(data.ownership),
-      specification: BuildingProjectSpecificationDTO.fromModel(
-        data.specification,
-      ),
+      specification: data.specification
+        ? BuildingProjectSpecificationDTO.fromModel(data.specification)
+        : undefined,
       staff: data.staff?.map(BuildingProjectStaffItemDTO.fromModel),
       technical_specifications: data.activeTechnicalSpecifications?.map(
         BuildingProjectTechSpecDTO.fromModel,
