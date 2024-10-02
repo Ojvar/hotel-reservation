@@ -355,7 +355,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getProjectStaffList(
       userId,
       id,
-      [EnumStatus.ACTIVE, EnumStatus.PENDING],
+      [EnumStatus.ACCEPTED, EnumStatus.PENDING],
       {checkOfficeMembership: true, checkUserAccess: false},
     );
   }
@@ -496,7 +496,10 @@ export class ProjectOperatorsController {
     @param.path.string('n_id') nId: string,
     @param.path.string('form_no') formNo: string,
   ): Promise<ValidateFormNumberResultDTO> {
-    return this.projectManagementService.validateFormNumber(nId, formNo);
+    return this.projectManagementService.validateFormNumber(
+      nId,
+      decodeURIComponent(formNo),
+    );
   }
 
   @post(`${BASE_ADDR}/{project_id}/technical-spec/unit-info`, {

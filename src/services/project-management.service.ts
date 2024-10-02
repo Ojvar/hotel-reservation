@@ -69,7 +69,10 @@ import {
   ProfileRepository,
 } from '../repositories';
 
-import {BuildingProjectRmqAgentService} from './building-project-rmq-agent.service';
+import {
+  BuildingProjectRmqAgentService,
+  EnumBuildingProjectRmqMessageType,
+} from './building-project-rmq-agent.service';
 import {FileServiceAgentService} from './file-agent.service';
 import {MessageService} from './message.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
@@ -145,6 +148,20 @@ export class ProjectManagementService {
     )
     .flatMap(x => x);
 
+  readonly DEFAULT_PROJECT_CLAUSE = {
+    $project: {
+      _id: 1,
+      id: 1,
+      created: 1,
+      updated: 1,
+      office_id: 1,
+      case_no: 1,
+      ownership: 1,
+      status: 1,
+      progress_status: 1,
+    },
+  };
+
   constructor(
     @inject(ProjectManagementService.CONFIG_BINDING_KEY)
     private configs: ProjectManagementServiceConfig,
@@ -187,7 +204,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -197,8 +214,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryPolystyrene(
@@ -221,7 +246,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -231,8 +256,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryTensile(
@@ -255,7 +288,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -265,8 +298,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryWelding(
@@ -289,7 +330,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -299,8 +340,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecLaboratoryConcrete(
@@ -323,7 +372,7 @@ export class ProjectManagementService {
 
     // Add new item
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(userId, [
+    const techSpecItems = [
       new BuildingProjectTechSpec({
         created: now,
         updated: now,
@@ -333,8 +382,16 @@ export class ProjectManagementService {
           data,
         ).toModel(),
       }),
-    ]);
+    ];
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async addTechnicalSpecUnitInfoItem(
@@ -357,20 +414,25 @@ export class ProjectManagementService {
 
     // Add items
     const now = new ModifyStamp({by: userId});
-    project.addTechnicalSpecItem(
-      userId,
-      data.map(
-        item =>
-          new BuildingProjectTechSpec({
-            created: now,
-            updated: now,
-            status: EnumStatus.ACTIVE,
-            tags: [EnumBuildingProjectTechSpecItems.UNIT_INFO],
-            data: new BuildingProjectTSItemUnitInfoRequestDTO(item).toModel(),
-          }),
-      ),
+    const techSpecItems = data.map(
+      item =>
+        new BuildingProjectTechSpec({
+          created: now,
+          updated: now,
+          status: EnumStatus.ACTIVE,
+          tags: [EnumBuildingProjectTechSpecItems.UNIT_INFO],
+          data: new BuildingProjectTSItemUnitInfoRequestDTO(item).toModel(),
+        }),
     );
+    project.addTechnicalSpecItem(userId, techSpecItems);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItems,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_INSERT,
+    );
   }
 
   async removeTechnicalSpecItem(
@@ -391,6 +453,13 @@ export class ProjectManagementService {
     );
     project.removeTechnicalSpecItem(userId, techSpecItemId);
     await this.buildingProjectRepo.update(project);
+
+    // Send RMQ Message
+    await this.buildingProjectRmqAgentService.publishTechnicalSpecUpdates(
+      project,
+      techSpecItemId,
+      EnumBuildingProjectRmqMessageType.TECH_SPEC_ITEM_REMOVE,
+    );
   }
 
   async checkAndExpireProjects(
@@ -613,10 +682,14 @@ export class ProjectManagementService {
       skip: adjustMin(userFilter.skip),
       offset: adjustMin(userFilter.offset),
     };
-    const aggregate = this.getProjectsListAggregate(filter, {
-      status: EnumStatus.ACTIVE,
-      staff: {$elemMatch: {user_id: userId, status: EnumStatus.PENDING}},
-    });
+    const aggregate = this.getProjectsListAggregate(
+      filter,
+      {
+        status: EnumStatus.ACTIVE,
+        staff: {$elemMatch: {user_id: userId, status: EnumStatus.PENDING}},
+      },
+      this.DEFAULT_PROJECT_CLAUSE,
+    );
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -685,7 +758,7 @@ export class ProjectManagementService {
   async getProjectStaffList(
     userId: string,
     projectId: string,
-    staffStatuses = [EnumStatus.ACTIVE, EnumStatus.PENDING],
+    staffStatuses = [EnumStatus.ACCEPTED, EnumStatus.PENDING],
     options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProjectStaffItemsDTO> {
     // Check for super-user access level
@@ -699,6 +772,11 @@ export class ProjectManagementService {
     const aggregate = [
       {$match: {_id: new ObjectId(projectId)}},
       {$unwind: '$staff'},
+      {
+        $match: {
+          'staff.status': {$in: [EnumStatus.ACCEPTED, EnumStatus.PENDING]},
+        },
+      },
 
       // Lookup over profiles
       {
@@ -750,7 +828,7 @@ export class ProjectManagementService {
     const projectData = await pointer.next();
     return !project
       ? []
-      : projectData.staff.map(BuildingProjectStaffItemDTO.fromModel);
+      : projectData?.staff?.map(BuildingProjectStaffItemDTO.fromModel);
   }
 
   async addProjectStaff(
@@ -1166,18 +1244,22 @@ https://apps.qeng.ir/dashboard
     options = {checkOfficeMembership: false, checkUserAccess: true, ...options};
 
     const {user_id = ''} = (filter.where ?? {}) as AnyObject;
-    const aggregate = this.getProjectsListAggregate(filter, {
-      ...(options.checkUserAccess
-        ? {
-            staff: {
-              $elemMatch: {
-                status: this.ALLOWED_STAFF_STATUS,
-                user_id,
+    const aggregate = this.getProjectsListAggregate(
+      filter,
+      {
+        ...(options.checkUserAccess
+          ? {
+              staff: {
+                $elemMatch: {
+                  status: this.ALLOWED_STAFF_STATUS,
+                  user_id,
+                },
               },
-            },
-          }
-        : {}),
-    });
+            }
+          : {}),
+      },
+      this.DEFAULT_PROJECT_CLAUSE,
+    );
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -1583,6 +1665,7 @@ https://apps.qeng.ir/dashboard
   private getProjectsListAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
     matchClause: AnyObject = {},
+    projectClause?: AnyObject,
   ): AnyObject[] {
     const {case_no, status = EnumStatus.ACTIVE} = (filter.where ??
       {}) as AnyObject;
@@ -1599,6 +1682,7 @@ https://apps.qeng.ir/dashboard
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
+      ...(projectClause ? [projectClause] : []),
     ];
   }
   getProjectByCaseNoAggregate(caseNo: string): AnyObject[] {
@@ -1616,6 +1700,7 @@ https://apps.qeng.ir/dashboard
   private getProjectsListByUserOfficeAggregate(
     filter: Filter<BuildingProjectFilter> = {skip: 0, limit: 100, where: {}},
     matchClause: AnyObject = {},
+    projectClause?: AnyObject,
   ): AnyObject[] {
     const where: AnyObject = filter.where ?? {};
     const officeId: string = where.office_id ?? '';
@@ -1660,13 +1745,14 @@ https://apps.qeng.ir/dashboard
           as: 'projects',
         },
       },
-      {$match: {'projects.status': {$ne: EnumStatus.DEACTIVE}}},
       {$unwind: {path: '$projects', preserveNullAndEmptyArrays: true}},
+      {$match: {'projects.status': {$ne: EnumStatus.DEACTIVE}}},
       {$replaceRoot: {newRoot: '$projects'}},
       ...this.projectLookupProfileAggregate,
       {$skip: adjustMin(filter.skip ?? 0)},
       {$limit: adjustRange(filter.limit)},
       {$set: {id: '$_id'}},
+      ...(projectClause ? [projectClause] : [this.DEFAULT_PROJECT_CLAUSE]),
     ];
   }
 
@@ -1697,7 +1783,7 @@ https://apps.qeng.ir/dashboard
     // Create a clone
     options = {
       removeRelations: true,
-      staffStatuses: [EnumStatus.ACTIVE, EnumStatus.PENDING],
+      staffStatuses: [EnumStatus.ACCEPTED, EnumStatus.PENDING],
       allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
       allowedOfficeStatus: [EnumStatus.ACTIVE],
       ...options,
