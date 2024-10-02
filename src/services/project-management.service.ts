@@ -1251,7 +1251,7 @@ https://apps.qeng.ir/dashboard
           ? {
               staff: {
                 $elemMatch: {
-                  status: this.ALLOWED_STAFF_STATUS,
+                  status: {$in: this.ALLOWED_STAFF_STATUS},
                   user_id,
                 },
               },
