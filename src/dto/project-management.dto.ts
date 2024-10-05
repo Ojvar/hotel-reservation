@@ -14,6 +14,7 @@ import {
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
   BuildingProjectSpecification,
+  BuildingProjectSpecificationFloorItem,
   BuildingProjectStaffItem,
   BuildingProjectStaffItems,
   BuildingProjectStaffResponse,
@@ -1036,6 +1037,29 @@ export class BuildingProjectLawyerDTO extends Model {
 }
 export type BuildingProjectLawyersDTO = BuildingProjectLawyerDTO[];
 
+@model()
+export class BuildingProjectSpecificationFloorItemDTO extends Model {
+  @property({type: 'string', required: true})
+  floor: number;
+  @property({type: 'string', required: true})
+  area: number;
+
+  constructor(data?: Partial<BuildingProjectSpecificationFloorItemDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectSpecificationFloorItem,
+  ): BuildingProjectSpecificationFloorItemDTO {
+    return new BuildingProjectSpecificationFloorItemDTO({
+      floor: data.floor,
+      area: data.area,
+    });
+  }
+}
+export type BuildingProjectSpecificationFloorItemsDTO =
+  BuildingProjectSpecificationFloorItemDTO[];
+
 @model({})
 export class BuildingProjectSpecificationDTO extends Model {
   // Keep all descriptions for all fields
@@ -1061,8 +1085,12 @@ export class BuildingProjectSpecificationDTO extends Model {
   commercial_units: number;
   @property({type: 'number', required: true})
   residental_units: number;
+
   @property({type: 'number', required: true})
   total_units: number;
+  @property.array(BuildingProjectSpecificationFloorItemDTO)
+  floors_area: BuildingProjectSpecificationFloorItemsDTO;
+
   @property({type: 'number', required: true})
   parking_count: number;
   @property({type: 'number', required: true})
@@ -1142,6 +1170,9 @@ export class BuildingProjectSpecificationDTO extends Model {
       commercial_units: data.commercial_units,
       residental_units: data.residental_units,
       total_units: data.total_units,
+      floors_area: data.floors_area.map(
+        BuildingProjectSpecificationFloorItemDTO.fromModel,
+      ),
       parking_count: data.parking_count,
       house_storage_count: data.house_storage_count,
       distict_north: data.distict_north,

@@ -12,7 +12,29 @@ import {
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
   BuildingProjectSpecification,
+  BuildingProjectSpecificationFloorItem,
 } from '../models';
+
+@model()
+export class BuildingProjectSpecificationFloorItemRequestDTO extends Model {
+  @property({type: 'string', required: true})
+  floor: number;
+  @property({type: 'string', required: true})
+  area: number;
+
+  constructor(data?: Partial<BuildingProjectSpecificationFloorItemRequestDTO>) {
+    super(data);
+  }
+
+  toModel(): BuildingProjectSpecificationFloorItem {
+    return new BuildingProjectSpecificationFloorItem({
+      floor: this.floor,
+      area: this.area,
+    });
+  }
+}
+export type BuildingProjectSpecificationFloorItemRequestsDTO =
+  BuildingProjectSpecificationFloorItemRequestDTO[];
 
 @model({})
 export class NewBuildingProjectSpecificationDTO extends Model {
@@ -27,8 +49,14 @@ export class NewBuildingProjectSpecificationDTO extends Model {
   ground_area_before: number;
   @property({required: true})
   ground_area_after: number;
+
   @property({required: true})
   total_area: number;
+  @property.array(BuildingProjectSpecificationFloorItemRequestDTO, {
+    required: true,
+  })
+  floors_area: BuildingProjectSpecificationFloorItemRequestsDTO;
+
   @property({required: true})
   elevator_stops: number;
   @property({required: true})
@@ -113,6 +141,7 @@ export class NewBuildingProjectSpecificationDTO extends Model {
       total_area: this.total_area,
       elevator_stops: this.elevator_stops,
       total_floors: this.total_floors,
+      floors_area: this.floors_area.map(x => x.toModel()),
       commercial_units: this.commercial_units,
       residental_units: this.residental_units,
       total_units: this.total_units,
