@@ -72,6 +72,7 @@ import {FileServiceAgentService} from './file-agent.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
 import {VerificationCodeService} from './verification-code.service';
 import {MessageService} from './message.service';
+import path from 'path';
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -1301,10 +1302,14 @@ https://apps.qeng.ir/dashboard
       tags: invoiceTags,
       job_invoice: jobInvoice,
       job_result: jobResult,
+      case_no: searchCaseNo,
+      has_job: hasJob,
     } = (userFilter.where ?? {}) as AnyObject;
 
     const invoicesConditions = {
-      ...(invoiceTags ? {'invoices.invoice.tags': {$in: invoiceTags}} : {}),
+      ...(invoiceTags
+        ? {$match: {'invoices.invoice.tags': {$in: invoiceTags}}}
+        : {}),
     };
     const jobsCondition: AnyObject = {
       ...(jobResult ? {result: jobResult} : {}),
@@ -1321,7 +1326,12 @@ https://apps.qeng.ir/dashboard
       {
         $match: projectId
           ? {_id: new ObjectId(projectId)}
-          : {status: EnumStatus.ACTIVE},
+          : {
+              status: EnumStatus.ACTIVE,
+              invoices: {$gt: {$size: 0}},
+              ...(searchCaseNo ? {'case_no.case_no': searchCaseNo} : {}),
+              ...(hasJob ? {jobs: {$size: 0}} : {}),
+            },
       },
       {$unwind: {path: '$invoices', preserveNullAndEmptyArrays: true}},
       ...customConditions,
@@ -1346,7 +1356,7 @@ https://apps.qeng.ir/dashboard
           from: 'profiles',
           localField: 'ownership.owners.user_id',
           foreignField: 'user_id',
-          as: 'ownership.owneres.profile',
+          as: 'ownership.owners.profile',
         },
       },
 
@@ -1360,19 +1370,6 @@ https://apps.qeng.ir/dashboard
           as: 'lawyers.profile',
         },
       },
-
-      // Regroup data
-      {
-        $group: {
-          _id: '$_id',
-          mergedFields: '$$ROOT',
-          all_lawyers: {$push: '$lawyers'},
-          all_ownerships: {$push: '$ownership'},
-        },
-      },
-      {$replaceRoot: {newRoot: {$mergeObjects: ['$$ROOT', '$mergedFields']}}},
-      {$set: {lawyers: '$all_lawyers', ownership: '$all_ownerships'}},
-      {$unset: ['all_lawyers', 'all_ownerships', 'mergedFields']},
 
       // Lookup basedata
       {
@@ -1389,6 +1386,7 @@ https://apps.qeng.ir/dashboard
       {$skip: adjustMin(userFilter.skip ?? 0)},
       {$limit: adjustRange(userFilter.limit ?? 100)},
     ];
+
     const pointer = await this.buildingProjectRepo.execute(
       BuildingProject.modelName,
       'aggregate',
@@ -1410,14 +1408,18 @@ https://apps.qeng.ir/dashboard
       case_no: r.case_no.case_no,
       ownership: {
         ...r.ownership,
-        owners: r.ownership.owners.map((owner: AnyObject) => ({
-          ...owner,
-          profile: getProfile(owner.profile),
-        })),
-        lawyers: r.lawyers.map((lawyer: AnyObject) => ({
-          ...lawyer,
-          profile: getProfile(lawyer.profile),
-        })),
+        owners: {
+          ...r.ownership.owners,
+          profile: r.ownership.owners?.profile?.map((item: Profile) => ({
+            ...getProfile(item),
+          })),
+        },
+        lawyers: {
+          ...r.ownership.lawyers,
+          profile: r.ownership.lawyers?.profile?.map((item: Profile) => ({
+            ...getProfile(item),
+          })),
+        },
         ownership_type: {
           ...r.ownership_type,
           ownership_type: r.ownership_info.key,

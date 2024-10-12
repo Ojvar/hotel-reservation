@@ -16,6 +16,15 @@ export class BuildingProjectInvoiceFilter extends Model {
   job_invoice: string;
   @property({type: 'object', required: true})
   job_result: AnyObject;
+  @property({type: 'string', required: true})
+  case_no: string;
+  @property({type: 'string', required: true})
+  owner_first_name: string;
+  @property({type: 'string', required: true})
+  owner_last_name: string;
+  @property({type: Boolean, required: true})
+  has_job: boolean;
+
 
   constructor(data?: Partial<BuildingProjectInvoiceFilter>) {
     super(data);

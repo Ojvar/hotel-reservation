@@ -5,12 +5,15 @@ import {
   get,
   getModelSchemaRef,
   param,
+  patch,
   post,
   requestBody,
 } from '@loopback/rest';
 import {
+  AddNewJobRequestDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
+  BuildingProjectInvoiceFilter,
   BuildingProjectTSItemLaboratoryConcreteRequestDTO,
   BuildingProjectTSItemLaboratoryElectrictyRequestDTO,
   BuildingProjectTSItemLaboratoryPolystyreneRequestDTO,
@@ -19,6 +22,7 @@ import {
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
+  UpdateInvoiceRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -26,7 +30,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
+import {AnyObject, Filter} from '@loopback/repository';
 import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/management';
@@ -387,5 +391,64 @@ export class ProjectManagementController {
       projectId,
       fieldId,
     );
+  }
+
+  @get(`${BASE_ADDR}/invoices-list`, {
+    tags,
+    summary: 'Get all invioces of projects',
+    description: 'Get all invioces of projects',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              // USE DTO
+              items: getModelSchemaRef(Object),
+            },
+          },
+        },
+      },
+    },
+  })
+  getAllInvoice(
+    @param.filter(BuildingProjectInvoiceFilter)
+    filter: Filter<BuildingProjectInvoiceFilter> = {},
+  ): Promise<AnyObject[]> {
+    return this.projectManagementService.getAllInvoices(undefined, filter);
+  }
+
+  @patch(`${BASE_ADDR}/{project_id}/invoices/{invoice_id}`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async updateInvoice(
+    @requestBody() body: UpdateInvoiceRequestDTO,
+    @param.path.string('project_id') projectId: string,
+    @param.path.string('invoice_id') invoiceId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.updateProjectInvoice(
+      userId,
+      projectId,
+      invoiceId,
+      new UpdateInvoiceRequestDTO(body),
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/jobs`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async addNewJob(
+    @requestBody() body: AddNewJobRequestDTO,
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.addNewJob(userId, projectId, body);
   }
 }
