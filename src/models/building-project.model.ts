@@ -351,6 +351,20 @@ export class BuildingProjectLocationAddress extends Model {
   }
 }
 
+@model()
+export class BuildingProjectSpecificationFloorItem extends Model {
+  @property({type: 'string', required: true})
+  floor: number;
+  @property({type: 'string', required: true})
+  area: number;
+
+  constructor(data?: Partial<BuildingProjectSpecificationFloorItem>) {
+    super(data);
+  }
+}
+export type BuildingProjectSpecificationFloorItems =
+  BuildingProjectSpecificationFloorItem[];
+
 @model({...REMOVE_ID_SETTING})
 export class BuildingProjectSpecification extends Model {
   // Keep all descriptions for all fields
@@ -370,8 +384,12 @@ export class BuildingProjectSpecification extends Model {
   total_area: number;
   @property({type: 'number', required: true})
   elevator_stops: number;
+
   @property({type: 'number', required: true})
   total_floors: number;
+  @property.array(BuildingProjectSpecificationFloorItem, {required: true})
+  floors_area: BuildingProjectSpecificationFloorItems;
+
   @property({type: 'number', required: true})
   commercial_units: number;
   @property({type: 'number', required: true})

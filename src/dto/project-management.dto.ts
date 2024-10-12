@@ -14,6 +14,7 @@ import {
   BuildingProjectOwnershipType,
   BuildingProjectPropertyRegistrationDetails,
   BuildingProjectSpecification,
+  BuildingProjectSpecificationFloorItem,
   BuildingProjectStaffItem,
   BuildingProjectStaffItems,
   BuildingProjectStaffResponse,
@@ -1036,6 +1037,29 @@ export class BuildingProjectLawyerDTO extends Model {
 }
 export type BuildingProjectLawyersDTO = BuildingProjectLawyerDTO[];
 
+@model()
+export class BuildingProjectSpecificationFloorItemDTO extends Model {
+  @property({type: 'string', required: true})
+  floor: number;
+  @property({type: 'string', required: true})
+  area: number;
+
+  constructor(data?: Partial<BuildingProjectSpecificationFloorItemDTO>) {
+    super(data);
+  }
+
+  static fromModel(
+    data: BuildingProjectSpecificationFloorItem,
+  ): BuildingProjectSpecificationFloorItemDTO {
+    return new BuildingProjectSpecificationFloorItemDTO({
+      floor: data.floor,
+      area: data.area,
+    });
+  }
+}
+export type BuildingProjectSpecificationFloorItemsDTO =
+  BuildingProjectSpecificationFloorItemDTO[];
+
 @model({})
 export class BuildingProjectSpecificationDTO extends Model {
   // Keep all descriptions for all fields
@@ -1061,8 +1085,12 @@ export class BuildingProjectSpecificationDTO extends Model {
   commercial_units: number;
   @property({type: 'number', required: true})
   residental_units: number;
+
   @property({type: 'number', required: true})
   total_units: number;
+  @property.array(BuildingProjectSpecificationFloorItemDTO)
+  floors_area: BuildingProjectSpecificationFloorItemsDTO;
+
   @property({type: 'number', required: true})
   parking_count: number;
   @property({type: 'number', required: true})
@@ -1142,6 +1170,9 @@ export class BuildingProjectSpecificationDTO extends Model {
       commercial_units: data.commercial_units,
       residental_units: data.residental_units,
       total_units: data.total_units,
+      floors_area: data.floors_area.map(
+        BuildingProjectSpecificationFloorItemDTO.fromModel,
+      ),
       parking_count: data.parking_count,
       house_storage_count: data.house_storage_count,
       distict_north: data.distict_north,
@@ -1223,20 +1254,24 @@ export class BuildingProjectDTO extends Model {
       updated_at: data.updated.at,
       case_no: data.case_no.case_no,
       case_date: data.case_date,
-      address: BuildingProjectLocationAddressDTO.fromModel(data.address),
-      ownership_type: BuildingProjectOwnershipTypeDTO.fromModel(
-        data.ownership_type,
-      ),
-      building_site_location: BuildingProjectBuildingSiteLocationDTO.fromModel(
-        data.building_site_location,
-      ),
+      address: data.address
+        ? BuildingProjectLocationAddressDTO.fromModel(data.address)
+        : undefined,
+      ownership_type: data.ownership_type
+        ? BuildingProjectOwnershipTypeDTO.fromModel(data.ownership_type)
+        : undefined,
+      building_site_location: data.building_site_location
+        ? BuildingProjectBuildingSiteLocationDTO.fromModel(
+            data.building_site_location,
+          )
+        : undefined,
       project_usage_description: data.project_usage_description,
       project_usage_types: data.project_usage_types,
       lawyers: data.lawyers?.map(BuildingProjectLawyerDTO.fromModel),
       ownership: BuildingProjectOwnershipDTO.fromModel(data.ownership),
-      specification: BuildingProjectSpecificationDTO.fromModel(
-        data.specification,
-      ),
+      specification: data.specification
+        ? BuildingProjectSpecificationDTO.fromModel(data.specification)
+        : undefined,
       staff: data.staff?.map(BuildingProjectStaffItemDTO.fromModel),
       technical_specifications: data.activeTechnicalSpecifications?.map(
         BuildingProjectTechSpecDTO.fromModel,

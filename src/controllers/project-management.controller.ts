@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {Filter} from '@loopback/repository';
 import {
   del,
   get,
@@ -9,6 +9,10 @@ import {
   post,
   requestBody,
 } from '@loopback/rest';
+import {MONGO_ID_REGEX} from '../models';
+import {ProjectManagementService} from '../services';
+
+import {AnyObject} from '@loopback/repository';
 import {
   AddNewJobRequestDTO,
   BuildingProjectDTO,
@@ -30,8 +34,6 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {AnyObject, Filter} from '@loopback/repository';
-import {MONGO_ID_REGEX} from '../models';
 
 const BASE_ADDR = '/projects/management';
 const tags = ['Projects.Management'];
@@ -44,32 +46,6 @@ export class ProjectManagementController {
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
   ) {}
-
-  //@post(`${BASE_ADDR}/new-project`, {
-  //  tags,
-  //  summary: 'Create a new project',
-  //  description: 'Create a new project',
-  //  responses: {
-  //    200: {
-  //      content: {
-  //        'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-  //      },
-  //    },
-  //  },
-  //})
-  //async createNewProject(
-  //  @requestBody() body: NewBuildingProjectRequestDTO,
-  //): Promise<BuildingProjectDTO> {
-  //  const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-  //  body = new NewBuildingProjectRequestDTO(body);
-  //  return this.projectManagementService.createNewProject(
-  //    userId,
-  //    undefined,
-  //    undefined,
-  //    body,
-  //    {checkOfficeId: false},
-  //  );
-  //}
 
   @get(`${BASE_ADDR}/project/{project_id}/details`, {
     tags,
