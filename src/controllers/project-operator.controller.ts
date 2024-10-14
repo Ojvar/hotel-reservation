@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/context';
-import {AnyObject} from '@loopback/repository';
+import {AnyObject, Filter} from '@loopback/repository';
 import {
   del,
   get,
@@ -10,9 +10,11 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {
+  AddNewJobRequestDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
   BuildingProjectDTO,
+  BuildingProjectInvoiceFilter,
   BuildingProjectRegistrationCodeDTO,
   BuildingProjectStaffItemDTO,
   BuildingProjectStaffItemsDTO,
@@ -29,6 +31,7 @@ import {
   NewProjectStaffRequestDTO,
   ProjectSummaryEngineerDTO,
   SetBuildingProjectStaffResponseDTO,
+  UpdateInvoiceRequestDTO,
   ValidateFormNumberResultDTO,
 } from '../dto';
 import {FileTokenResponse} from '../lib-file-service/src';
@@ -180,6 +183,64 @@ export class ProjectOperatorsController {
     );
   }
 
+  @get(`${BASE_ADDR}/invoices-list`, {
+    tags,
+    summary: 'Get all invioces of projects',
+    description: 'Get all invioces of projects',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              // USE DTO
+              items: getModelSchemaRef(Object),
+            },
+          },
+        },
+      },
+    },
+  })
+  getAllInvoice(
+    @param.filter(BuildingProjectInvoiceFilter)
+    filter: Filter<BuildingProjectInvoiceFilter> = {},
+  ): Promise<AnyObject[]> {
+    return this.projectManagementService.getAllInvoices(undefined, filter);
+  }
+
+  @patch(`${BASE_ADDR}/{project_id}/invoices/{invoice_id}`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async updateInvoice(
+    @requestBody() body: UpdateInvoiceRequestDTO,
+    @param.path.string('project_id') projectId: string,
+    @param.path.string('invoice_id') invoiceId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.updateProjectInvoice(
+      userId,
+      projectId,
+      invoiceId,
+      new UpdateInvoiceRequestDTO(body),
+    );
+  }
+
+  @post(`${BASE_ADDR}/{project_id}/jobs`, {
+    tags,
+    summary: 'Update an invoice',
+    description: 'Update an invoice',
+    responses: {204: {}},
+  })
+  async addNewJob(
+    @requestBody() body: AddNewJobRequestDTO,
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.addNewJob(userId, projectId, body);
+  }
 
   @patch(`${BASE_ADDR}/{project_id}/attachments/commit`, {
     tags,
@@ -294,7 +355,7 @@ export class ProjectOperatorsController {
     return this.projectManagementService.getProjectStaffList(
       userId,
       id,
-      [EnumStatus.ACCEPTED, EnumStatus.PENDING],
+      [EnumStatus.ACTIVE, EnumStatus.PENDING],
       {checkOfficeMembership: true, checkUserAccess: false},
     );
   }
@@ -435,10 +496,7 @@ export class ProjectOperatorsController {
     @param.path.string('n_id') nId: string,
     @param.path.string('form_no') formNo: string,
   ): Promise<ValidateFormNumberResultDTO> {
-    return this.projectManagementService.validateFormNumber(
-      nId,
-      decodeURIComponent(formNo),
-    );
+    return this.projectManagementService.validateFormNumber(nId, formNo);
   }
 
   @post(`${BASE_ADDR}/{project_id}/technical-spec/unit-info`, {

@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {AnyObject, Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
 } from '../dto';
-import {Filter} from '@loopback/repository';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
+import {BuildingGroup, MONGO_ID_REGEX} from '../models';
+import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/me';
 const tags = ['Projects.Me'];
@@ -59,5 +60,28 @@ export class ProjectMeController {
       checkUserAccess: true,
       checkOfficeMembership: false,
     });
+  }
+
+  @get(`${BASE_ADDR}/{project_id}/new-building-group`, {
+    tags,
+    summary: "Get project's building group conditions",
+    description: "Get project's building group conditions",
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(BuildingGroup),
+          },
+        },
+      },
+    },
+  })
+  async getNewBuildingGroupConditionByProject(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<AnyObject | null> {
+    return this.projectManagementService.getNewBuildingGroupConditionByProject(
+      projectId,
+    );
   }
 }

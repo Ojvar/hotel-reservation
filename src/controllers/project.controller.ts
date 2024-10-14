@@ -1,5 +1,5 @@
 import {inject, intercept} from '@loopback/core';
-import {ProjectService} from '../services';
+import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
   ProjectDetailsDTO,
@@ -9,7 +9,7 @@ import {
   WorkRefReadyListDTO,
 } from '../dto';
 import {EnumRoles, protect} from '../lib-keycloak/src';
-import {Filter} from '@loopback/repository';
+import {ProjectService} from '../services';
 
 const BASE_ADDR = '/projects';
 const tags = ['Projects'];

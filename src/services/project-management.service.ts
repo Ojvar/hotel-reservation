@@ -48,10 +48,12 @@ import {
   BaseData,
   BuildingGroup,
   BuildingGroupRelations,
+  BuildingGroupTreesDTO,
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectLawyer,
   BuildingProjectTechSpec,
+  BuldingGroupDetailsDTO,
   Condition,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
@@ -65,10 +67,12 @@ import {
   BaseDataRepository,
   BuildingGroupRepository,
   BuildingProjectRepository,
+  CitySpecificationRepository,
   OfficeRepository,
   ProfileRepository,
 } from '../repositories';
 
+import {CitySpecification} from '../lib-models/src';
 import {
   BuildingProjectRmqAgentService,
   EnumBuildingProjectRmqMessageType,
@@ -166,6 +170,8 @@ export class ProjectManagementService {
     @inject(ProjectManagementService.CONFIG_BINDING_KEY)
     private configs: ProjectManagementServiceConfig,
     @repository(BaseDataRepository) private basedataRepo: BaseDataRepository,
+    @repository(CitySpecificationRepository)
+    private citySpecificationRepo: CitySpecificationRepository,
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
     @repository(OfficeRepository) private officeRepo: OfficeRepository,
     @repository(BuildingGroupRepository)
@@ -678,6 +684,72 @@ export class ProjectManagementService {
     return selectedBuildingGroup
       ? BuildingGroupDTO.fromModel(selectedBuildingGroup)
       : null;
+  }
+  async getNewBuildingGroupConditionByProject(
+    projectId: string,
+  ): Promise<AnyObject | null> {
+    // Find project
+    const project = await this.buildingProjectRepo.findById(projectId);
+    const bildingGroupBaseList: BuildingGroupTreesDTO =
+      await this.getTreeBuildingGroup();
+    let group: {
+      group: string;
+      subGroupTitle: string;
+      subGroup: BuldingGroupDetailsDTO | undefined;
+    } = {
+      group: '-',
+      subGroupTitle: '-',
+      subGroup: undefined,
+    };
+    if (bildingGroupBaseList.length > 0) {
+      const city = await this.getCitySpecificationById(project.address.city_id);
+      const cityBuldingGroup = project.address.is_village
+        ? city?.building_groups.village
+        : city?.building_groups.city;
+      if (cityBuldingGroup) {
+        // @typescript-eslint/prefer-for-of
+        for (const item of bildingGroupBaseList) {
+          const baseGroup = cityBuldingGroup[item.id];
+          const itemKeys: string[] = Object.keys(baseGroup);
+          if (itemKeys && itemKeys.length > 0) {
+            // eslint-disable-next-line eqeqeq
+            const rulesItem = item.children.find(x => x._id == itemKeys[0]);
+            const conditionsItem = baseGroup[itemKeys[0]] as {
+              code: string;
+              name: string;
+            };
+            const finalConditions = rulesItem?.children?.find(
+              // eslint-disable-next-line eqeqeq
+              x => x._id == conditionsItem.code,
+            );
+            if (
+              project.specification.total_area >=
+                +(
+                  rulesItem?.conditions.find(
+                    x => x.key === 'specification.total_area',
+                  )?.min ?? 0
+                ) ||
+              project.specification.total_floors >
+                +(
+                  rulesItem?.conditions.find(
+                    x => x.key === 'specification.total_floors',
+                  )?.min ?? 0
+                )
+            ) {
+              group = {
+                group: item.title,
+                subGroupTitle: finalConditions?.title ?? '-',
+                subGroup: finalConditions,
+              };
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      return group;
+    }
+    return group;
   }
 
   async getStaffRequestsListByUserId(
@@ -1839,5 +1911,133 @@ https://apps.qeng.ir/dashboard
 
   private sortFunc(a: BuildingGroup, b: BuildingGroup) {
     return +b.conditions![0].min - +a.conditions![0].min;
+  }
+
+  // TODO: read from base-data-service/building-groups/get-tree
+  async getTreeBuildingGroup(): Promise<BuildingGroupTreesDTO> {
+    const aggregate = [
+      {
+        $match: {
+          category: 'BUILDING_GROUP',
+        },
+      },
+      {
+        $lookup: {
+          from: 'building_groups',
+          localField: '_id',
+          foreignField: 'category_id',
+          as: 'children',
+        },
+      },
+      {
+        $unwind: {
+          path: '$children',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          'children.parent_id': null,
+          'children.status': 6,
+        },
+      },
+      {
+        $lookup: {
+          from: 'basedata',
+          localField: 'children.conditions.key',
+          foreignField: '_id',
+          as: 'children.conditionsValue',
+        },
+      },
+      {
+        $lookup: {
+          from: 'building_groups',
+          localField: 'children._id',
+          foreignField: 'parent_id',
+          as: 'children.children',
+        },
+      },
+
+      {
+        $addFields: {
+          'children.conditions': {
+            $map: {
+              input: '$children.conditions',
+              as: 'condition',
+              in: {
+                $mergeObjects: [
+                  '$$condition',
+                  {
+                    $arrayElemAt: [
+                      '$children.conditionsValue',
+                      {
+                        $indexOfArray: [
+                          '$children.conditionsValue._id',
+                          '$$condition.key',
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $unset: 'children.conditionsValue',
+      },
+      {
+        $group: {
+          _id: '$_id',
+          title: {
+            $first: '$value',
+          },
+          row_number: {
+            $first: '$meta.order',
+          },
+          children: {
+            $push: '$children',
+          },
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          _id: 0,
+          row_number: 1,
+          children: 1,
+          title: 1,
+        },
+      },
+      {
+        $sort: {
+          row_number: -1,
+        },
+      },
+    ];
+    const pointer = await this.basedataRepo.execute(
+      BaseData.modelName,
+      'aggregate',
+      aggregate,
+    );
+    return pointer.toArray();
+  }
+  // TODO: read from base-data-service/building-groups/get-tree
+  async getCitySpecificationById(id: string): Promise<CitySpecification> {
+    const aggregate = [
+      {
+        $match: {
+          _id: new ObjectId(id),
+        },
+      },
+    ];
+    const pointer = await this.citySpecificationRepo.execute(
+      CitySpecification.modelName,
+      'aggregate',
+      aggregate,
+    );
+    const result = await pointer.toArray();
+    return result.length > 0 ? result[0] : {};
   }
 }
