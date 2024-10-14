@@ -1,8 +1,7 @@
 import {inject} from '@loopback/context';
-import {Filter} from '@loopback/repository';
+import {AnyObject, Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
-  BuildingGroupDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
@@ -60,13 +59,11 @@ export class OfficeMeProjectController {
       },
     },
   })
-  async getBuildingGroupConditionByProject(
+  getBuildingGroupConditionByProject(
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
-  ): Promise<BuildingGroupDTO | null> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+  ): Promise<AnyObject | null> {
     return this.projectManagementService.getBuildingGroupConditionByProject(
-      userId,
       projectId,
     );
   }

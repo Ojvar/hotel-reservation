@@ -62,7 +62,7 @@ export class ProjectMeController {
     });
   }
 
-  @get(`${BASE_ADDR}/{project_id}/new-building-group`, {
+  @get(`${BASE_ADDR}/{project_id}/building-group`, {
     tags,
     summary: "Get project's building group conditions",
     description: "Get project's building group conditions",
@@ -76,11 +76,11 @@ export class ProjectMeController {
       },
     },
   })
-  async getNewBuildingGroupConditionByProject(
+  getBuildingGroupConditionByProject(
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
   ): Promise<AnyObject | null> {
-    return this.projectManagementService.getNewBuildingGroupConditionByProject(
+    return this.projectManagementService.getBuildingGroupConditionByProject(
       projectId,
     );
   }

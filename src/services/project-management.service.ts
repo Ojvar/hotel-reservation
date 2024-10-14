@@ -5,7 +5,6 @@ import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
 import {
   AddNewJobRequestDTO,
-  BuildingGroupDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
   BuildingProjectAttachmentSingDTO,
@@ -40,7 +39,6 @@ import {
   adjustMin,
   adjustRange,
   getPersianDateParts,
-  getPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
@@ -54,7 +52,6 @@ import {
   BuildingProjectLawyer,
   BuildingProjectTechSpec,
   BuldingGroupDetailsDTO,
-  Condition,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
   EnumProgressStatus,
@@ -72,7 +69,6 @@ import {
   ProfileRepository,
 } from '../repositories';
 
-import {CitySpecification} from '../lib-models/src';
 import {
   BuildingProjectRmqAgentService,
   EnumBuildingProjectRmqMessageType,
@@ -634,63 +630,64 @@ export class ProjectManagementService {
     await this.buildingProjectRepo.update(project);
   }
 
+  //async getBuildingGroupConditionByProject(
+  //  userId: string,
+  //  projectId: string,
+  //  options?: CheckProjectDetailsOptions,
+  //): Promise<BuildingGroupDTO | null> {
+  //  // Find project
+  //  const project = await this.getProjectByUserIdRaw(
+  //    userId,
+  //    projectId,
+  //    options,
+  //  );
+  //  const conditionsBaseData = await this.getBaseDataByCategory(
+  //    'BUILDING_GROUP_CONDITIONS',
+  //  );
+  //  const buildingGroups = await this.getBuildingGroups();
+  //
+  //  // Get basedata with specified category
+  //  const getBaseData = (id: string): BaseData | undefined =>
+  //    conditionsBaseData.find(b => b.id?.toString() === id.toString());
+  //
+  //  // Filter building group
+  //  let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
+  //  let selectedBuildingGroup: BuildingGroup | null = null;
+  //  while (queue.length > 0) {
+  //    const currentBuildingGroup = queue.find(bGroup => {
+  //      const conditions = bGroup.conditions?.map(c => ({
+  //        ...c,
+  //        value: getBaseData(c.key.toString())?.key ?? '',
+  //      }));
+  //      return !conditions?.length
+  //        ? true
+  //        : conditions?.some(cond =>
+  //            new Condition(cond).checkValue(
+  //              getPropertyByString(project, cond.value) as string,
+  //            ),
+  //          );
+  //    });
+  //    if (!currentBuildingGroup) {
+  //      break;
+  //    }
+  //    const parent_id = currentBuildingGroup.id?.toString();
+  //    queue = buildingGroups
+  //      .filter(bGroup => parent_id === bGroup.parent_id?.toString())
+  //      .sort(this.sortFunc);
+  //    selectedBuildingGroup = currentBuildingGroup;
+  //  }
+  //
+  //  return selectedBuildingGroup
+  //    ? BuildingGroupDTO.fromModel(selectedBuildingGroup)
+  //    : null;
+  //}
+
   async getBuildingGroupConditionByProject(
-    userId: string,
-    projectId: string,
-    options?: CheckProjectDetailsOptions,
-  ): Promise<BuildingGroupDTO | null> {
-    // Find project
-    const project = await this.getProjectByUserIdRaw(
-      userId,
-      projectId,
-      options,
-    );
-    const conditionsBaseData = await this.getBaseDataByCategory(
-      'BUILDING_GROUP_CONDITIONS',
-    );
-    const buildingGroups = await this.getBuildingGroups();
-
-    // Get basedata with specified category
-    const getBaseData = (id: string): BaseData | undefined =>
-      conditionsBaseData.find(b => b.id?.toString() === id.toString());
-
-    // Filter building group
-    let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
-    let selectedBuildingGroup: BuildingGroup | null = null;
-    while (queue.length > 0) {
-      const currentBuildingGroup = queue.find(bGroup => {
-        const conditions = bGroup.conditions?.map(c => ({
-          ...c,
-          value: getBaseData(c.key.toString())?.key ?? '',
-        }));
-        return !conditions?.length
-          ? true
-          : conditions?.some(cond =>
-              new Condition(cond).checkValue(
-                getPropertyByString(project, cond.value) as string,
-              ),
-            );
-      });
-      if (!currentBuildingGroup) {
-        break;
-      }
-      const parent_id = currentBuildingGroup.id?.toString();
-      queue = buildingGroups
-        .filter(bGroup => parent_id === bGroup.parent_id?.toString())
-        .sort(this.sortFunc);
-      selectedBuildingGroup = currentBuildingGroup;
-    }
-
-    return selectedBuildingGroup
-      ? BuildingGroupDTO.fromModel(selectedBuildingGroup)
-      : null;
-  }
-  async getNewBuildingGroupConditionByProject(
     projectId: string,
   ): Promise<AnyObject | null> {
     // Find project
     const project = await this.buildingProjectRepo.findById(projectId);
-    const bildingGroupBaseList: BuildingGroupTreesDTO =
+    const buildingGroupBaseList: BuildingGroupTreesDTO =
       await this.getTreeBuildingGroup();
     let group: {
       group: string;
@@ -701,40 +698,45 @@ export class ProjectManagementService {
       subGroupTitle: '-',
       subGroup: undefined,
     };
-    if (bildingGroupBaseList.length > 0) {
-      const city = await this.getCitySpecificationById(project.address.city_id);
+
+    if (buildingGroupBaseList.length > 0) {
+      const city = await this.citySpecificationRepo.findById(
+        project.address.city_id,
+      );
       const cityBuldingGroup = project.address.is_village
         ? city?.building_groups.village
         : city?.building_groups.city;
+
       if (cityBuldingGroup) {
-        // @typescript-eslint/prefer-for-of
-        for (const item of bildingGroupBaseList) {
+        for (const item of buildingGroupBaseList) {
           const baseGroup = cityBuldingGroup[item.id];
           const itemKeys: string[] = Object.keys(baseGroup);
+
           if (itemKeys && itemKeys.length > 0) {
-            // eslint-disable-next-line eqeqeq
-            const rulesItem = item.children.find(x => x._id == itemKeys[0]);
-            const conditionsItem = baseGroup[itemKeys[0]] as {
+            const itemKey = itemKeys[0].toString();
+            const rulesItem = item.children.find(
+              x => x._id?.toString() === itemKey,
+            );
+            const conditionsItem = baseGroup[itemKey] as {
               code: string;
               name: string;
             };
             const finalConditions = rulesItem?.children?.find(
-              // eslint-disable-next-line eqeqeq
-              x => x._id == conditionsItem.code,
+              x => x._id?.toString() === conditionsItem.code,
             );
+
+            const c1 =
+              rulesItem?.conditions.find(
+                x => x.key === 'specification.total_area',
+              )?.min ?? 0;
+            const c2 =
+              rulesItem?.conditions.find(
+                x => x.key === 'specification.total_floors',
+              )?.min ?? 0;
+
             if (
-              project.specification.total_area >=
-                +(
-                  rulesItem?.conditions.find(
-                    x => x.key === 'specification.total_area',
-                  )?.min ?? 0
-                ) ||
-              project.specification.total_floors >
-                +(
-                  rulesItem?.conditions.find(
-                    x => x.key === 'specification.total_floors',
-                  )?.min ?? 0
-                )
+              project.specification.total_area >= +c1 ||
+              project.specification.total_floors > +c2
             ) {
               group = {
                 group: item.title,
@@ -746,8 +748,6 @@ export class ProjectManagementService {
           }
         }
       }
-    } else {
-      return group;
     }
     return group;
   }
@@ -2022,22 +2022,5 @@ https://apps.qeng.ir/dashboard
       aggregate,
     );
     return pointer.toArray();
-  }
-  // TODO: read from base-data-service/building-groups/get-tree
-  async getCitySpecificationById(id: string): Promise<CitySpecification> {
-    const aggregate = [
-      {
-        $match: {
-          _id: new ObjectId(id),
-        },
-      },
-    ];
-    const pointer = await this.citySpecificationRepo.execute(
-      CitySpecification.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const result = await pointer.toArray();
-    return result.length > 0 ? result[0] : {};
   }
 }
