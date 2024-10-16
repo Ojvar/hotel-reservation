@@ -8,3 +8,5 @@ export * from './job-candidation-result.consumer.dto';
 export * from './rmq.dto';
 export * from './building-group.dto';
 export * from './document-registration.service.dto';
+export * from './building-group-condition.dto';
+export * from './resolution.dto';

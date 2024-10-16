@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {inject, intercept} from '@loopback/context';
-import {AnyObject, Filter} from '@loopback/repository';
+import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
+  BuildingProjectConditionResultDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
@@ -13,7 +14,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {BuildingGroup, MONGO_ID_REGEX} from '../models';
+import {MONGO_ID_REGEX} from '../models';
 import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/me';
@@ -70,7 +71,7 @@ export class ProjectMeController {
       200: {
         content: {
           'application/json': {
-            schema: getModelSchemaRef(BuildingGroup),
+            schema: getModelSchemaRef(BuildingProjectConditionResultDTO),
           },
         },
       },
@@ -79,8 +80,8 @@ export class ProjectMeController {
   getBuildingGroupConditionByProject(
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
-  ): Promise<AnyObject | null> {
-    return this.projectManagementService.getBuildingGroupConditionByProject(
+  ): Promise<BuildingProjectConditionResultDTO | null> {
+    return this.projectManagementService.getBuildingGroupConditionByProjectId(
       projectId,
     );
   }

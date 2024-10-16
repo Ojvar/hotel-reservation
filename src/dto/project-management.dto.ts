@@ -37,6 +37,7 @@ import {
   MONGO_ID_REGEX,
   Profile,
 } from '../models';
+import {BuildingGroupDetailsDTO} from './building-group.dto';
 
 @model()
 export class BuildingProjectTSItemUnitInfoDTO extends Model {
@@ -1170,7 +1171,7 @@ export class BuildingProjectSpecificationDTO extends Model {
       commercial_units: data.commercial_units,
       residental_units: data.residental_units,
       total_units: data.total_units,
-      floors_area: data.floors_area.map(
+      floors_area: data.floors_area?.map(
         BuildingProjectSpecificationFloorItemDTO.fromModel,
       ),
       parking_count: data.parking_count,
@@ -1384,3 +1385,34 @@ export class BuildingProjectAttachmentDTO extends Model {
   }
 }
 export type BuildingProjectAttachmentsDTO = BuildingProjectAttachmentDTO[];
+
+@model()
+export class BuildingProjectConditionResultDTO extends Model {
+  @property({type: 'string'})
+  group: string;
+  @property({type: 'string'})
+  groupId?: string;
+  @property({type: 'string'})
+  rulesGroupTitle: string;
+  @property({type: 'string'})
+  rulesGroupId: string;
+  @property({type: 'string'})
+  subGroupTitle: string;
+  @property({})
+  subGroup?: BuildingGroupDetailsDTO;
+
+  constructor(data?: Partial<BuildingProjectConditionResultDTO>) {
+    super(data);
+  }
+
+  static fromModel(data: AnyObject): BuildingProjectConditionResultDTO {
+    return new BuildingProjectConditionResultDTO({
+      group: data.group,
+      groupId: data.groupId,
+      rulesGroupId: data.rulesGroupId,
+      rulesGroupTitle: data.rulesGroupTitle,
+      subGroupTitle: data.subGroupTitle,
+      subGroup: BuildingGroupDetailsDTO.fromModel(data.subGroup),
+    });
+  }
+}

@@ -12,3 +12,4 @@ export * from './building-project-rmq-agent.service';
 export * from './push-notification-agent.service';
 export * from './registration-org.service';
 export * from './wordpress.service';
+export * from './block-checker.service';

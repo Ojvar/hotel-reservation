@@ -141,7 +141,9 @@ export class NewBuildingProjectSpecificationDTO extends Model {
       total_area: this.total_area,
       elevator_stops: this.elevator_stops,
       total_floors: this.total_floors,
-      floors_area: this.floors_area.map(x => x.toModel()),
+      floors_area: this.floors_area?.map(x =>
+        new BuildingProjectSpecificationFloorItemRequestDTO(x).toModel(),
+      ),
       commercial_units: this.commercial_units,
       residental_units: this.residental_units,
       total_units: this.total_units,

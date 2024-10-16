@@ -9,6 +9,8 @@ import {
 } from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {
+  EnumProgressStatus,
+  EnumProgressStatusValues,
   EnumStatus,
   EnumStatusValues,
   ModifyStamp,
@@ -25,12 +27,6 @@ export enum EnumBuildingProjectTechSpecItems {
   LABORATORY_POLYSTYRENE = 'LABORATORY_POLYSTYRENE',
   LABORATORY_ELECTRICITY = 'LABORATORY_ELECTRICITY',
 }
-
-export enum EnumProgressStatus {
-  OFFICE_DATA_ENTRY = 0,
-  OFFICE_DATA_CONFIRMED = 1,
-}
-export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
 export enum EnumBuildingUnitDirection {
   NORTH = 0,
@@ -759,6 +755,35 @@ export class BuildingProjectTechSpec extends TimestampModelWithId {
 }
 export type BuildingProjectTechSpecs = BuildingProjectTechSpec[];
 
+@model()
+export class BuildingProjectGroupDetail extends TimestampModelWithId {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({type: 'string', required: true})
+  group_id: string;
+  @property({type: 'string', required: true})
+  rules_group_id: string;
+  @property({type: 'string', required: true})
+  sub_group_id: string;
+  @property({type: 'string', required: true})
+  condition_id: string;
+
+  constructor(data?: Partial<BuildingProjectGroupDetail>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+
+  markAsRemoved(userId: string): void {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: userId});
+  }
+}
+export type BuildingProjectGroupDetails = BuildingProjectGroupDetail[];
+
 @model({
   name: 'building_projects',
   settings: {
@@ -781,6 +806,10 @@ export class BuildingProject extends Entity {
   status: EnumStatus;
   @property({type: 'string'})
   unique_key?: string;
+
+  @property.array(BuildingProjectGroupDetail, {required: true})
+  building_groups: BuildingProjectGroupDetails;
+
   @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
   progress_status: EnumProgressStatus;
   @property.array(ProgressStatusItem)
@@ -851,6 +880,9 @@ export class BuildingProject extends Entity {
     this.technical_specifications = this.technical_specifications?.map(
       ts => new BuildingProjectTechSpec(ts),
     );
+    this.building_groups =
+      this.building_groups?.map(grp => new BuildingProjectGroupDetail(grp)) ??
+      [];
   }
 
   static generateUniqueKey = (nId: string, formNo: string) =>
@@ -872,6 +904,50 @@ export class BuildingProject extends Entity {
         x => x.status === EnumStatus.ACTIVE,
       ) ?? []
     );
+  }
+
+  addBuildingGroup(userId: string, newGroup: BuildingProjectGroupDetail): void {
+    const now = new ModifyStamp({by: userId});
+
+    // Get last active building group
+    const lastActiveBG = this.building_groups?.find(
+      bg => bg.status === EnumStatus.ACTIVE,
+    );
+    if (
+      lastActiveBG?.condition_id.toString() ===
+        newGroup.condition_id.toString() &&
+      lastActiveBG.group_id.toString() === newGroup.group_id.toString() &&
+      lastActiveBG.sub_group_id.toString() ===
+        newGroup.sub_group_id.toString() &&
+      lastActiveBG.rules_group_id.toString() ===
+        newGroup.rules_group_id.toString()
+    ) {
+      return;
+    }
+
+    lastActiveBG?.markAsRemoved(userId);
+    this.building_groups.push(
+      new BuildingProjectGroupDetail({
+        ...newGroup,
+        updated: now,
+        created: now,
+        status: EnumStatus.ACTIVE,
+      }),
+    );
+  }
+
+  removeBuildingGroup(userId: string, groupId: string): void {
+    const bg = this.building_groups.find(
+      bGroup =>
+        bGroup.id?.toString() === groupId &&
+        bGroup.status === EnumStatus.ACTIVE,
+    );
+    if (!bg) {
+      throw new HttpErrors.NotFound(
+        `Building group detial not found, id: ${groupId}`,
+      );
+    }
+    bg.markAsRemoved(userId);
   }
 
   signRelatedFiles(
