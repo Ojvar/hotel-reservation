@@ -5,6 +5,7 @@ export enum EnumConditionMode {
   MODIFY_ENGINEERS = 0,
   CHECK_ENGINEERS = 1,
 }
+export const EnumConditionModeValues = Object.values(EnumConditionMode);
 
 @model()
 export class UserLicenseItem extends Model {

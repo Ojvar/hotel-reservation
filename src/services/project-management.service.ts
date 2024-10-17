@@ -5,6 +5,7 @@ import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
 import {
   AddNewJobRequestDTO,
+  BlockCheckResult,
   BuildingGroupTreesDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
@@ -62,7 +63,6 @@ import {
 } from '../models';
 import {
   BaseDataRepository,
-  BuildingGroupRepository,
   BuildingProjectRepository,
   CitySpecificationRepository,
   OfficeRepository,
@@ -171,8 +171,6 @@ export class ProjectManagementService {
     private citySpecificationRepo: CitySpecificationRepository,
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
     @repository(OfficeRepository) private officeRepo: OfficeRepository,
-    @repository(BuildingGroupRepository)
-    private buildingGroupRepo: BuildingGroupRepository,
     @repository(BuildingProjectRepository)
     private buildingProjectRepo: BuildingProjectRepository,
     @inject(BuildingProjectRmqAgentService.BINDING_KEY)
@@ -2047,11 +2045,35 @@ https://apps.qeng.ir/dashboard
     return pointer.toArray();
   }
 
-  async checkConditionsList(
-    project: BuildingProject,
-    mode: EnumConditionMode = EnumConditionMode.CHECK_ENGINEERS,
-  ): Promise<unknown> {
-    //return this.blockCheckerService.analyze( project, )
-    return {};
+  async updateProjectBuildingGroupCondition(
+    userId: string,
+    projectId: string,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    const buildingGroup =
+      await this.getBuildingGroupConditionByProject(project);
+    if (!buildingGroup) {
+      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+    }
+    project.addBuildingGroup(
+      userId,
+      new BuildingProjectGroupDetail({
+        group_id: buildingGroup?.groupId,
+        rules_group_id: buildingGroup?.rulesGroupId,
+        sub_group_id: buildingGroup?.subGroup?.id,
+        condition_id: buildingGroup?.subGroup?.value,
+      }),
+    );
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async checkBuildingGroupConditionByProjectId(
+    projectId: string,
+    mode: EnumConditionMode,
+    engineerTypesFilter: string[] = [],
+  ): Promise<BlockCheckResult> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    return this.blockCheckerService.analyze(project, mode, engineerTypesFilter);
   }
 }

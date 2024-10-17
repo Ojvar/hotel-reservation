@@ -906,6 +906,10 @@ export class BuildingProject extends Entity {
     );
   }
 
+  get activeBuildingGroupCondition(): BuildingProjectGroupDetail | undefined {
+    return this.building_groups?.find(bg => bg.status === EnumStatus.ACTIVE);
+  }
+
   addBuildingGroup(userId: string, newGroup: BuildingProjectGroupDetail): void {
     const now = new ModifyStamp({by: userId});
 
