@@ -15,6 +15,7 @@ import {ProjectManagementService} from '../services';
 import {AnyObject} from '@loopback/repository';
 import {
   AddNewJobRequestDTO,
+  BlockCheckResult,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectInvoiceFilter,
@@ -26,6 +27,8 @@ import {
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
   BuildingProjectsDTO,
+  EnumConditionMode,
+  EnumConditionModeValues,
   UpdateInvoiceRequestDTO,
 } from '../dto';
 import {
@@ -426,5 +429,47 @@ export class ProjectManagementController {
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     await this.projectManagementService.addNewJob(userId, projectId, body);
+  }
+
+  @patch(`${BASE_ADDR}/{project_id}/update-building-group-condition`, {
+    tags,
+    summary: "Update project's Building group condition",
+    description: "Update project's Building group condition",
+    responses: {204: {}},
+  })
+  async updateBuildingGroupCondition(
+    @param.path.string('project_id') projectId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.updateProjectBuildingGroupCondition(
+      userId,
+      projectId,
+    );
+  }
+
+  @get(`${BASE_ADDR}/{project_id}/check-building-group-condition`, {
+    tags,
+    summary: "Check project's Building group condition",
+    description: "Check project's Building group condition",
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BlockCheckResult)},
+        },
+      },
+    },
+  })
+  checkBuildingGroupCondition(
+    @param.path.string('project_id') projectId: string,
+    @param.query.number('check_mode', {
+      schema: {type: 'number', enum: EnumConditionModeValues},
+    })
+    mode = EnumConditionMode.CHECK_ENGINEERS,
+  ): Promise<BlockCheckResult> {
+    return this.projectManagementService.checkBuildingGroupConditionByProjectId(
+      projectId,
+      mode,
+      [],
+    );
   }
 }
