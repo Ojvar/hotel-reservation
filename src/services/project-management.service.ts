@@ -733,7 +733,7 @@ export class ProjectManagementService {
 
             if (
               project.specification.total_area >= +c1 ||
-              project.specification.total_floors > +c2
+              project.specification.total_floors >= +c2
             ) {
               return BuildingProjectConditionResultDTO.fromModel({
                 group: item.title,
