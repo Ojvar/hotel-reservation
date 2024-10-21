@@ -923,6 +923,7 @@ export class ProjectManagementService {
     id: string,
     data: NewProjectStaffRequestDTO,
   ): Promise<void> {
+    console.debug(JSON.stringify(data, null, 1));
     const project = await this.buildingProjectRepo.findById(id);
     project.addStaff(data.toModel(userId));
     project.updated = new ModifyStamp({by: userId});
@@ -2058,8 +2059,9 @@ https://apps.qeng.ir/dashboard
     projectId: string,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
-    const buildingGroup =
-      await this.getBuildingGroupConditionByProject(project);
+    const buildingGroup = await this.getBuildingGroupConditionByProject(
+      project,
+    );
     if (!buildingGroup) {
       throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
     }

@@ -77,6 +77,8 @@ export class BuildingProjectStaffResponse extends Model {
 
 @model()
 export class BuildingProjectStaffItem extends TimestampModelWithId {
+  @property({type: 'object', required: false})
+  meta?: Record<string, number | string>;
   @property({type: 'string', required: true})
   user_id: string;
   @property({type: 'string', required: true})
@@ -985,6 +987,7 @@ export class BuildingProject extends Entity {
       );
     }
     this.staff = [...(this.staff ?? []), ...staffItems];
+    console.debug(JSON.stringify(this.staff, null, 1));
   }
 
   removeStaff(userId: string, staffId: string): void {
