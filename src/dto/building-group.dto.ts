@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import {Model, model, property} from '@loopback/repository';
+import {AnyObject, Model, model, property} from '@loopback/repository';
 import {
   BuildingGroupCondition,
   BuildingGroupWithRelations,
   Condition,
   CONDITION_OPERATORS,
+  EnumProgressStatus,
   EnumStatus,
   EnumStatusValues,
+  Resolution,
 } from '../models';
+import {ResolutionDTO} from './resolution.dto';
 
 @model({settings: {IdInjection: false}})
 export class ConditionDTO extends Model {
@@ -91,3 +94,67 @@ export class BuildingGroupDTO extends Model {
     });
   }
 }
+
+@model()
+export class BuildingGroupDetailsDTO extends Model {
+  _id?: string;
+
+  @property({type: 'string'})
+  id: string;
+  @property({type: 'date'})
+  created_at: Date;
+  @property({type: 'date'})
+  updated_at: Date;
+  @property({type: 'number'})
+  status: EnumProgressStatus;
+  @property({type: 'string'})
+  title: string;
+  @property({type: 'number'})
+  revision: number;
+
+  @property.array(ConditionDTO, {})
+  conditions: ConditionsDTO;
+
+  @property({type: 'string'})
+  value?: string;
+  @property({type: 'string'})
+  parent_id?: string;
+
+  @property({})
+  resolution?: ResolutionDTO;
+
+  @property.array(BuildingGroupDetailsDTO, {})
+  children?: BuildingGroupDetailsDTO[];
+
+  constructor(data?: Partial<BuildingGroupDetailsDTO>) {
+    super(data);
+  }
+
+  static fromModel(data: AnyObject): BuildingGroupDetailsDTO {
+    return new BuildingGroupDetailsDTO({
+      id: data.id ?? data._id,
+      created_at: data.created.at,
+      updated_at: data.updated.at,
+      status: data.status,
+      title: data.title,
+      revision: data.revision,
+      value: data.value,
+      parent_id: data.parent_id,
+
+      children: data.children?.map(BuildingGroupDetailsDTO.fromModel),
+      conditions: data.conditions?.map(ConditionDTO.fromModel),
+      resolution: data.resolution
+        ? ResolutionDTO.fromModel(new Resolution(data.resolution))
+        : undefined,
+    });
+  }
+}
+
+export type BuldingGroupDetailsListDTO = BuildingGroupDetailsDTO[];
+export interface BuildingGroupTreeDTO {
+  id: string;
+  title: string;
+  row_number: number;
+  children: BuildingGroupDetailsDTO[];
+}
+export type BuildingGroupTreesDTO = BuildingGroupTreeDTO[];

@@ -13,4 +13,6 @@ export {
   REMOVE_ID_SETTING,
   TimestampModelWithId,
   KEYCLOAK_ID_REGEX,
+  EnumProgressStatus,
+  EnumProgressStatusValues,
 } from '../lib-models/src';

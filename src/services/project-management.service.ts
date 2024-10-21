@@ -5,9 +5,11 @@ import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
 import {
   AddNewJobRequestDTO,
+  BuildingGroupTreesDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
   BuildingProjectAttachmentSingDTO,
+  BuildingProjectConditionResultDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
@@ -23,6 +25,8 @@ import {
   BuildingProjectTSItemLaboratoryWeldingRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
+  BuldingGroupDetailsListDTO,
+  EnumConditionMode,
   JobCandiateResultDTO,
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
@@ -44,14 +48,11 @@ import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
   BaseData,
-  BuildingGroup,
-  BuildingGroupRelations,
-  BuildingGroupTreesDTO,
   BuildingProject,
   BuildingProjectAttachmentSing,
+  BuildingProjectGroupDetail,
   BuildingProjectLawyer,
   BuildingProjectTechSpec,
-  BuldingGroupDetailsDTO,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
   EnumProgressStatus,
@@ -69,6 +70,7 @@ import {
   ProfileRepository,
 } from '../repositories';
 
+import {BlockCheckerService} from './block-checker.service';
 import {
   BuildingProjectRmqAgentService,
   EnumBuildingProjectRmqMessageType,
@@ -184,6 +186,8 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
+    @inject(BlockCheckerService.BINDING_KEY)
+    private blockCheckerService: BlockCheckerService,
   ) {}
 
   async autoAssignEngineerToProject(
@@ -682,28 +686,18 @@ export class ProjectManagementService {
   //    : null;
   //}
 
-  async getBuildingGroupConditionByProject(
+  async getBuildingGroupConditionByProjectId(
     projectId: string,
-  ): Promise<AnyObject | null> {
-    // Find project
+  ): Promise<BuildingProjectConditionResultDTO | null> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    return this.getBuildingGroupConditionByProject(project);
+  }
+
+  async getBuildingGroupConditionByProject(
+    project: BuildingProject,
+  ): Promise<BuildingProjectConditionResultDTO | null> {
     const buildingGroupBaseList: BuildingGroupTreesDTO =
       await this.getTreeBuildingGroup();
-    let group: {
-      group: string;
-      subGroupTitle: string;
-      group_id: string;
-      rulesGroupTitle: string;
-      rulesGroup_id: string;
-      subGroup: BuldingGroupDetailsDTO | undefined;
-    } = {
-      group: '-',
-      subGroupTitle: '-',
-      group_id: '',
-      rulesGroupTitle: '',
-      rulesGroup_id: '',
-      subGroup: undefined,
-    };
 
     if (buildingGroupBaseList.length > 0) {
       const city = await this.citySpecificationRepo.findById(
@@ -721,44 +715,51 @@ export class ProjectManagementService {
           if (itemKeys && itemKeys.length > 0) {
             const itemKey = itemKeys[0].toString();
             const rulesItem = item.children.find(
-              x => x._id?.toString() === itemKey,
+              (x: AnyObject) => x._id?.toString() === itemKey,
             );
             const conditionsItem = baseGroup[itemKey] as {
               code: string;
               name: string;
             };
             const finalConditions = rulesItem?.children?.find(
-              x => x._id?.toString() === conditionsItem.code,
+              (x: AnyObject) => x._id?.toString() === conditionsItem.code,
             );
 
             const c1 =
               rulesItem?.conditions.find(
-                x => x.key === 'specification.total_area',
+                (x: {key: string}) => x.key === 'specification.total_area',
               )?.min ?? 0;
             const c2 =
               rulesItem?.conditions.find(
-                x => x.key === 'specification.total_floors',
+                (x: {key: string}) => x.key === 'specification.total_floors',
               )?.min ?? 0;
 
             if (
               project.specification.total_area >= +c1 ||
               project.specification.total_floors > +c2
             ) {
-              group = {
+              return BuildingProjectConditionResultDTO.fromModel({
                 group: item.title,
-                group_id: item.id,
+                groupId: item.id,
                 rulesGroupTitle: rulesItem?.title ?? '-',
-                rulesGroup_id: rulesItem?.id ?? '-',
+                rulesGroupId: rulesItem?._id ?? '-',
                 subGroupTitle: finalConditions?.title ?? '-',
                 subGroup: finalConditions,
-              };
-              break;
+              });
             }
           }
         }
       }
     }
-    return group;
+
+    return BuildingProjectConditionResultDTO.fromModel({
+      group: '-',
+      groupId: undefined,
+      rulesGroupTitle: '-',
+      rulesGroupId: '-',
+      subGroupTitle: '-',
+      subGroup: undefined,
+    });
   }
 
   async getStaffRequestsListByUserId(
@@ -1268,6 +1269,24 @@ https://apps.qeng.ir/dashboard
         lawyers: updatedLawyers,
       }),
     );
+
+    // Find related-project building group
+    const buildingGroup = await this.getBuildingGroupConditionByProject(
+      updatedProject,
+    );
+    if (!buildingGroup) {
+      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+    }
+    updatedProject.addBuildingGroup(
+      userId,
+      new BuildingProjectGroupDetail({
+        group_id: buildingGroup?.groupId,
+        rules_group_id: buildingGroup?.rulesGroupId,
+        sub_group_id: buildingGroup?.subGroup?.id,
+        condition_id: buildingGroup?.subGroup?.value,
+      }),
+    );
+
     await this.buildingProjectRepo.update(updatedProject);
     return BuildingProjectDTO.fromModel(updatedProject);
   }
@@ -1311,9 +1330,28 @@ https://apps.qeng.ir/dashboard
       data.case_no = await this.generateNewCaseNo(year);
     }
 
-    const newProject = await this.buildingProjectRepo.create(
-      data.toModel(userId, {}),
+    // Convert to bulding-project-model
+    const newBuildingModel = data.toModel(userId);
+
+    // Find related-project building group
+    const buildingGroup = await this.getBuildingGroupConditionByProject(
+      newBuildingModel,
     );
+    if (!buildingGroup) {
+      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+    }
+    newBuildingModel.addBuildingGroup(
+      userId,
+      new BuildingProjectGroupDetail({
+        group_id: buildingGroup?.groupId,
+        rules_group_id: buildingGroup?.rulesGroupId,
+        sub_group_id: buildingGroup?.subGroup?.id,
+        condition_id: buildingGroup?.subGroup?.value,
+      }),
+    );
+
+    // Create project
+    const newProject = await this.buildingProjectRepo.create(newBuildingModel);
 
     // Remove verification code stored in the redis
     if (shouldVerify) {
@@ -1908,24 +1946,24 @@ https://apps.qeng.ir/dashboard
     return [project, options];
   }
 
-  private getBaseDataByCategory(category: string): Promise<BaseData[]> {
-    return this.basedataRepo.find({
-      where: {category},
-    });
-  }
+  //private getBaseDataByCategory(category: string): Promise<BaseData[]> {
+  //  return this.basedataRepo.find({
+  //    where: {category},
+  //  });
+  //}
 
-  private async getBuildingGroups(): Promise<
-    (BuildingGroup & BuildingGroupRelations)[]
-  > {
-    return this.buildingGroupRepo.find({
-      where: {status: EnumStatus.ACTIVE},
-      include: ['buildingGroupCondition'],
-    });
-  }
+  //private async getBuildingGroups(): Promise<
+  //  (BuildingGroup & BuildingGroupRelations)[]
+  //> {
+  //  return this.buildingGroupRepo.find({
+  //    where: {status: EnumStatus.ACTIVE},
+  //    include: ['buildingGroupCondition'],
+  //  });
+  //}
 
-  private sortFunc(a: BuildingGroup, b: BuildingGroup) {
-    return +b.conditions![0].min - +a.conditions![0].min;
-  }
+  //private sortFunc(a: BuildingGroup, b: BuildingGroup) {
+  //  return +b.conditions![0].min - +a.conditions![0].min;
+  //}
 
   // TODO: read from base-data-service/building-groups/get-tree
   async getTreeBuildingGroup(): Promise<BuildingGroupTreesDTO> {
@@ -1998,37 +2036,17 @@ https://apps.qeng.ir/dashboard
           },
         },
       },
-      {
-        $unset: 'children.conditionsValue',
-      },
+      {$unset: 'children.conditionsValue'},
       {
         $group: {
           _id: '$_id',
-          title: {
-            $first: '$value',
-          },
-          row_number: {
-            $first: '$meta.order',
-          },
-          children: {
-            $push: '$children',
-          },
+          title: {$first: '$value'},
+          row_number: {$first: '$meta.order'},
+          children: {$push: '$children'},
         },
       },
-      {
-        $project: {
-          id: '$_id',
-          _id: 0,
-          row_number: 1,
-          children: 1,
-          title: 1,
-        },
-      },
-      {
-        $sort: {
-          row_number: -1,
-        },
-      },
+      {$project: {id: '$_id', _id: 0, row_number: 1, children: 1, title: 1}},
+      {$sort: {row_number: -1}},
     ];
     const pointer = await this.basedataRepo.execute(
       BaseData.modelName,
@@ -2036,5 +2054,13 @@ https://apps.qeng.ir/dashboard
       aggregate,
     );
     return pointer.toArray();
+  }
+
+  async checkConditionsList(
+    project: BuildingProject,
+    mode: EnumConditionMode = EnumConditionMode.CHECK_ENGINEERS,
+  ): Promise<unknown> {
+    //return this.blockCheckerService.analyze( project, )
+    return {};
   }
 }

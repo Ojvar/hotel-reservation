@@ -152,7 +152,6 @@ export class ProjectOperatorsController {
     );
   }
 
-  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',

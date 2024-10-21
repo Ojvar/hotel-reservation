@@ -1,13 +1,14 @@
 import {inject} from '@loopback/context';
-import {AnyObject, Filter} from '@loopback/repository';
+import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param} from '@loopback/rest';
 import {
+  BuildingProjectConditionResultDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectsDTO,
 } from '../dto';
 import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
-import {BuildingGroup, MONGO_ID_REGEX} from '../models';
+import {MONGO_ID_REGEX} from '../models';
 import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/offices/me/projects';
@@ -53,7 +54,7 @@ export class OfficeMeProjectController {
       200: {
         content: {
           'application/json': {
-            schema: getModelSchemaRef(BuildingGroup),
+            schema: getModelSchemaRef(BuildingProjectConditionResultDTO),
           },
         },
       },
@@ -62,8 +63,8 @@ export class OfficeMeProjectController {
   getBuildingGroupConditionByProject(
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
-  ): Promise<AnyObject | null> {
-    return this.projectManagementService.getBuildingGroupConditionByProject(
+  ): Promise<BuildingProjectConditionResultDTO | null> {
+    return this.projectManagementService.getBuildingGroupConditionByProjectId(
       projectId,
     );
   }
