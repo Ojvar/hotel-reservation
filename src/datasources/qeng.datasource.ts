@@ -18,12 +18,6 @@ export type QengDataSourceConfig = {
 const config = {
   name: 'Qeng',
   connector: 'mongodb',
-  // url: '',
-  // host: 'knode3.qeng.ir',
-  // port: 27017,
-  // user: '',
-  // password: '',
-  // database: '',
   useNewUrlParser: true,
 };
 

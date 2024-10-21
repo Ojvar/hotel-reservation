@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
-import {AnyObject, repository} from '@loopback/repository';
+import {
+  AnyObject,
+  Model,
+  model,
+  property,
+  repository,
+} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import basedata from '../basedata.json';
 import {
@@ -14,6 +20,20 @@ import {BuildingProjectRepository, OfficeRepository} from '../repositories';
 import {AuthService, AuthServiceProvider} from './auth.service';
 import {MsSqlService} from './ms-sql.service';
 import {ProfileService, ProfileServiceProvider} from './profile.service';
+
+@model()
+export class BriefProfileItemDTO extends Model {
+  @property({type: 'string'})
+  firstName: string;
+  @property({type: 'string'})
+  lastName: string;
+  @property({type: 'string'})
+  mobile: string;
+
+  constructor(data?: Partial<BriefProfileItemDTO>) {
+    super(data);
+  }
+}
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ProjectConverterService {
@@ -80,32 +100,20 @@ WHERE   CaseNo = '${caseNo}'
       );
     }
 
-    const prjDto = new NewBuildingProjectRequestDTO({
+    const projectDto = new NewBuildingProjectRequestDTO({
       ...projectObject,
       office_id: office.id?.toString(),
     });
-    console.log('🚀 ~ ProjectConverterService ~ prjDto:', prjDto);
     const newBuildingProject = await this.buildingProjectRepo.create(
-      prjDto.toModel(userId),
+      projectDto.toModel(userId),
     );
-    console.log(
-      '🚀 ~ ProjectConverterService ~ newBuildingProject:',
-      newBuildingProject,
-    );
-
     return BuildingProjectDTO.fromModel(newBuildingProject);
   }
 
   async createProfile(
     token: string,
     nId: string,
-    data:
-      | AnyObject
-      | {
-          firstName: string;
-          lastName: string;
-          mobile: string;
-        },
+    data: AnyObject | BriefProfileItemDTO,
   ): Promise<AnyObject> {
     // Create new user profile
     const body = {
@@ -128,7 +136,7 @@ WHERE   CaseNo = '${caseNo}'
 
   async getProfileOrCreate(
     nId: string,
-    data: {firstName: string; lastName: string; mobile: string},
+    data: BriefProfileItemDTO,
   ): Promise<AnyObject> {
     nId = nId.padStart(10, '0');
 
@@ -137,21 +145,19 @@ WHERE   CaseNo = '${caseNo}'
 
     // Get Profile
     const profile = await this.profileService.userProfile(access_token, nId);
-    if (profile) {
-      return profile;
-    }
-
-    // Create Profile
-    return this.createProfile(access_token, nId, data);
+    return profile ? profile : this.createProfile(access_token, nId, data);
   }
 
   async getOwner(data: AnyObject): Promise<AnyObject> {
     const [firstName, ...lastName] = data['Owner_Name'].split(' ');
-    const profile = await this.getProfileOrCreate(data['Owner_shsh'], {
-      firstName: firstName ?? '-',
-      lastName: (lastName ?? []).join(' '),
-      mobile: data['OwnerMobile'],
-    });
+    const profile = await this.getProfileOrCreate(
+      data['Owner_shsh'],
+      new BriefProfileItemDTO({
+        firstName: firstName ?? '-',
+        lastName: (lastName ?? []).join(' '),
+        mobile: data['OwnerMobile'],
+      }),
+    );
     return {
       user_id: profile.user_id,
       address: data.OwnerAddress ?? '',
@@ -164,11 +170,14 @@ WHERE   CaseNo = '${caseNo}'
       return undefined;
     }
     const [firstName, ...lastName] = (data.Lawyer_Name ?? '').split(' ');
-    const profile = await this.getProfileOrCreate(data['Lawyer_shsh'], {
-      firstName: firstName ?? '-',
-      lastName: (lastName ?? []).join(' '),
-      mobile: data['OwnerMobile'],
-    });
+    const profile = await this.getProfileOrCreate(
+      data['Lawyer_shsh'],
+      new BriefProfileItemDTO({
+        firstName: firstName ?? '-',
+        lastName: (lastName ?? []).join(' '),
+        mobile: data['OwnerMobile'],
+      }),
+    );
     return {
       user_id: profile.user_id,
       power_of_attorney_date: data.ProxyDate ?? undefined,
