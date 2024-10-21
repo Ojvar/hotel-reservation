@@ -1170,7 +1170,7 @@ export class BuildingProjectSpecificationDTO extends Model {
       commercial_units: data.commercial_units,
       residental_units: data.residental_units,
       total_units: data.total_units,
-      floors_area: data.floors_area.map(
+      floors_area: data.floors_area?.map(
         BuildingProjectSpecificationFloorItemDTO.fromModel,
       ),
       parking_count: data.parking_count,

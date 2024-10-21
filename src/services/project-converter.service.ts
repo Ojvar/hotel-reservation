@@ -84,8 +84,13 @@ WHERE   CaseNo = '${caseNo}'
       ...projectObject,
       office_id: office.id?.toString(),
     });
+    console.log('🚀 ~ ProjectConverterService ~ prjDto:', prjDto);
     const newBuildingProject = await this.buildingProjectRepo.create(
       prjDto.toModel(userId),
+    );
+    console.log(
+      '🚀 ~ ProjectConverterService ~ newBuildingProject:',
+      newBuildingProject,
     );
 
     return BuildingProjectDTO.fromModel(newBuildingProject);

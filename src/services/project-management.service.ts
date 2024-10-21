@@ -692,10 +692,16 @@ export class ProjectManagementService {
     let group: {
       group: string;
       subGroupTitle: string;
+      group_id: string;
+      rulesGroupTitle: string;
+      rulesGroup_id: string;
       subGroup: BuldingGroupDetailsDTO | undefined;
     } = {
       group: '-',
       subGroupTitle: '-',
+      group_id: '',
+      rulesGroupTitle: '',
+      rulesGroup_id: '',
       subGroup: undefined,
     };
 
@@ -740,6 +746,9 @@ export class ProjectManagementService {
             ) {
               group = {
                 group: item.title,
+                group_id: item.id,
+                rulesGroupTitle: rulesItem?.title ?? '-',
+                rulesGroup_id: rulesItem?.id ?? '-',
                 subGroupTitle: finalConditions?.title ?? '-',
                 subGroup: finalConditions,
               };
@@ -1516,7 +1525,12 @@ https://apps.qeng.ir/dashboard
       },
 
       // Lookup lawyers
-      {$unwind: '$lawyers'},
+      {
+        $unwind: {
+          path: '$lawyers',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $lookup: {
           from: 'profiles',
