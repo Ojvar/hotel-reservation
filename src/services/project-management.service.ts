@@ -692,16 +692,16 @@ export class ProjectManagementService {
     let group: {
       group: string;
       subGroupTitle: string;
-      group_id: string;
+      groupId: string;
       rulesGroupTitle: string;
-      rulesGroup_id: string;
+      rulesGroupId: string;
       subGroup: BuldingGroupDetailsDTO | undefined;
     } = {
       group: '-',
       subGroupTitle: '-',
-      group_id: '',
+      groupId: '',
       rulesGroupTitle: '',
-      rulesGroup_id: '',
+      rulesGroupId: '',
       subGroup: undefined,
     };
 
@@ -716,44 +716,46 @@ export class ProjectManagementService {
       if (cityBuldingGroup) {
         for (const item of buildingGroupBaseList) {
           const baseGroup = cityBuldingGroup[item.id];
-          const itemKeys: string[] = Object.keys(baseGroup);
+          const itemKeys: string[] = Object.keys(baseGroup) ?? [];
 
-          if (itemKeys && itemKeys.length > 0) {
-            const itemKey = itemKeys[0].toString();
-            const rulesItem = item.children.find(
-              x => x._id?.toString() === itemKey,
-            );
-            const conditionsItem = baseGroup[itemKey] as {
-              code: string;
-              name: string;
+          if (itemKeys.length === 0) {
+            continue;
+          }
+
+          const itemKey = itemKeys[0].toString();
+          const rulesItem = item.children.find(
+            x => x._id?.toString() === itemKey,
+          );
+          const conditionsItem = baseGroup[itemKey] as {
+            code: string;
+            name: string;
+          };
+          const finalConditions = rulesItem?.children?.find(
+            child => child._id?.toString() === conditionsItem.code,
+          );
+
+          const c1 =
+            rulesItem?.conditions.find(
+              cond => cond.key === 'specification.total_area',
+            )?.min ?? 0;
+          const c2 =
+            rulesItem?.conditions.find(
+              ruleItem => ruleItem.key === 'specification.total_floors',
+            )?.min ?? 0;
+
+          if (
+            project.specification.total_area >= +c1 ||
+            project.specification.total_floors >= +c2
+          ) {
+            group = {
+              group: item.title,
+              groupId: item.id,
+              rulesGroupTitle: rulesItem?.title ?? '-',
+              rulesGroupId: rulesItem?.id ?? '-',
+              subGroupTitle: finalConditions?.title ?? '-',
+              subGroup: finalConditions,
             };
-            const finalConditions = rulesItem?.children?.find(
-              x => x._id?.toString() === conditionsItem.code,
-            );
-
-            const c1 =
-              rulesItem?.conditions.find(
-                x => x.key === 'specification.total_area',
-              )?.min ?? 0;
-            const c2 =
-              rulesItem?.conditions.find(
-                x => x.key === 'specification.total_floors',
-              )?.min ?? 0;
-
-            if (
-              project.specification.total_area >= +c1 ||
-              project.specification.total_floors > +c2
-            ) {
-              group = {
-                group: item.title,
-                group_id: item.id,
-                rulesGroupTitle: rulesItem?.title ?? '-',
-                rulesGroup_id: rulesItem?.id ?? '-',
-                subGroupTitle: finalConditions?.title ?? '-',
-                subGroup: finalConditions,
-              };
-              break;
-            }
+            break;
           }
         }
       }
