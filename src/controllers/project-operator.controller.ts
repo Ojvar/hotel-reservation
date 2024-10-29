@@ -29,6 +29,7 @@ import {
   FileTokenRequestDTO,
   NewBuildingProjectRequestDTO,
   NewProjectStaffRequestDTO,
+  ProjectCommitAttachmentRequestDTO,
   ProjectSummaryEngineerDTO,
   SetBuildingProjectStaffResponseDTO,
   UpdateInvoiceRequestDTO,
@@ -152,7 +153,6 @@ export class ProjectOperatorsController {
     );
   }
 
-  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',
@@ -251,12 +251,14 @@ export class ProjectOperatorsController {
   async saveAttachments(
     @param.path.string('project_id') projectId: string,
     @param.header.string('file-token') fileToken = '',
+    @requestBody() body: ProjectCommitAttachmentRequestDTO,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
     return this.projectManagementService.commitUploadedFiles(
       userId,
       projectId,
       fileToken,
+      body.comments ?? {},
     );
   }
 

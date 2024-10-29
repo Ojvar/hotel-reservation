@@ -39,6 +39,16 @@ import {
 } from '../models';
 
 @model()
+export class ProjectCommitAttachmentRequestDTO extends Model {
+  @property({type: 'object', itemType: 'string', required: false})
+  comments?: Record<string, string>;
+
+  constructor(data?: Partial<ProjectCommitAttachmentRequestDTO>) {
+    super(data);
+  }
+}
+
+@model()
 export class BuildingProjectTSItemUnitInfoDTO extends Model {
   @property({type: 'number', required: true})
   unit_no: number;

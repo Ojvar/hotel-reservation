@@ -1110,6 +1110,7 @@ https://apps.qeng.ir/dashboard
     userId: string,
     id: string,
     fileToken: string,
+    comments: Record<string, string> = {},
   ): Promise<void> {
     if (!fileToken) {
       return;
@@ -1128,7 +1129,7 @@ https://apps.qeng.ir/dashboard
       field: f.fieldname,
     }));
 
-    project.updateAttachments(userId, newAttachments);
+    project.updateAttachments(userId, newAttachments, true, comments);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
 

@@ -12,6 +12,7 @@ import {
   EnumStatus,
   EnumStatusValues,
   ModifyStamp,
+  ModifyStampWithDescription,
   REMOVE_ID_SETTING,
   TimestampModelWithId,
 } from './common';
@@ -132,6 +133,10 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
   status: EnumStatus;
   @property.array(BuildingProjectAttachmentSing, {requird: false})
   signes: BuildingProjectAttachmentSings;
+  @property({type: 'string', required: false})
+  comment?: string;
+  @property({required: false})
+  response?: ModifyStampWithDescription;
 
   constructor(data?: Partial<BuildingProjectAttachmentItem>) {
     super(data);
@@ -191,6 +196,19 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
   markAsRemoved(userId: string) {
     this.status = EnumStatus.DEACTIVE;
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  setResponse(
+    userId: string,
+    status: EnumStatus.ACCEPTED | EnumStatus.REJECTED,
+    comment?: string,
+  ): void {
+    this.response = new ModifyStampWithDescription({
+      by: userId,
+      description: comment,
+    });
+    this.updated = new ModifyStamp({by: userId});
+    this.status = status;
   }
 }
 export type BuildingProjectAttachmentItems = BuildingProjectAttachmentItem[];
@@ -1008,6 +1026,7 @@ export class BuildingProject extends Entity {
     userId: string,
     newAttachments: {fileId: string; field: string}[],
     forceValidation = true,
+    meta: Record<string, string> = {},
   ): void {
     const now = new ModifyStamp({by: userId});
     for (const attachment of newAttachments) {
@@ -1031,6 +1050,7 @@ export class BuildingProject extends Entity {
           file_id: attachment.fileId,
           created: now,
           updated: now,
+          comment: meta[attachment.field],
         }),
       );
     }
@@ -1207,6 +1227,26 @@ export class BuildingProject extends Entity {
     item.markAsRemoved(userId);
     items[index] = item;
     this.technical_specifications = items;
+    this.updated = new ModifyStamp({by: userId});
+  }
+
+  setAttachmentResponse(
+    userId: string,
+    attachmentId: string,
+    status: EnumStatus.ACCEPTED | EnumStatus.REJECTED,
+    comment?: string,
+  ): void {
+    const attachment = this.attachments.find(
+      a =>
+        a.id?.toString() === attachmentId.toString() &&
+        a.status === EnumStatus.ACTIVE,
+    );
+    if (!attachment) {
+      throw new HttpErrors.UnprocessableEntity(
+        `Set attachment response failed, id: ${attachmentId}`,
+      );
+    }
+    attachment.setResponse(userId, status, comment);
     this.updated = new ModifyStamp({by: userId});
   }
 }
