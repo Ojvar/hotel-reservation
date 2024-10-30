@@ -987,7 +987,6 @@ export class BuildingProject extends Entity {
       );
     }
     this.staff = [...(this.staff ?? []), ...staffItems];
-    console.debug(JSON.stringify(this.staff, null, 1));
   }
 
   removeStaff(userId: string, staffId: string): void {
