@@ -12,9 +12,12 @@ import {
   ModifyStamp,
   Office,
   BuildingProjectRelations,
+  EnumStatus,
 } from '../models';
 import {OfficeRepository} from './office.repository';
 import {AddNewJobRequestDTO, JobCandiateResultDTO} from '../dto';
+import {AnyObject} from 'loopback-datasource-juggler';
+import {ObjectId} from 'bson';
 
 export class BuildingProjectRepository extends DefaultCrudRepository<
   BuildingProject,
@@ -72,5 +75,64 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
     const project = await this.findById(projectId);
     project.addNewJob(userId, data.job_id, data.invoice_id);
     await this.update(project);
+  }
+
+  async getProjectByStaffListInfo(
+    projectId: string,
+    projectStatus: EnumStatus[],
+  ): Promise<AnyObject> {
+    const aggregate = [
+      {$match: {_id: new ObjectId(projectId)}},
+      {$unwind: '$staff'},
+      {$match: {'staff.status': {$in: projectStatus}}},
+
+      // Lookup over profiles
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'staff.user_id',
+          foreignField: 'user_id',
+          as: 'staff.profile',
+        },
+      },
+      // Lookup over basedata
+      {
+        $lookup: {
+          from: 'basedata',
+          localField: 'staff.field_id',
+          foreignField: '_id',
+          as: 'staff.field',
+        },
+      },
+      {
+        $set: {
+          'staff.field': {$first: '$staff.field.value'},
+          'staff.profile': {$first: '$staff.profile'},
+        },
+      },
+
+      // Group
+      {
+        $group: {
+          _id: '$_id',
+          staff: {$push: '$staff'},
+          other_fields: {$first: '$$ROOT'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
+          },
+        },
+      },
+    ];
+
+    const pointer = await this.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    return pointer.next();
   }
 }

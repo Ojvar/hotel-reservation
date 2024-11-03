@@ -43,6 +43,8 @@ import {
   adjustMin,
   adjustRange,
   getPersianDateParts,
+  getPropertyByString,
+  setPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
@@ -51,7 +53,6 @@ import {
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectGroupDetail,
-  BuildingProjectLawyer,
   BuildingProjectTechSpec,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
@@ -79,6 +80,14 @@ import {MessageService} from './message.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
 import {VerificationCodeService} from './verification-code.service';
 
+export enum EnumOpeartion {
+  CREATE = 0,
+  UPDATE_OFFICE_DATA_ENTRY = 100,
+  ATTACHMENTS_OFFICE_DATA_ENTRY = 200,
+  UPDATE_OFFICE_SELECT_DESIGNERS = 300,
+  UPDATE_OFFICE_SELECT_SUPERVISORS = 301,
+}
+
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
   DESIGNER_SPECIFICATION: {code: 1, title: 'تغیین مهندس طراح'},
@@ -104,6 +113,7 @@ type FieldMappers = FieldMapper[];
 
 const CATEGORY_LICENSE_TAG = 'LICENSE_TAG';
 
+// Service config
 export type ProjectManagementServiceConfig = {
   maxAttachmentsItemCount: number;
   pushNotification: boolean;
@@ -162,6 +172,22 @@ export class ProjectManagementService {
       progress_status: 1,
     },
   };
+
+  readonly ALLOWED_FIELDS_FOR_UPDATE = [
+    'specification.foundation_types',
+    'specification.floor_access_systems',
+    'specification.building_frontages',
+    'specification.roof_types',
+    'specification.roof_cover_types',
+    'specification.window_types',
+    'specification.heating_system_types',
+    'specification.cooling_system_types',
+    'specification.sewage_disposals',
+    'specification.earth_connection_types',
+    'specification.polystyrene',
+    'specification.underground',
+    'specification.dilapidated',
+  ];
 
   constructor(
     @inject(ProjectManagementService.CONFIG_BINDING_KEY)
@@ -556,6 +582,10 @@ export class ProjectManagementService {
         project.office_id.toString(),
       );
     }
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS,
+      project,
+    );
     project.removeStaff(userId, staffId);
     await this.buildingProjectRepo.update(project);
   }
@@ -855,67 +885,16 @@ export class ProjectManagementService {
       projectId,
       {...options, staffStatuses},
     );
+    if (!project) {
+      return [];
+    }
 
-    const aggregate = [
-      {$match: {_id: new ObjectId(projectId)}},
-      {$unwind: '$staff'},
-      {
-        $match: {
-          'staff.status': {$in: [EnumStatus.ACCEPTED, EnumStatus.PENDING]},
-        },
-      },
-
-      // Lookup over profiles
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'staff.user_id',
-          foreignField: 'user_id',
-          as: 'staff.profile',
-        },
-      },
-      // Lookup over basedata
-      {
-        $lookup: {
-          from: 'basedata',
-          localField: 'staff.field_id',
-          foreignField: '_id',
-          as: 'staff.field',
-        },
-      },
-      {
-        $set: {
-          'staff.field': {$first: '$staff.field.value'},
-          'staff.profile': {$first: '$staff.profile'},
-        },
-      },
-
-      // Group
-      {
-        $group: {
-          _id: '$_id',
-          staff: {$push: '$staff'},
-          other_fields: {$first: '$$ROOT'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
-          },
-        },
-      },
-    ];
-
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const projectData = await pointer.next();
-    return !project
-      ? []
-      : projectData?.staff?.map(BuildingProjectStaffItemDTO.fromModel);
+    const projectData =
+      await this.buildingProjectRepo.getProjectByStaffListInfo(projectId, [
+        EnumStatus.ACCEPTED,
+        EnumStatus.PENDING,
+      ]);
+    return projectData?.staff?.map(BuildingProjectStaffItemDTO.fromModel);
   }
 
   async addProjectStaff(
@@ -924,10 +903,13 @@ export class ProjectManagementService {
     data: NewProjectStaffRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(id);
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS,
+      project,
+    );
     project.addStaff(data.toModel(userId));
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
-
     await this.sendEngineerRequestPushNotif(project, data);
   }
 
@@ -992,6 +974,13 @@ https://apps.qeng.ir/dashboard
     fileId: string,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+
+    // Check project state
+    this.checkOperationValidity(
+      EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY,
+      project,
+    );
+
     project.removeUploadedFile(userId, fileId);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
@@ -1112,6 +1101,12 @@ https://apps.qeng.ir/dashboard
     }
     const project = await this.buildingProjectRepo.findById(id);
 
+    // Check project state
+    this.checkOperationValidity(
+      EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY,
+      project,
+    );
+
     // Get uploaded files info
     const attachments = fileToken
       ? await this.fileServiceAgent.getAttachments(userId, fileToken)
@@ -1123,7 +1118,6 @@ https://apps.qeng.ir/dashboard
       fileId: f.id,
       field: f.fieldname,
     }));
-
     project.updateAttachments(userId, newAttachments);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
@@ -1221,7 +1215,7 @@ https://apps.qeng.ir/dashboard
     projectId: string,
     data: NewBuildingProjectRequestDTO,
     options: {checkOfficeMembership: boolean} = {checkOfficeMembership: true},
-    allowedProjectProgressStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
+    //allowedProjectProgressStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
     const [oldProject] = await this.checkProjectUserAccessLevel(
       userId,
@@ -1234,46 +1228,28 @@ https://apps.qeng.ir/dashboard
       },
     );
 
-    if (!allowedProjectProgressStatus.includes(oldProject.progress_status)) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid project progress status',
-      );
-    }
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY,
+      oldProject,
+    );
 
-    // Get main owner
-    const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
-    const newMainOwner = data.owners.find(x => x.is_delegate);
-    if (mainOwner?.user_id !== newMainOwner?.user_id) {
-      throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
+    // Just some fields can
+    // Apply updated data
+    const newData = data.toModel(userId);
+    for (const field of this.ALLOWED_FIELDS_FOR_UPDATE) {
+      const newValue = getPropertyByString(newData, field);
+      if (newValue) {
+        setPropertyByString(oldProject, field, newValue);
+      }
     }
-    const updatedLawyers = [...(oldProject.lawyers ?? [])].map(
-      x => new BuildingProjectLawyer({...x, status: EnumStatus.DEACTIVE}),
-    );
-    if (data.lawyer) {
-      updatedLawyers.push(data.lawyer.toModel(userId));
-    }
-    const updatedProject = data.toModel(
-      userId,
-      new BuildingProject({
-        id: oldProject.id,
-        created: oldProject.created,
-        updated: new ModifyStamp({by: userId}),
-        attachments: oldProject.attachments,
-        status: oldProject.status,
-        case_no: oldProject.case_no,
-        progress_status: oldProject.progress_status,
-        progress_status_history: oldProject.progress_status_history,
-        lawyers: updatedLawyers,
-      }),
-    );
 
     // Find related-project building group
     const buildingGroup =
-      await this.getBuildingGroupConditionByProject(updatedProject);
+      await this.getBuildingGroupConditionByProject(oldProject);
     if (!buildingGroup) {
       throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
     }
-    updatedProject.addBuildingGroup(
+    oldProject.addBuildingGroup(
       userId,
       new BuildingProjectGroupDetail({
         group_id: buildingGroup?.groupId,
@@ -1283,8 +1259,10 @@ https://apps.qeng.ir/dashboard
       }),
     );
 
-    await this.buildingProjectRepo.update(updatedProject);
-    return BuildingProjectDTO.fromModel(updatedProject);
+    console.debug(JSON.stringify(oldProject, null, 1));
+
+    await this.buildingProjectRepo.update(oldProject);
+    return BuildingProjectDTO.fromModel(oldProject);
   }
 
   async createNewProject(
@@ -1803,13 +1781,10 @@ https://apps.qeng.ir/dashboard
       ...(projectClause ? [projectClause] : []),
     ];
   }
+
   getProjectByCaseNoAggregate(caseNo: string): AnyObject[] {
     return [
-      {
-        $match: {
-          'case_no.case_no': caseNo,
-        },
-      },
+      {$match: {'case_no.case_no': caseNo}},
       ...this.projectLookupProfileAggregate,
       {$set: {id: '$_id'}},
     ];
@@ -2081,5 +2056,35 @@ https://apps.qeng.ir/dashboard
   ): Promise<BlockCheckResult> {
     const project = await this.buildingProjectRepo.findById(projectId);
     return this.blockCheckerService.analyze(project, mode, engineerTypesFilter);
+  }
+
+  checkOperationValidity(
+    operation: EnumOpeartion,
+    project: BuildingProject,
+    data: AnyObject = {},
+  ): boolean {
+    data = {raiseError: true, ...data};
+    const result =
+      {
+        [EnumOpeartion.CREATE]: true,
+        [EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
+        [EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]: false,
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_SUPERVISORS]: false,
+      }[operation] ?? true;
+    if (!result && data.raiseError) {
+      throw new HttpErrors.UnprocessableEntity('Invalid project state');
+    }
+    return result;
+  }
+
+  /// TODO: SEND MESSAGE TO ALL STAFF
+  async sendMessageToStaffs(
+    project: BuildingProject,
+    message: string,
+  ): Promise<void> {
+    ///
   }
 }

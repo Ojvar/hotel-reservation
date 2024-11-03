@@ -1001,7 +1001,27 @@ export class BuildingProject extends Entity {
       );
     }
     staffItem.markAsRemoved(userId);
+    this.removeStaffSign(userId, staffItem);
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  removeStaffSign(userId: string, staff: BuildingProjectStaffItem): void {
+    const staffUserId = staff.user_id.toString();
+    const now = new ModifyStamp({by: userId});
+    this.attachments
+      .filter(a => a.status !== EnumStatus.DEACTIVE)
+      .forEach(a => {
+        a.signes
+          .filter(
+            s =>
+              s.status !== EnumStatus.DEACTIVE &&
+              s.user_id.toString() === staffUserId,
+          )
+          .forEach(s => {
+            s.updated = now;
+            s.status = EnumStatus.DEACTIVE;
+          });
+      });
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
@@ -1290,6 +1310,10 @@ export class BuildingProject extends Entity {
     items[index] = item;
     this.technical_specifications = items;
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  getDelegateOwner(): BuildingProjectOwner | undefined {
+    return this.ownership.owners.find(x => x.is_delegate);
   }
 }
 

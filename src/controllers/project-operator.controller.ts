@@ -126,32 +126,6 @@ export class ProjectOperatorsController {
     );
   }
 
-  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
-  @patch(`${BASE_ADDR}/project/{project_id}`, {
-    tags,
-    summary: 'Update project',
-    description: 'Update project',
-    responses: {
-      200: {
-        content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-        },
-      },
-    },
-  })
-  async updateProject(
-    @requestBody() body: NewBuildingProjectRequestDTO,
-    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    projectId: string,
-  ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.updateProject(
-      userId,
-      projectId,
-      new NewBuildingProjectRequestDTO(body),
-    );
-  }
-
   @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
     tags,
     summary: 'Create a new project',
@@ -179,6 +153,32 @@ export class ProjectOperatorsController {
       verificationCode,
       new NewBuildingProjectRequestDTO(body),
       {checkOfficeId: true},
+    );
+  }
+
+  /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
+  @patch(`${BASE_ADDR}/project/{project_id}`, {
+    tags,
+    summary: 'Update project',
+    description: 'Update project',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async updateProject(
+    @requestBody() body: NewBuildingProjectRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.updateProject(
+      userId,
+      projectId,
+      new NewBuildingProjectRequestDTO(body),
     );
   }
 
@@ -259,6 +259,28 @@ export class ProjectOperatorsController {
     );
   }
 
+  @del(`${BASE_ADDR}/{project_id}/files/{file_id}`, {
+    tags,
+    summary: 'Remove an uploaed file',
+    description: 'Remove an uploaed file',
+    responses: {204: {}},
+  })
+  async removeUploadedFile(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('file_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    fileId: string,
+  ) {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.removeUploadedFile(
+      userId,
+      projectId,
+      fileId,
+    );
+  }
+
   @get(`${BASE_ADDR}/{project_id}/files`, {
     tags,
     summary: 'Get projects uploaded files',
@@ -284,28 +306,6 @@ export class ProjectOperatorsController {
       checkOfficeMembership: true,
       checkUserAccess: false,
     });
-  }
-
-  @del(`${BASE_ADDR}/{project_id}/files/{file_id}`, {
-    tags,
-    summary: 'Remove an uploaed file',
-    description: 'Remove an uploaed file',
-    responses: {204: {}},
-  })
-  async removeUploadedFile(
-    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    projectId: string,
-    @param.path.string('file_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
-    })
-    fileId: string,
-  ) {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.removeUploadedFile(
-      userId,
-      projectId,
-      fileId,
-    );
   }
 
   @get(`${BASE_ADDR}/{project_id}`, {
