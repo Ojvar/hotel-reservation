@@ -18,6 +18,8 @@ import {
   TimestampModelWithId,
 } from './common';
 import {Office} from './office.model';
+import {BlockCheckerService} from '../services';
+import {EnumConditionMode} from '../dto';
 
 export enum EnumBuildingProjectTechSpecItems {
   UNIT_INFO = 'UNIT_INFO',
@@ -105,13 +107,14 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
     if (this.response?.status) {
       throw new HttpErrors.UnprocessableEntity('Response already registered');
     }
+    const now = new ModifyStamp({by: userId});
     this.status = status;
     this.response = new BuildingProjectStaffResponse({
-      responsed: new ModifyStamp({by: userId}),
+      responsed: now,
       description,
       status,
     });
-    this.updated = new ModifyStamp({by: userId});
+    this.updated = now;
   }
 }
 export type BuildingProjectStaffItems = BuildingProjectStaffItem[];
@@ -1151,17 +1154,47 @@ export class BuildingProject extends Entity {
     file.markAsRemoved(userId);
   }
 
-  commitState(userId: string, newState: EnumProgressStatus): void {
-    const commitSequence = {
-      [EnumProgressStatus.OFFICE_DATA_ENTRY]: [],
-      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: [
-        EnumProgressStatus.OFFICE_DATA_ENTRY,
-      ],
-    };
-    const prevState: EnumProgressStatus[] = commitSequence[newState] ?? [];
-    if (!prevState.includes(this.progress_status)) {
+  get checkAllStaffIsAccpeted(): boolean {
+    return this.staff?.every(s => s.status !== EnumStatus.PENDING) ?? true;
+  }
+
+  get allStaffFields(): string[] {
+    return (
+      this.staff
+        ?.filter(s =>
+          [EnumStatus.ACCEPTED, EnumStatus.PENDING].includes(s.status),
+        )
+        .map(s => s.field_id) ?? []
+    );
+  }
+
+  commitState(
+    userId: string,
+    newState: EnumProgressStatus,
+    meta: {blockChecker?: BlockCheckerService} = {},
+  ): void {
+    const commitCheckFunc = {
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]: () => true,
+      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: () => {
+        return (
+          this.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY &&
+          this.checkAllStaffIsAccpeted &&
+          meta.blockChecker?.analyze(
+            this,
+            EnumConditionMode.CHECK_ENGINEERS,
+            this.allStaffFields,
+          )
+        );
+      },
+      [EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED]: () => false,
+      [EnumProgressStatus.CONTROL_QUEUE_CONFIRMED]: () => false,
+      undefined: () => false,
+    }[this.progress_status];
+
+    if (!commitCheckFunc()) {
       throw new HttpErrors.UnprocessableEntity('Commit not acceptable');
     }
+
     const now = new ModifyStamp({by: userId});
     this.progress_status = newState;
     this.progress_status_history = [

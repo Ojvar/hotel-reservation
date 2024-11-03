@@ -44,6 +44,7 @@ import {
   adjustRange,
   getPersianDateParts,
   getPropertyByString,
+  getUniqueItems,
   setPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
@@ -86,6 +87,8 @@ export enum EnumOpeartion {
   ATTACHMENTS_OFFICE_DATA_ENTRY = 200,
   UPDATE_OFFICE_SELECT_DESIGNERS = 300,
   UPDATE_OFFICE_SELECT_SUPERVISORS = 301,
+  DESIGNERS_SIGN_FILE = 401,
+  DESIGNERS_UNSIGN_FILE = 402,
 }
 
 export const ProjectManagementSteps = {
@@ -644,6 +647,7 @@ export class ProjectManagementService {
     data: SignFilesRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    this.checkOperationValidity(EnumOpeartion.DESIGNERS_SIGN_FILE, project);
     const mapper = await this.createFilesFieldMapper();
     project.signAttachments(operatorId, userId, data.files, mapper);
     await this.buildingProjectRepo.update(project);
@@ -655,63 +659,12 @@ export class ProjectManagementService {
     data: SignFilesRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    this.checkOperationValidity(EnumOpeartion.DESIGNERS_SIGN_FILE, project);
     data.files.forEach(file => {
       project.unsignAttachment(operatorId, file);
     });
     await this.buildingProjectRepo.update(project);
   }
-
-  //async getBuildingGroupConditionByProject(
-  //  userId: string,
-  //  projectId: string,
-  //  options?: CheckProjectDetailsOptions,
-  //): Promise<BuildingGroupDTO | null> {
-  //  // Find project
-  //  const project = await this.getProjectByUserIdRaw(
-  //    userId,
-  //    projectId,
-  //    options,
-  //  );
-  //  const conditionsBaseData = await this.getBaseDataByCategory(
-  //    'BUILDING_GROUP_CONDITIONS',
-  //  );
-  //  const buildingGroups = await this.getBuildingGroups();
-  //
-  //  // Get basedata with specified category
-  //  const getBaseData = (id: string): BaseData | undefined =>
-  //    conditionsBaseData.find(b => b.id?.toString() === id.toString());
-  //
-  //  // Filter building group
-  //  let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
-  //  let selectedBuildingGroup: BuildingGroup | null = null;
-  //  while (queue.length > 0) {
-  //    const currentBuildingGroup = queue.find(bGroup => {
-  //      const conditions = bGroup.conditions?.map(c => ({
-  //        ...c,
-  //        value: getBaseData(c.key.toString())?.key ?? '',
-  //      }));
-  //      return !conditions?.length
-  //        ? true
-  //        : conditions?.some(cond =>
-  //            new Condition(cond).checkValue(
-  //              getPropertyByString(project, cond.value) as string,
-  //            ),
-  //          );
-  //    });
-  //    if (!currentBuildingGroup) {
-  //      break;
-  //    }
-  //    const parent_id = currentBuildingGroup.id?.toString();
-  //    queue = buildingGroups
-  //      .filter(bGroup => parent_id === bGroup.parent_id?.toString())
-  //      .sort(this.sortFunc);
-  //    selectedBuildingGroup = currentBuildingGroup;
-  //  }
-  //
-  //  return selectedBuildingGroup
-  //    ? BuildingGroupDTO.fromModel(selectedBuildingGroup)
-  //    : null;
-  //}
 
   async getBuildingGroupConditionByProjectId(
     projectId: string,
@@ -862,9 +815,9 @@ export class ProjectManagementService {
       projectId,
       {removeRelations: true},
     );
-
-    // Update project's state
-    project.commitState(userId, state);
+    project.commitState(userId, state, {
+      blockChecker: this.blockCheckerService,
+    });
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
 
@@ -909,6 +862,11 @@ export class ProjectManagementService {
     );
     project.addStaff(data.toModel(userId));
     project.updated = new ModifyStamp({by: userId});
+    await this.blockCheckerService.analyze(
+      project,
+      EnumConditionMode.MODIFY_ENGINEERS,
+      getUniqueItems<string>(data.staff.map(s => s.field_id)),
+    );
     await this.buildingProjectRepo.update(project);
     await this.sendEngineerRequestPushNotif(project, data);
   }
@@ -984,6 +942,14 @@ https://apps.qeng.ir/dashboard
     project.removeUploadedFile(userId, fileId);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
+    await this.sendMessageToStaffs(
+      project,
+      `بروزرسانی در فایلهای پروژه ${project.case_no.case_no}
+لطفا جهت بررسی به پورتال خود مراجعه نمایید
+https://apps.qeng.ir/dashboard
+`,
+      {fileId},
+    );
   }
 
   async getFilesList(
@@ -998,56 +964,8 @@ https://apps.qeng.ir/dashboard
       staffStatuses,
     });
 
-    const aggregate: AnyObject[] = [
-      {$match: {_id: new ObjectId(projectId)}},
-      {$unwind: '$attachments'},
-      {$match: {'attachments.status': 6}},
-
-      {
-        $unwind: {
-          path: '$attachments.signes',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {$match: {'attachments.signes.status': {$ne: 7}}},
-
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'attachments.signes.user_id',
-          foreignField: 'user_id',
-          as: 'attachments.signes.profile',
-        },
-      },
-      {
-        $set: {
-          'attachments.signes.profile': {$first: '$attachments.signes.profile'},
-        },
-      },
-      //  { $match: { "attachments.signes.profile.user_id": { $exists: true } } },
-
-      {
-        $group: {
-          _id: '$attachments.id',
-          other_fields: {$first: '$attachments'},
-          all_signes: {$push: '$attachments.signes'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$other_fields', {signes: '$all_signes'}],
-          },
-        },
-      },
-    ];
-
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const attachments: AnyObject[] = await pointer.toArray();
+    const attachments =
+      await this.buildingProjectRepo.getAttachmentsList(projectId);
     const filesInfo = await this.fileServiceAgent.getFilesInformation(
       attachments.map(x => x.file_id.toString()),
     );
@@ -1057,7 +975,6 @@ https://apps.qeng.ir/dashboard
       const info = filesInfo.find(
         f => f.id.toString() === x.file_id.toString(),
       );
-
       return new BuildingProjectAttachmentDTO({
         id: x.id,
         created_at: x.created.at,
@@ -1124,6 +1041,15 @@ https://apps.qeng.ir/dashboard
 
     // Commit uploaded files
     await this.fileServiceAgent.commit(userId, fileToken);
+    await this.sendMessageToStaffs(
+      project,
+      `بروزرسانی در فایلهای پروژه ${project.case_no.case_no}
+لطفا جهت بررسی به پورتال خود مراجعه نمایید
+
+https://apps.qeng.ir/dashboard
+`,
+      {newAttachments},
+    );
   }
 
   async getFileToken(
@@ -1163,7 +1089,7 @@ https://apps.qeng.ir/dashboard
     return this.buildingProjectRepo.updateJobData(userId, data);
   }
 
-  async addNewJob(
+  addNewJob(
     userId: string,
     projectId: string,
     data: AddNewJobRequestDTO,
@@ -1378,69 +1304,12 @@ https://apps.qeng.ir/dashboard
     options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProject> {
     options = {checkUserAccess: true, checkOfficeMembership: false, ...options};
-
     await this.checkProjectUserAccessLevel(userId, projectId, {
       ...options,
       removeRelations: true,
     });
-
-    const aggregate = [
-      {$match: {_id: new ObjectId(projectId)}},
-
-      // Get profiles
-      {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
-      {$unwind: {path: '$ownership.owners', preserveNullAndEmptyArrays: true}},
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'lawyers.user_id',
-          foreignField: 'user_id',
-          as: 'lawyers.profile',
-        },
-      },
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'ownership.owners.user_id',
-          foreignField: 'user_id',
-          as: 'ownership.owners.profile',
-        },
-      },
-      {
-        $set: {
-          'ownership.owners.profile': {$first: '$ownership.owners.profile'},
-          'lawyers.profile': {$first: '$lawyers.profile'},
-        },
-      },
-
-      {
-        $group: {
-          _id: '$_id',
-          owners: {$push: '$ownership.owners'},
-          lawyers: {$push: '$lawyers'},
-          other_fields: {$first: '$$ROOT'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [
-              '$other_fields',
-              {ownership: '$ownership', lawyers: '$lawyers', owners: '$owners'},
-            ],
-          },
-        },
-      },
-      {$set: {'ownership.owners': '$owners', id: '$_id'}},
-      {$unset: ['owners']},
-    ];
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-      {allowDiskUse: true},
-    );
-    const project = await pointer.next();
+    const project =
+      await this.buildingProjectRepo.getProjectRawDataById(projectId);
     if (!project) {
       throw new HttpErrors.UnprocessableEntity(
         'Project not found or access was denied',
@@ -1909,40 +1778,17 @@ https://apps.qeng.ir/dashboard
     }
 
     if (options.removeRelations) {
-      /* eslint-disable @typescript-eslint/no-unused-vars */
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
       const {office, ...newProject} = project;
       return [new BuildingProject(newProject), options];
     }
     return [project, options];
   }
 
-  //private getBaseDataByCategory(category: string): Promise<BaseData[]> {
-  //  return this.basedataRepo.find({
-  //    where: {category},
-  //  });
-  //}
-
-  //private async getBuildingGroups(): Promise<
-  //  (BuildingGroup & BuildingGroupRelations)[]
-  //> {
-  //  return this.buildingGroupRepo.find({
-  //    where: {status: EnumStatus.ACTIVE},
-  //    include: ['buildingGroupCondition'],
-  //  });
-  //}
-
-  //private sortFunc(a: BuildingGroup, b: BuildingGroup) {
-  //  return +b.conditions![0].min - +a.conditions![0].min;
-  //}
-
   // TODO: read from base-data-service/building-groups/get-tree
   async getTreeBuildingGroup(): Promise<BuildingGroupTreesDTO> {
     const aggregate = [
-      {
-        $match: {
-          category: 'BUILDING_GROUP',
-        },
-      },
+      {$match: {category: 'BUILDING_GROUP'}},
       {
         $lookup: {
           from: 'building_groups',
@@ -2069,10 +1915,19 @@ https://apps.qeng.ir/dashboard
         [EnumOpeartion.CREATE]: true,
         [EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY]:
           project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
-        [EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY]:
-          project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
-        [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]: false,
-        [EnumOpeartion.UPDATE_OFFICE_SELECT_SUPERVISORS]: false,
+        [EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY]: [
+          EnumProgressStatus.OFFICE_DATA_ENTRY,
+          EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        ].includes(project.progress_status),
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_SUPERVISORS]:
+          project.progress_status ===
+          EnumProgressStatus.CONTROL_QUEUE_CONFIRMED,
+        [EnumOpeartion.DESIGNERS_SIGN_FILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.DESIGNERS_UNSIGN_FILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
       }[operation] ?? true;
     if (!result && data.raiseError) {
       throw new HttpErrors.UnprocessableEntity('Invalid project state');
@@ -2084,7 +1939,10 @@ https://apps.qeng.ir/dashboard
   async sendMessageToStaffs(
     project: BuildingProject,
     message: string,
+    data: AnyObject = {},
   ): Promise<void> {
-    ///
+    console.debug(project, message, data);
+    /// TODO: Publish by SMS
+    /// TODO: public by Push Notif
   }
 }

@@ -33,8 +33,7 @@ export class EngineerService {
       throw new HttpErrors.NotFound('Invalid user data');
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-    const [_province, reshteh, ..._other] = user.code.split('_');
+    const reshteh = user.code.split('_').at(1);
     const fields = reshteh
       .replace(/\)|\(/gi, '')
       .split(this.FIELD_SEPARATOR)
