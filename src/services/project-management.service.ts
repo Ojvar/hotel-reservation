@@ -54,6 +54,7 @@ import {
   BuildingProject,
   BuildingProjectAttachmentSing,
   BuildingProjectGroupDetail,
+  BuildingProjectLawyer,
   BuildingProjectTechSpec,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
@@ -1153,42 +1154,96 @@ https://apps.qeng.ir/dashboard
         allowedOfficeStatus: [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
       },
     );
-
     this.checkOperationValidity(
       EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY,
       oldProject,
     );
-
-    // Just some fields can
-    // Apply updated data
-    const newData = data.toModel(userId);
-    for (const field of this.ALLOWED_FIELDS_FOR_UPDATE) {
-      const newValue = getPropertyByString(newData, field);
-      if (newValue) {
-        setPropertyByString(oldProject, field, newValue);
-      }
-    }
-
-    // Find related-project building group
-    const buildingGroup =
-      await this.getBuildingGroupConditionByProject(oldProject);
-    if (!buildingGroup) {
-      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
-    }
-    oldProject.addBuildingGroup(
+    const updatedProject = await this.updateProjectData(
       userId,
-      new BuildingProjectGroupDetail({
-        group_id: buildingGroup?.groupId,
-        rules_group_id: buildingGroup?.rulesGroupId,
-        sub_group_id: buildingGroup?.subGroup?.id,
-        condition_id: buildingGroup?.subGroup?.value,
-      }),
+      oldProject,
+      data,
     );
+    await this.buildingProjectRepo.update(updatedProject);
+    return BuildingProjectDTO.fromModel(updatedProject);
+  }
 
-    console.debug(JSON.stringify(oldProject, null, 1));
+  private async updateProjectData(
+    userId: string,
+    oldProject: BuildingProject,
+    data: NewBuildingProjectRequestDTO,
+  ): Promise<BuildingProject> {
+    if (!oldProject.userCanModifyProject) {
+      // Just some fields can
+      // Apply updated data
+      const newData = data.toModel(userId);
+      for (const field of this.ALLOWED_FIELDS_FOR_UPDATE) {
+        const newValue = getPropertyByString(newData, field);
+        if (newValue) {
+          setPropertyByString(oldProject, field, newValue);
+        }
+      }
 
-    await this.buildingProjectRepo.update(oldProject);
-    return BuildingProjectDTO.fromModel(oldProject);
+      // Find related-project building group
+      const buildingGroup =
+        await this.getBuildingGroupConditionByProject(oldProject);
+      if (!buildingGroup) {
+        throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+      }
+      oldProject.addBuildingGroup(
+        userId,
+        new BuildingProjectGroupDetail({
+          group_id: buildingGroup?.groupId,
+          rules_group_id: buildingGroup?.rulesGroupId,
+          sub_group_id: buildingGroup?.subGroup?.id,
+          condition_id: buildingGroup?.subGroup?.value,
+        }),
+      );
+      return oldProject;
+    } else {
+      // Get main owner
+      const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
+      const newMainOwner = data.owners.find(x => x.is_delegate);
+      if (mainOwner?.user_id !== newMainOwner?.user_id) {
+        throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
+      }
+      const updatedLawyers = [...(oldProject.lawyers ?? [])].map(
+        x => new BuildingProjectLawyer({...x, status: EnumStatus.DEACTIVE}),
+      );
+      if (data.lawyer) {
+        updatedLawyers.push(data.lawyer.toModel(userId));
+      }
+      const updatedProject = data.toModel(
+        userId,
+        new BuildingProject({
+          id: oldProject.id,
+          created: oldProject.created,
+          updated: new ModifyStamp({by: userId}),
+          attachments: oldProject.attachments,
+          status: oldProject.status,
+          case_no: oldProject.case_no,
+          progress_status: oldProject.progress_status,
+          progress_status_history: oldProject.progress_status_history,
+          lawyers: updatedLawyers,
+        }),
+      );
+
+      // Find related-project building group
+      const buildingGroup =
+        await this.getBuildingGroupConditionByProject(updatedProject);
+      if (!buildingGroup) {
+        throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+      }
+      oldProject.addBuildingGroup(
+        userId,
+        new BuildingProjectGroupDetail({
+          group_id: buildingGroup?.groupId,
+          rules_group_id: buildingGroup?.rulesGroupId,
+          sub_group_id: buildingGroup?.subGroup?.id,
+          condition_id: buildingGroup?.subGroup?.value,
+        }),
+      );
+      return updatedProject;
+    }
   }
 
   async createNewProject(

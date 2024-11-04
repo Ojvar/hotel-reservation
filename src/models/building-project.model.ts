@@ -1168,6 +1168,13 @@ export class BuildingProject extends Entity {
     );
   }
 
+  get userCanModifyProject(): boolean {
+    return [
+      EnumProgressStatus.OFFICE_DATA_ENTRY,
+      EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+    ].includes(this.progress_status);
+  }
+
   commitState(
     userId: string,
     newState: EnumProgressStatus,
