@@ -86,8 +86,18 @@ export enum EnumOpeartion {
   CREATE = 0,
   UPDATE_OFFICE_DATA_ENTRY = 100,
   ATTACHMENTS_OFFICE_DATA_ENTRY = 200,
+
+  REMOVE_TECH_SPEC_ITEM = 201,
+  UPDATE_TECH_SPEC_UNIT_INFO = 202,
+  UPDATE_TECH_SPEC_LABORATORY_CONCRETE = 203,
+  UPDATE_TECH_SPEC_LABORATORY_WELDING = 204,
+  UPDATE_TECH_SPEC_LABORATORY_TENSILE = 205,
+  UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE = 206,
+  UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY = 207,
+
   UPDATE_OFFICE_SELECT_DESIGNERS = 300,
   UPDATE_OFFICE_SELECT_SUPERVISORS = 301,
+
   DESIGNERS_SIGN_FILE = 401,
   DESIGNERS_UNSIGN_FILE = 402,
 }
@@ -237,6 +247,11 @@ export class ProjectManagementService {
       {...options, removeRelations: true},
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY,
+      project,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY_ELECTRICITY,
@@ -277,6 +292,11 @@ export class ProjectManagementService {
       userId,
       projectId,
       {...options, removeRelations: true},
+    );
+
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE,
+      project,
     );
 
     // Check older and active laboratory record
@@ -321,6 +341,11 @@ export class ProjectManagementService {
       {...options, removeRelations: true},
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_TENSILE,
+      project,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY_TENSILE,
@@ -363,6 +388,11 @@ export class ProjectManagementService {
       {...options, removeRelations: true},
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_WELDING,
+      project,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY_WELDING,
@@ -403,6 +433,10 @@ export class ProjectManagementService {
       userId,
       projectId,
       {...options, removeRelations: true},
+    );
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_CONCRETE,
+      project,
     );
 
     // Check older and active laboratory record
@@ -453,6 +487,11 @@ export class ProjectManagementService {
       },
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_UNIT_INFO,
+      project,
+    );
+
     // Add items
     const now = new ModifyStamp({by: userId});
     const techSpecItems = data.map(
@@ -492,6 +531,9 @@ export class ProjectManagementService {
         allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
       },
     );
+
+    this.checkOperationValidity(EnumOpeartion.REMOVE_TECH_SPEC_ITEM, project);
+
     project.removeTechnicalSpecItem(userId, techSpecItemId);
     await this.buildingProjectRepo.update(project);
 
@@ -1974,11 +2016,28 @@ https://apps.qeng.ir/dashboard
           EnumProgressStatus.OFFICE_DATA_ENTRY,
           EnumProgressStatus.OFFICE_DATA_CONFIRMED,
         ].includes(project.progress_status),
+
+        [EnumOpeartion.REMOVE_TECH_SPEC_ITEM]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_UNIT_INFO]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_TENSILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_WELDING]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_CONCRETE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+
         [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]:
           project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
         [EnumOpeartion.UPDATE_OFFICE_SELECT_SUPERVISORS]:
           project.progress_status ===
           EnumProgressStatus.CONTROL_QUEUE_CONFIRMED,
+
         [EnumOpeartion.DESIGNERS_SIGN_FILE]:
           project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
         [EnumOpeartion.DESIGNERS_UNSIGN_FILE]:
