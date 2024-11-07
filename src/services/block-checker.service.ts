@@ -132,7 +132,7 @@ export class BlockCheckerService {
     return result;
   }
 
-  private async getActiveEngineers(): Promise<Profiles> {
+  private getActiveEngineers(): Promise<Profiles> {
     const activeStaff = this.project.staff
       ?.filter(
         staff =>

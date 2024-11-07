@@ -985,14 +985,19 @@ https://apps.qeng.ir/dashboard
     project.removeUploadedFile(userId, fileId);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
+
+    // Send message to staffs
     await this.sendMessageToStaffs(
-      project,
-      `بروزرسانی در فایلهای پروژه ${project.case_no.case_no}
+      project.getId(),
+      `سازمان نظام مهندسی ساختمان استان قزوین
+
+فایلهای پروژه ${project.case_no.case_no} تغییر یافت
 لطفا جهت بررسی به پورتال خود مراجعه نمایید
-https://apps.qeng.ir/dashboard
-`,
-      {fileId},
+https://apps.qeng.ir/dashboard`,
     );
+
+    // Publis rmq message
+    await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
   }
 
   async getFilesList(
@@ -1084,15 +1089,19 @@ https://apps.qeng.ir/dashboard
 
     // Commit uploaded files
     await this.fileServiceAgent.commit(userId, fileToken);
-    await this.sendMessageToStaffs(
-      project,
-      `بروزرسانی در فایلهای پروژه ${project.case_no.case_no}
-لطفا جهت بررسی به پورتال خود مراجعه نمایید
 
-https://apps.qeng.ir/dashboard
-`,
-      {newAttachments},
+    // Send message to staffs
+    await this.sendMessageToStaffs(
+      project.getId(),
+      `سازمان نظام مهندسی ساختمان استان قزوین
+
+فایلهای پروژه ${project.case_no.case_no} تغییر یافت
+لطفا جهت بررسی به پورتال خود مراجعه نمایید
+https://apps.qeng.ir/dashboard`,
     );
+
+    // Send RMQ message
+    await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
   }
 
   async getFileToken(
@@ -1288,7 +1297,7 @@ https://apps.qeng.ir/dashboard
     }
   }
 
-  async createNewProject(
+  async createProject(
     userId: string,
     officeId: string,
     nId: string | undefined,
@@ -2049,14 +2058,47 @@ https://apps.qeng.ir/dashboard
     return result;
   }
 
-  /// TODO: SEND MESSAGE TO ALL STAFF
-  async sendMessageToStaffs(
-    project: BuildingProject,
-    message: string,
-    data: AnyObject = {},
-  ): Promise<void> {
-    console.debug(project, message, data);
-    /// TODO: Publish by SMS
-    /// TODO: public by Push Notif
+  async sendMessageToStaffs(projectId: string, message: string): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId, {
+      include: ['office'],
+    });
+    let targets =
+      project?.staff
+        ?.filter(staff =>
+          [EnumStatus.PENDING, EnumStatus.ACCEPTED].includes(staff.status),
+        )
+        .map(staff => staff.user_id) ?? [];
+
+    targets?.push(
+      ...(project.office?.members ?? [])
+        .filter(member =>
+          project.office?.checkUserAccess(
+            member.user_id,
+            [
+              EnumOfficeMemberRole.OWNER,
+              EnumOfficeMemberRole.SECRETARY,
+              EnumOfficeMemberRole.CO_FOUNDER,
+            ],
+            [EnumStatus.ACTIVE],
+          ),
+        )
+        .map(member => member.user_id),
+    );
+
+    targets = Array.from(new Set(targets));
+    for (const target of targets) {
+      const profile = await this.profileRepo.findOne({
+        where: {user_id: target},
+      });
+      if (profile) {
+        await this.messageService.sendSms(
+          new SmsMessage({
+            tag: 'BUIDING_PROJECT',
+            body: message,
+            receiver: profile.mobile,
+          }),
+        );
+      }
+    }
   }
 }

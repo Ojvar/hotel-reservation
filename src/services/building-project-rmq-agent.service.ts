@@ -14,6 +14,7 @@ export enum EnumBuildingProjectRmqMessageType {
   STAFF_ACCEPT = 'staff_accept',
   TECH_SPEC_ITEM_INSERT = 'tech_spec_item_insert',
   TECH_SPEC_ITEM_REMOVE = 'tech_spec_item_remove',
+  FILE_CHANGE = 'file_change',
 }
 
 @injectable({scope: BindingScope.APPLICATION})

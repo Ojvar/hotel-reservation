@@ -146,7 +146,7 @@ export class ProjectOperatorsController {
     @param.path.string('verification_code') verificationCode: number,
   ): Promise<BuildingProjectDTO> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.createNewProject(
+    return this.projectManagementService.createProject(
       userId,
       officeId,
       nId,
