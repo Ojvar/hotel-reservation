@@ -227,14 +227,6 @@ export class ProjectManagementService {
     private blockCheckerService: BlockCheckerService,
   ) {}
 
-  //async autoAssignEngineerToProject(
-  //  userId: string,
-  //  projectId: string,
-  //  fieldId: string,
-  //): Promise<void> {
-  //  ////
-  //}
-
   async addTechnicalSpecLaboratoryElectricty(
     userId: string,
     projectId: string,
