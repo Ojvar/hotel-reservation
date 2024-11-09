@@ -127,6 +127,36 @@ export class ProjectOperatorsController {
     );
   }
 
+  @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
+    tags,
+    summary: 'Create a new project',
+    description: 'Create a new project',
+    responses: {
+      200: {
+        content: {
+          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
+        },
+      },
+    },
+  })
+  async createNewProject(
+    @requestBody() body: NewBuildingProjectRequestDTO,
+    @param.path.string('office_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    officeId: string,
+    @param.path.string('n_id') nId: string,
+    @param.path.string('verification_code') verificationCode: number,
+  ): Promise<BuildingProjectDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.createProject(
+      userId,
+      officeId,
+      nId,
+      verificationCode,
+      new NewBuildingProjectRequestDTO(body),
+      {checkOfficeId: true},
+    );
+  }
+
   /// INFO: PROJECT ACCESS LEVEL CHECK - APPLIED
   @patch(`${BASE_ADDR}/project/{project_id}`, {
     tags,
@@ -150,36 +180,6 @@ export class ProjectOperatorsController {
       userId,
       projectId,
       new NewBuildingProjectRequestDTO(body),
-    );
-  }
-
-  @post(`${BASE_ADDR}/project/{n_id}/{verification_code}`, {
-    tags,
-    summary: 'Create a new project',
-    description: 'Create a new project',
-    responses: {
-      200: {
-        content: {
-          'application/json': {schema: getModelSchemaRef(BuildingProjectDTO)},
-        },
-      },
-    },
-  })
-  async createNewProject(
-    @requestBody() body: NewBuildingProjectRequestDTO,
-    @param.path.string('office_id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    officeId: string,
-    @param.path.string('n_id') nId: string,
-    @param.path.string('verification_code') verificationCode: number,
-  ): Promise<BuildingProjectDTO> {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    return this.projectManagementService.createNewProject(
-      userId,
-      officeId,
-      nId,
-      verificationCode,
-      new NewBuildingProjectRequestDTO(body),
-      {checkOfficeId: true},
     );
   }
 
@@ -262,6 +262,28 @@ export class ProjectOperatorsController {
     );
   }
 
+  @del(`${BASE_ADDR}/{project_id}/files/{file_id}`, {
+    tags,
+    summary: 'Remove an uploaed file',
+    description: 'Remove an uploaed file',
+    responses: {204: {}},
+  })
+  async removeUploadedFile(
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('file_id', {
+      schema: {pattern: MONGO_ID_REGEX.source},
+    })
+    fileId: string,
+  ) {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    await this.projectManagementService.removeUploadedFile(
+      userId,
+      projectId,
+      fileId,
+    );
+  }
+
   @get(`${BASE_ADDR}/{project_id}/files`, {
     tags,
     summary: 'Get projects uploaded files',
@@ -287,28 +309,6 @@ export class ProjectOperatorsController {
       checkOfficeMembership: true,
       checkUserAccess: false,
     });
-  }
-
-  @del(`${BASE_ADDR}/{project_id}/files/{file_id}`, {
-    tags,
-    summary: 'Remove an uploaed file',
-    description: 'Remove an uploaed file',
-    responses: {204: {}},
-  })
-  async removeUploadedFile(
-    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
-    projectId: string,
-    @param.path.string('file_id', {
-      schema: {pattern: MONGO_ID_REGEX.source},
-    })
-    fileId: string,
-  ) {
-    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.removeUploadedFile(
-      userId,
-      projectId,
-      fileId,
-    );
   }
 
   @get(`${BASE_ADDR}/{project_id}`, {

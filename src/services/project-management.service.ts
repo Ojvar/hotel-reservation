@@ -5,9 +5,12 @@ import {HttpErrors} from '@loopback/rest';
 import {ObjectId} from 'bson';
 import {
   AddNewJobRequestDTO,
+  BlockCheckResult,
+  BuildingGroupTreesDTO,
   BuildingProjectAttachmentDTO,
   BuildingProjectAttachmentsDTO,
   BuildingProjectAttachmentSingDTO,
+  BuildingProjectConditionResultDTO,
   BuildingProjectDTO,
   BuildingProjectFilter,
   BuildingProjectInvoiceDTO,
@@ -23,6 +26,7 @@ import {
   BuildingProjectTSItemLaboratoryWeldingRequestDTO,
   BuildingProjectTSItemUnitInfoRequestDTO,
   BuildingProjectTSItemUnitInfosRequestDTO,
+  EnumConditionMode,
   JobCandiateResultDTO,
   NewBuildingProjectInvoiceRequestDTO,
   NewBuildingProjectRequestDTO,
@@ -39,19 +43,19 @@ import {
   adjustMin,
   adjustRange,
   getPersianDateParts,
+  getPropertyByString,
+  getUniqueItems,
+  setPropertyByString,
 } from '../helpers';
 import {FileTokenResponse} from '../lib-file-service/src';
 import {EnumTargetType} from '../lib-push-notification-service/src';
 import {
   BaseData,
-  BuildingGroup,
-  BuildingGroupRelations,
-  BuildingGroupTreesDTO,
   BuildingProject,
   BuildingProjectAttachmentSing,
+  BuildingProjectGroupDetail,
   BuildingProjectLawyer,
   BuildingProjectTechSpec,
-  BuldingGroupDetailsDTO,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
   EnumProgressStatus,
@@ -62,13 +66,13 @@ import {
 } from '../models';
 import {
   BaseDataRepository,
-  BuildingGroupRepository,
   BuildingProjectRepository,
   CitySpecificationRepository,
   OfficeRepository,
   ProfileRepository,
 } from '../repositories';
 
+import {BlockCheckerService} from './block-checker.service';
 import {
   BuildingProjectRmqAgentService,
   EnumBuildingProjectRmqMessageType,
@@ -77,6 +81,26 @@ import {FileServiceAgentService} from './file-agent.service';
 import {MessageService} from './message.service';
 import {PushNotificationAgentService} from './push-notification-agent.service';
 import {VerificationCodeService} from './verification-code.service';
+
+export enum EnumOpeartion {
+  CREATE = 0,
+  UPDATE_OFFICE_DATA_ENTRY = 100,
+  ATTACHMENTS_OFFICE_DATA_ENTRY = 200,
+
+  REMOVE_TECH_SPEC_ITEM = 201,
+  UPDATE_TECH_SPEC_UNIT_INFO = 202,
+  UPDATE_TECH_SPEC_LABORATORY_CONCRETE = 203,
+  UPDATE_TECH_SPEC_LABORATORY_WELDING = 204,
+  UPDATE_TECH_SPEC_LABORATORY_TENSILE = 205,
+  UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE = 206,
+  UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY = 207,
+
+  UPDATE_OFFICE_SELECT_DESIGNERS = 300,
+  UPDATE_OFFICE_SELECT_SUPERVISORS = 301,
+
+  DESIGNERS_SIGN_FILE = 401,
+  DESIGNERS_UNSIGN_FILE = 402,
+}
 
 export const ProjectManagementSteps = {
   REGISTRATION: {code: 0, title: 'ثبت پروژه'},
@@ -103,6 +127,7 @@ type FieldMappers = FieldMapper[];
 
 const CATEGORY_LICENSE_TAG = 'LICENSE_TAG';
 
+// Service config
 export type ProjectManagementServiceConfig = {
   maxAttachmentsItemCount: number;
   pushNotification: boolean;
@@ -162,6 +187,22 @@ export class ProjectManagementService {
     },
   };
 
+  readonly ALLOWED_FIELDS_FOR_UPDATE = [
+    'specification.foundation_types',
+    'specification.floor_access_systems',
+    'specification.building_frontages',
+    'specification.roof_types',
+    'specification.roof_cover_types',
+    'specification.window_types',
+    'specification.heating_system_types',
+    'specification.cooling_system_types',
+    'specification.sewage_disposals',
+    'specification.earth_connection_types',
+    'specification.polystyrene',
+    'specification.underground',
+    'specification.dilapidated',
+  ];
+
   constructor(
     @inject(ProjectManagementService.CONFIG_BINDING_KEY)
     private configs: ProjectManagementServiceConfig,
@@ -170,8 +211,6 @@ export class ProjectManagementService {
     private citySpecificationRepo: CitySpecificationRepository,
     @repository(ProfileRepository) private profileRepo: ProfileRepository,
     @repository(OfficeRepository) private officeRepo: OfficeRepository,
-    @repository(BuildingGroupRepository)
-    private buildingGroupRepo: BuildingGroupRepository,
     @repository(BuildingProjectRepository)
     private buildingProjectRepo: BuildingProjectRepository,
     @inject(BuildingProjectRmqAgentService.BINDING_KEY)
@@ -184,15 +223,9 @@ export class ProjectManagementService {
     private pushNotifAgent: PushNotificationAgentService,
     @inject(MessageService.BINDING_KEY)
     private messageService: MessageService,
+    @inject(BlockCheckerService.BINDING_KEY)
+    private blockCheckerService: BlockCheckerService,
   ) {}
-
-  async autoAssignEngineerToProject(
-    userId: string,
-    projectId: string,
-    fieldId: string,
-  ): Promise<void> {
-    ////
-  }
 
   async addTechnicalSpecLaboratoryElectricty(
     userId: string,
@@ -204,6 +237,11 @@ export class ProjectManagementService {
       userId,
       projectId,
       {...options, removeRelations: true},
+    );
+
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY,
+      project,
     );
 
     // Check older and active laboratory record
@@ -248,6 +286,11 @@ export class ProjectManagementService {
       {...options, removeRelations: true},
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE,
+      project,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY_POLYSTYRENE,
@@ -288,6 +331,11 @@ export class ProjectManagementService {
       userId,
       projectId,
       {...options, removeRelations: true},
+    );
+
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_TENSILE,
+      project,
     );
 
     // Check older and active laboratory record
@@ -332,6 +380,11 @@ export class ProjectManagementService {
       {...options, removeRelations: true},
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_WELDING,
+      project,
+    );
+
     // Check older and active laboratory record
     const [labItem] = project.getActiveTechnicalItems(
       EnumBuildingProjectTechSpecItems.LABORATORY_WELDING,
@@ -372,6 +425,10 @@ export class ProjectManagementService {
       userId,
       projectId,
       {...options, removeRelations: true},
+    );
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_CONCRETE,
+      project,
     );
 
     // Check older and active laboratory record
@@ -422,6 +479,11 @@ export class ProjectManagementService {
       },
     );
 
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_TECH_SPEC_UNIT_INFO,
+      project,
+    );
+
     // Add items
     const now = new ModifyStamp({by: userId});
     const techSpecItems = data.map(
@@ -461,6 +523,9 @@ export class ProjectManagementService {
         allowedOfficeMembershipRules: this.ALLOWED_OFFICE_MEMBERSHIP_RULES,
       },
     );
+
+    this.checkOperationValidity(EnumOpeartion.REMOVE_TECH_SPEC_ITEM, project);
+
     project.removeTechnicalSpecItem(userId, techSpecItemId);
     await this.buildingProjectRepo.update(project);
 
@@ -555,6 +620,10 @@ export class ProjectManagementService {
         project.office_id.toString(),
       );
     }
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS,
+      project,
+    );
     project.removeStaff(userId, staffId);
     await this.buildingProjectRepo.update(project);
   }
@@ -613,6 +682,7 @@ export class ProjectManagementService {
     data: SignFilesRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    this.checkOperationValidity(EnumOpeartion.DESIGNERS_SIGN_FILE, project);
     const mapper = await this.createFilesFieldMapper();
     project.signAttachments(operatorId, userId, data.files, mapper);
     await this.buildingProjectRepo.update(project);
@@ -624,86 +694,25 @@ export class ProjectManagementService {
     data: SignFilesRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    this.checkOperationValidity(EnumOpeartion.DESIGNERS_SIGN_FILE, project);
     data.files.forEach(file => {
       project.unsignAttachment(operatorId, file);
     });
     await this.buildingProjectRepo.update(project);
   }
 
-  //async getBuildingGroupConditionByProject(
-  //  userId: string,
-  //  projectId: string,
-  //  options?: CheckProjectDetailsOptions,
-  //): Promise<BuildingGroupDTO | null> {
-  //  // Find project
-  //  const project = await this.getProjectByUserIdRaw(
-  //    userId,
-  //    projectId,
-  //    options,
-  //  );
-  //  const conditionsBaseData = await this.getBaseDataByCategory(
-  //    'BUILDING_GROUP_CONDITIONS',
-  //  );
-  //  const buildingGroups = await this.getBuildingGroups();
-  //
-  //  // Get basedata with specified category
-  //  const getBaseData = (id: string): BaseData | undefined =>
-  //    conditionsBaseData.find(b => b.id?.toString() === id.toString());
-  //
-  //  // Filter building group
-  //  let queue = buildingGroups.filter(bg => !bg.parent_id).sort(this.sortFunc);
-  //  let selectedBuildingGroup: BuildingGroup | null = null;
-  //  while (queue.length > 0) {
-  //    const currentBuildingGroup = queue.find(bGroup => {
-  //      const conditions = bGroup.conditions?.map(c => ({
-  //        ...c,
-  //        value: getBaseData(c.key.toString())?.key ?? '',
-  //      }));
-  //      return !conditions?.length
-  //        ? true
-  //        : conditions?.some(cond =>
-  //            new Condition(cond).checkValue(
-  //              getPropertyByString(project, cond.value) as string,
-  //            ),
-  //          );
-  //    });
-  //    if (!currentBuildingGroup) {
-  //      break;
-  //    }
-  //    const parent_id = currentBuildingGroup.id?.toString();
-  //    queue = buildingGroups
-  //      .filter(bGroup => parent_id === bGroup.parent_id?.toString())
-  //      .sort(this.sortFunc);
-  //    selectedBuildingGroup = currentBuildingGroup;
-  //  }
-  //
-  //  return selectedBuildingGroup
-  //    ? BuildingGroupDTO.fromModel(selectedBuildingGroup)
-  //    : null;
-  //}
+  async getBuildingGroupConditionByProjectId(
+    projectId: string,
+  ): Promise<BuildingProjectConditionResultDTO | null> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    return this.getBuildingGroupConditionByProject(project);
+  }
 
   async getBuildingGroupConditionByProject(
-    projectId: string,
-  ): Promise<AnyObject | null> {
-    // Find project
-    const project = await this.buildingProjectRepo.findById(projectId);
+    project: BuildingProject,
+  ): Promise<BuildingProjectConditionResultDTO | null> {
     const buildingGroupBaseList: BuildingGroupTreesDTO =
       await this.getTreeBuildingGroup();
-    let group: {
-      group: string;
-      subGroupTitle: string;
-      groupId: string;
-      rulesGroupTitle: string;
-      rulesGroupId: string;
-      subGroup: BuldingGroupDetailsDTO | undefined;
-    } = {
-      group: '-',
-      subGroupTitle: '-',
-      groupId: '',
-      rulesGroupTitle: '',
-      rulesGroupId: '',
-      subGroup: undefined,
-    };
 
     if (buildingGroupBaseList.length > 0) {
       const city = await this.citySpecificationRepo.findById(
@@ -718,49 +727,54 @@ export class ProjectManagementService {
           const baseGroup = cityBuldingGroup[item.id];
           const itemKeys: string[] = Object.keys(baseGroup) ?? [];
 
-          if (itemKeys.length === 0) {
-            continue;
-          }
-
-          const itemKey = itemKeys[0].toString();
-          const rulesItem = item.children.find(
-            x => x._id?.toString() === itemKey,
-          );
-          const conditionsItem = baseGroup[itemKey] as {
-            code: string;
-            name: string;
-          };
-          const finalConditions = rulesItem?.children?.find(
-            child => child._id?.toString() === conditionsItem.code,
-          );
-
-          const c1 =
-            rulesItem?.conditions.find(
-              cond => cond.key === 'specification.total_area',
-            )?.min ?? 0;
-          const c2 =
-            rulesItem?.conditions.find(
-              ruleItem => ruleItem.key === 'specification.total_floors',
-            )?.min ?? 0;
-
-          if (
-            project.specification.total_area >= +c1 ||
-            project.specification.total_floors >= +c2
-          ) {
-            group = {
-              group: item.title,
-              groupId: item.id,
-              rulesGroupTitle: rulesItem?.title ?? '-',
-              rulesGroupId: rulesItem?.id ?? '-',
-              subGroupTitle: finalConditions?.title ?? '-',
-              subGroup: finalConditions,
+          if (itemKeys && itemKeys.length > 0) {
+            const itemKey = itemKeys[0].toString();
+            const rulesItem = item.children.find(
+              (x: AnyObject) => x._id?.toString() === itemKey,
+            );
+            const conditionsItem = baseGroup[itemKey] as {
+              code: string;
+              name: string;
             };
-            break;
+            const finalConditions = rulesItem?.children?.find(
+              (x: AnyObject) => x._id?.toString() === conditionsItem.code,
+            );
+
+            const c1 =
+              rulesItem?.conditions.find(
+                (x: {key: string}) => x.key === 'specification.total_area',
+              )?.min ?? 0;
+            const c2 =
+              rulesItem?.conditions.find(
+                (x: {key: string}) => x.key === 'specification.total_floors',
+              )?.min ?? 0;
+
+            if (
+              project.specification.total_area >= +c1 ||
+              project.specification.total_floors >= +c2
+            ) {
+              return BuildingProjectConditionResultDTO.fromModel({
+                group: item.title,
+                groupId: item.id,
+                rulesGroupTitle: rulesItem?.title ?? '-',
+                rulesGroupId: rulesItem?._id ?? '-',
+                subGroupTitle: finalConditions?.title ?? '-',
+                subGroup: finalConditions,
+              });
+            }
           }
         }
       }
     }
-    return group;
+
+    return BuildingProjectConditionResultDTO.fromModel({
+      group: '-',
+      groupId: undefined,
+      rulesGroupTitle: '-',
+      rulesGroupId: '-',
+      subGroupTitle: '-',
+      subGroup: undefined,
+    });
   }
 
   async getStaffRequestsListByUserId(
@@ -836,9 +850,9 @@ export class ProjectManagementService {
       projectId,
       {removeRelations: true},
     );
-
-    // Update project's state
-    project.commitState(userId, state);
+    project.commitState(userId, state, {
+      blockChecker: this.blockCheckerService,
+    });
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
 
@@ -859,67 +873,16 @@ export class ProjectManagementService {
       projectId,
       {...options, staffStatuses},
     );
+    if (!project) {
+      return [];
+    }
 
-    const aggregate = [
-      {$match: {_id: new ObjectId(projectId)}},
-      {$unwind: '$staff'},
-      {
-        $match: {
-          'staff.status': {$in: [EnumStatus.ACCEPTED, EnumStatus.PENDING]},
-        },
-      },
-
-      // Lookup over profiles
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'staff.user_id',
-          foreignField: 'user_id',
-          as: 'staff.profile',
-        },
-      },
-      // Lookup over basedata
-      {
-        $lookup: {
-          from: 'basedata',
-          localField: 'staff.field_id',
-          foreignField: '_id',
-          as: 'staff.field',
-        },
-      },
-      {
-        $set: {
-          'staff.field': {$first: '$staff.field.value'},
-          'staff.profile': {$first: '$staff.profile'},
-        },
-      },
-
-      // Group
-      {
-        $group: {
-          _id: '$_id',
-          staff: {$push: '$staff'},
-          other_fields: {$first: '$$ROOT'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
-          },
-        },
-      },
-    ];
-
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const projectData = await pointer.next();
-    return !project
-      ? []
-      : projectData?.staff?.map(BuildingProjectStaffItemDTO.fromModel);
+    const projectData =
+      await this.buildingProjectRepo.getProjectByStaffListInfo(projectId, [
+        EnumStatus.ACCEPTED,
+        EnumStatus.PENDING,
+      ]);
+    return projectData?.staff?.map(BuildingProjectStaffItemDTO.fromModel);
   }
 
   async addProjectStaff(
@@ -928,10 +891,18 @@ export class ProjectManagementService {
     data: NewProjectStaffRequestDTO,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(id);
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS,
+      project,
+    );
     project.addStaff(data.toModel(userId));
     project.updated = new ModifyStamp({by: userId});
+    await this.blockCheckerService.analyze(
+      project,
+      EnumConditionMode.MODIFY_ENGINEERS,
+      getUniqueItems<string>(data.staff.map(s => s.field_id)),
+    );
     await this.buildingProjectRepo.update(project);
-
     await this.sendEngineerRequestPushNotif(project, data);
   }
 
@@ -996,9 +967,29 @@ https://apps.qeng.ir/dashboard
     fileId: string,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+
+    // Check project state
+    this.checkOperationValidity(
+      EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY,
+      project,
+    );
+
     project.removeUploadedFile(userId, fileId);
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
+
+    // Send message to staffs
+    await this.sendMessageToStaffs(
+      project.getId(),
+      `سازمان نظام مهندسی ساختمان استان قزوین
+
+فایلهای پروژه ${project.case_no.case_no} تغییر یافت
+لطفا جهت بررسی به پورتال خود مراجعه نمایید
+https://apps.qeng.ir/dashboard`,
+    );
+
+    // Publis rmq message
+    await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
   }
 
   async getFilesList(
@@ -1013,56 +1004,8 @@ https://apps.qeng.ir/dashboard
       staffStatuses,
     });
 
-    const aggregate: AnyObject[] = [
-      {$match: {_id: new ObjectId(projectId)}},
-      {$unwind: '$attachments'},
-      {$match: {'attachments.status': 6}},
-
-      {
-        $unwind: {
-          path: '$attachments.signes',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {$match: {'attachments.signes.status': {$ne: 7}}},
-
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'attachments.signes.user_id',
-          foreignField: 'user_id',
-          as: 'attachments.signes.profile',
-        },
-      },
-      {
-        $set: {
-          'attachments.signes.profile': {$first: '$attachments.signes.profile'},
-        },
-      },
-      //  { $match: { "attachments.signes.profile.user_id": { $exists: true } } },
-
-      {
-        $group: {
-          _id: '$attachments.id',
-          other_fields: {$first: '$attachments'},
-          all_signes: {$push: '$attachments.signes'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$other_fields', {signes: '$all_signes'}],
-          },
-        },
-      },
-    ];
-
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-    );
-    const attachments: AnyObject[] = await pointer.toArray();
+    const attachments =
+      await this.buildingProjectRepo.getAttachmentsList(projectId);
     const filesInfo = await this.fileServiceAgent.getFilesInformation(
       attachments.map(x => x.file_id.toString()),
     );
@@ -1072,7 +1015,6 @@ https://apps.qeng.ir/dashboard
       const info = filesInfo.find(
         f => f.id.toString() === x.file_id.toString(),
       );
-
       return new BuildingProjectAttachmentDTO({
         id: x.id,
         created_at: x.created.at,
@@ -1117,6 +1059,12 @@ https://apps.qeng.ir/dashboard
     }
     const project = await this.buildingProjectRepo.findById(id);
 
+    // Check project state
+    this.checkOperationValidity(
+      EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY,
+      project,
+    );
+
     // Get uploaded files info
     const attachments = fileToken
       ? await this.fileServiceAgent.getAttachments(userId, fileToken)
@@ -1128,13 +1076,26 @@ https://apps.qeng.ir/dashboard
       fileId: f.id,
       field: f.fieldname,
     }));
-
     project.updateAttachments(userId, newAttachments, true, comments);
+
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
 
     // Commit uploaded files
     await this.fileServiceAgent.commit(userId, fileToken);
+
+    // Send message to staffs
+    await this.sendMessageToStaffs(
+      project.getId(),
+      `سازمان نظام مهندسی ساختمان استان قزوین
+
+فایلهای پروژه ${project.case_no.case_no} تغییر یافت
+لطفا جهت بررسی به پورتال خود مراجعه نمایید
+https://apps.qeng.ir/dashboard`,
+    );
+
+    // Send RMQ message
+    await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
   }
 
   async getFileToken(
@@ -1174,7 +1135,7 @@ https://apps.qeng.ir/dashboard
     return this.buildingProjectRepo.updateJobData(userId, data);
   }
 
-  async addNewJob(
+  addNewJob(
     userId: string,
     projectId: string,
     data: AddNewJobRequestDTO,
@@ -1226,7 +1187,7 @@ https://apps.qeng.ir/dashboard
     projectId: string,
     data: NewBuildingProjectRequestDTO,
     options: {checkOfficeMembership: boolean} = {checkOfficeMembership: true},
-    allowedProjectProgressStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
+    //allowedProjectProgressStatus = [EnumProgressStatus.OFFICE_DATA_ENTRY],
   ): Promise<BuildingProjectDTO> {
     const [oldProject] = await this.checkProjectUserAccessLevel(
       userId,
@@ -1238,44 +1199,99 @@ https://apps.qeng.ir/dashboard
         allowedOfficeStatus: [EnumStatus.ACTIVE, EnumStatus.SUSPENDED],
       },
     );
-
-    if (!allowedProjectProgressStatus.includes(oldProject.progress_status)) {
-      throw new HttpErrors.UnprocessableEntity(
-        'Invalid project progress status',
-      );
-    }
-
-    // Get main owner
-    const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
-    const newMainOwner = data.owners.find(x => x.is_delegate);
-    if (mainOwner?.user_id !== newMainOwner?.user_id) {
-      throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
-    }
-    const updatedLawyers = [...(oldProject.lawyers ?? [])].map(
-      x => new BuildingProjectLawyer({...x, status: EnumStatus.DEACTIVE}),
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY,
+      oldProject,
     );
-    if (data.lawyer) {
-      updatedLawyers.push(data.lawyer.toModel(userId));
-    }
-    const updatedProject = data.toModel(
+    const updatedProject = await this.updateProjectData(
       userId,
-      new BuildingProject({
-        id: oldProject.id,
-        created: oldProject.created,
-        updated: new ModifyStamp({by: userId}),
-        attachments: oldProject.attachments,
-        status: oldProject.status,
-        case_no: oldProject.case_no,
-        progress_status: oldProject.progress_status,
-        progress_status_history: oldProject.progress_status_history,
-        lawyers: updatedLawyers,
-      }),
+      oldProject,
+      data,
     );
     await this.buildingProjectRepo.update(updatedProject);
     return BuildingProjectDTO.fromModel(updatedProject);
   }
 
-  async createNewProject(
+  private async updateProjectData(
+    userId: string,
+    oldProject: BuildingProject,
+    data: NewBuildingProjectRequestDTO,
+  ): Promise<BuildingProject> {
+    if (!oldProject.userCanModifyProject) {
+      // Just some fields can
+      // Apply updated data
+      const newData = data.toModel(userId);
+      for (const field of this.ALLOWED_FIELDS_FOR_UPDATE) {
+        const newValue = getPropertyByString(newData, field);
+        if (newValue) {
+          setPropertyByString(oldProject, field, newValue);
+        }
+      }
+
+      // Find related-project building group
+      const buildingGroup =
+        await this.getBuildingGroupConditionByProject(oldProject);
+      if (!buildingGroup) {
+        throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+      }
+      oldProject.addBuildingGroup(
+        userId,
+        new BuildingProjectGroupDetail({
+          group_id: buildingGroup?.groupId,
+          rules_group_id: buildingGroup?.rulesGroupId,
+          sub_group_id: buildingGroup?.subGroup?.id,
+          condition_id: buildingGroup?.subGroup?.value,
+        }),
+      );
+      return oldProject;
+    } else {
+      // Get main owner
+      const mainOwner = oldProject.ownership.owners.find(x => x.is_delegate);
+      const newMainOwner = data.owners.find(x => x.is_delegate);
+      if (mainOwner?.user_id !== newMainOwner?.user_id) {
+        throw new HttpErrors.UnprocessableEntity("Main owner can't be changed");
+      }
+      const updatedLawyers = [...(oldProject.lawyers ?? [])].map(
+        x => new BuildingProjectLawyer({...x, status: EnumStatus.DEACTIVE}),
+      );
+      if (data.lawyer) {
+        updatedLawyers.push(data.lawyer.toModel(userId));
+      }
+      const updatedProject = data.toModel(
+        userId,
+        new BuildingProject({
+          id: oldProject.id,
+          created: oldProject.created,
+          updated: new ModifyStamp({by: userId}),
+          attachments: oldProject.attachments,
+          status: oldProject.status,
+          case_no: oldProject.case_no,
+          progress_status: oldProject.progress_status,
+          progress_status_history: oldProject.progress_status_history,
+          lawyers: updatedLawyers,
+        }),
+      );
+
+      // Find related-project building group
+      const buildingGroup =
+        await this.getBuildingGroupConditionByProject(updatedProject);
+      if (!buildingGroup) {
+        throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+      }
+      oldProject.addBuildingGroup(
+        userId,
+        new BuildingProjectGroupDetail({
+          group_id: buildingGroup?.groupId,
+          rules_group_id: buildingGroup?.rulesGroupId,
+          sub_group_id: buildingGroup?.subGroup?.id,
+          condition_id: buildingGroup?.subGroup?.value,
+        }),
+      );
+      return updatedProject;
+    }
+  }
+
+  async createProject(
     userId: string,
     officeId: string,
     nId: string | undefined,
@@ -1314,9 +1330,27 @@ https://apps.qeng.ir/dashboard
       data.case_no = await this.generateNewCaseNo(year);
     }
 
-    const newProject = await this.buildingProjectRepo.create(
-      data.toModel(userId, {}),
+    // Convert to bulding-project-model
+    const newBuildingModel = data.toModel(userId);
+
+    // Find related-project building group
+    const buildingGroup =
+      await this.getBuildingGroupConditionByProject(newBuildingModel);
+    if (!buildingGroup) {
+      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+    }
+    newBuildingModel.addBuildingGroup(
+      userId,
+      new BuildingProjectGroupDetail({
+        group_id: buildingGroup?.groupId,
+        rules_group_id: buildingGroup?.rulesGroupId,
+        sub_group_id: buildingGroup?.subGroup?.id,
+        condition_id: buildingGroup?.subGroup?.value,
+      }),
     );
+
+    // Create project
+    const newProject = await this.buildingProjectRepo.create(newBuildingModel);
 
     // Remove verification code stored in the redis
     if (shouldVerify) {
@@ -1370,69 +1404,12 @@ https://apps.qeng.ir/dashboard
     options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProject> {
     options = {checkUserAccess: true, checkOfficeMembership: false, ...options};
-
     await this.checkProjectUserAccessLevel(userId, projectId, {
       ...options,
       removeRelations: true,
     });
-
-    const aggregate = [
-      {$match: {_id: new ObjectId(projectId)}},
-
-      // Get profiles
-      {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
-      {$unwind: {path: '$ownership.owners', preserveNullAndEmptyArrays: true}},
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'lawyers.user_id',
-          foreignField: 'user_id',
-          as: 'lawyers.profile',
-        },
-      },
-      {
-        $lookup: {
-          from: 'profiles',
-          localField: 'ownership.owners.user_id',
-          foreignField: 'user_id',
-          as: 'ownership.owners.profile',
-        },
-      },
-      {
-        $set: {
-          'ownership.owners.profile': {$first: '$ownership.owners.profile'},
-          'lawyers.profile': {$first: '$lawyers.profile'},
-        },
-      },
-
-      {
-        $group: {
-          _id: '$_id',
-          owners: {$push: '$ownership.owners'},
-          lawyers: {$push: '$lawyers'},
-          other_fields: {$first: '$$ROOT'},
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [
-              '$other_fields',
-              {ownership: '$ownership', lawyers: '$lawyers', owners: '$owners'},
-            ],
-          },
-        },
-      },
-      {$set: {'ownership.owners': '$owners', id: '$_id'}},
-      {$unset: ['owners']},
-    ];
-    const pointer = await this.buildingProjectRepo.execute(
-      BuildingProject.modelName,
-      'aggregate',
-      aggregate,
-      {allowDiskUse: true},
-    );
-    const project = await pointer.next();
+    const project =
+      await this.buildingProjectRepo.getProjectRawDataById(projectId);
     if (!project) {
       throw new HttpErrors.UnprocessableEntity(
         'Project not found or access was denied',
@@ -1773,13 +1750,10 @@ https://apps.qeng.ir/dashboard
       ...(projectClause ? [projectClause] : []),
     ];
   }
+
   getProjectByCaseNoAggregate(caseNo: string): AnyObject[] {
     return [
-      {
-        $match: {
-          'case_no.case_no': caseNo,
-        },
-      },
+      {$match: {'case_no.case_no': caseNo}},
       ...this.projectLookupProfileAggregate,
       {$set: {id: '$_id'}},
     ];
@@ -1904,40 +1878,17 @@ https://apps.qeng.ir/dashboard
     }
 
     if (options.removeRelations) {
-      /* eslint-disable @typescript-eslint/no-unused-vars */
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
       const {office, ...newProject} = project;
       return [new BuildingProject(newProject), options];
     }
     return [project, options];
   }
 
-  private getBaseDataByCategory(category: string): Promise<BaseData[]> {
-    return this.basedataRepo.find({
-      where: {category},
-    });
-  }
-
-  private async getBuildingGroups(): Promise<
-    (BuildingGroup & BuildingGroupRelations)[]
-  > {
-    return this.buildingGroupRepo.find({
-      where: {status: EnumStatus.ACTIVE},
-      include: ['buildingGroupCondition'],
-    });
-  }
-
-  private sortFunc(a: BuildingGroup, b: BuildingGroup) {
-    return +b.conditions![0].min - +a.conditions![0].min;
-  }
-
   // TODO: read from base-data-service/building-groups/get-tree
   async getTreeBuildingGroup(): Promise<BuildingGroupTreesDTO> {
     const aggregate = [
-      {
-        $match: {
-          category: 'BUILDING_GROUP',
-        },
-      },
+      {$match: {category: 'BUILDING_GROUP'}},
       {
         $lookup: {
           from: 'building_groups',
@@ -2001,37 +1952,17 @@ https://apps.qeng.ir/dashboard
           },
         },
       },
-      {
-        $unset: 'children.conditionsValue',
-      },
+      {$unset: 'children.conditionsValue'},
       {
         $group: {
           _id: '$_id',
-          title: {
-            $first: '$value',
-          },
-          row_number: {
-            $first: '$meta.order',
-          },
-          children: {
-            $push: '$children',
-          },
+          title: {$first: '$value'},
+          row_number: {$first: '$meta.order'},
+          children: {$push: '$children'},
         },
       },
-      {
-        $project: {
-          id: '$_id',
-          _id: 0,
-          row_number: 1,
-          children: 1,
-          title: 1,
-        },
-      },
-      {
-        $sort: {
-          row_number: -1,
-        },
-      },
+      {$project: {id: '$_id', _id: 0, row_number: 1, children: 1, title: 1}},
+      {$sort: {row_number: -1}},
     ];
     const pointer = await this.basedataRepo.execute(
       BaseData.modelName,
@@ -2039,5 +1970,129 @@ https://apps.qeng.ir/dashboard
       aggregate,
     );
     return pointer.toArray();
+  }
+
+  async updateProjectBuildingGroupCondition(
+    userId: string,
+    projectId: string,
+  ): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    const buildingGroup =
+      await this.getBuildingGroupConditionByProject(project);
+    if (!buildingGroup) {
+      throw new HttpErrors.UnprocessableEntity(`Invalid Building Group`);
+    }
+    project.addBuildingGroup(
+      userId,
+      new BuildingProjectGroupDetail({
+        group_id: buildingGroup?.groupId,
+        rules_group_id: buildingGroup?.rulesGroupId,
+        sub_group_id: buildingGroup?.subGroup?.id,
+        condition_id: buildingGroup?.subGroup?.value,
+      }),
+    );
+    project.updated = new ModifyStamp({by: userId});
+    await this.buildingProjectRepo.update(project);
+  }
+
+  async checkBuildingGroupConditionByProjectId(
+    projectId: string,
+    mode: EnumConditionMode,
+    engineerTypesFilter: string[] = [],
+  ): Promise<BlockCheckResult> {
+    const project = await this.buildingProjectRepo.findById(projectId);
+    return this.blockCheckerService.analyze(project, mode, engineerTypesFilter);
+  }
+
+  checkOperationValidity(
+    operation: EnumOpeartion,
+    project: BuildingProject,
+    data: AnyObject = {},
+  ): boolean {
+    data = {raiseError: true, ...data};
+    const result =
+      {
+        [EnumOpeartion.CREATE]: true,
+        [EnumOpeartion.UPDATE_OFFICE_DATA_ENTRY]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
+        [EnumOpeartion.ATTACHMENTS_OFFICE_DATA_ENTRY]: [
+          EnumProgressStatus.OFFICE_DATA_ENTRY,
+          EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        ].includes(project.progress_status),
+
+        [EnumOpeartion.REMOVE_TECH_SPEC_ITEM]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_UNIT_INFO]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_TENSILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_WELDING]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_CONCRETE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.UPDATE_OFFICE_SELECT_SUPERVISORS]:
+          project.progress_status ===
+          EnumProgressStatus.CONTROL_QUEUE_CONFIRMED,
+
+        [EnumOpeartion.DESIGNERS_SIGN_FILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+        [EnumOpeartion.DESIGNERS_UNSIGN_FILE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+      }[operation] ?? true;
+    if (!result && data.raiseError) {
+      throw new HttpErrors.UnprocessableEntity('Invalid project state');
+    }
+    return result;
+  }
+
+  async sendMessageToStaffs(projectId: string, message: string): Promise<void> {
+    const project = await this.buildingProjectRepo.findById(projectId, {
+      include: ['office'],
+    });
+    let targets =
+      project?.staff
+        ?.filter(staff =>
+          [EnumStatus.PENDING, EnumStatus.ACCEPTED].includes(staff.status),
+        )
+        .map(staff => staff.user_id) ?? [];
+
+    targets?.push(
+      ...(project.office?.members ?? [])
+        .filter(member =>
+          project.office?.checkUserAccess(
+            member.user_id,
+            [
+              EnumOfficeMemberRole.OWNER,
+              EnumOfficeMemberRole.SECRETARY,
+              EnumOfficeMemberRole.CO_FOUNDER,
+            ],
+            [EnumStatus.ACTIVE],
+          ),
+        )
+        .map(member => member.user_id),
+    );
+
+    targets = Array.from(new Set(targets));
+    for (const target of targets) {
+      const profile = await this.profileRepo.findOne({
+        where: {user_id: target},
+      });
+      if (profile) {
+        await this.messageService.sendSms(
+          new SmsMessage({
+            tag: 'BUIDING_PROJECT',
+            body: message,
+            receiver: profile.mobile,
+          }),
+        );
+      }
+    }
   }
 }

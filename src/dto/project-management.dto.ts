@@ -37,6 +37,7 @@ import {
   MONGO_ID_REGEX,
   Profile,
 } from '../models';
+import {BuildingGroupDetailsDTO} from './building-group.dto';
 
 @model()
 export class ProjectCommitAttachmentRequestDTO extends Model {
@@ -637,6 +638,8 @@ export class BuildingProjectStaffItemDTO extends Model {
   updated_at: Date;
   @property({type: 'number', jsonSchema: {enum: EnumStatusValues}})
   status: EnumStatus;
+  @property({type: 'object', required: false})
+  meta?: Record<string, number | string>;
   @property({})
   response?: BuildingProjectStaffResponseDTO;
 
@@ -654,6 +657,7 @@ export class BuildingProjectStaffItemDTO extends Model {
       status: data.status,
       field_id: data.field_id,
       user_id: data.user_id,
+      meta: data.meta ?? {},
       profile: data.profile
         ? new Profile({
             user_id: data.profile?.user_id,
@@ -686,6 +690,8 @@ export class NewProjectStaffItemDTO extends Model {
     jsonSchema: {pattern: MONGO_ID_REGEX.source},
   })
   field_id: string;
+  @property({type: 'object', required: false})
+  meta?: Record<string, number | string>;
 
   constructor(data?: Partial<NewProjectStaffItemDTO>) {
     super(data);
@@ -711,6 +717,7 @@ export class NewProjectStaffRequestDTO extends Model {
           updated: now,
           user_id: s.user_id,
           field_id: s.field_id,
+          meta: s.meta ?? {},
           status: EnumStatus.PENDING,
         }),
     );
@@ -1394,3 +1401,34 @@ export class BuildingProjectAttachmentDTO extends Model {
   }
 }
 export type BuildingProjectAttachmentsDTO = BuildingProjectAttachmentDTO[];
+
+@model()
+export class BuildingProjectConditionResultDTO extends Model {
+  @property({type: 'string'})
+  group: string;
+  @property({type: 'string'})
+  groupId?: string;
+  @property({type: 'string'})
+  rulesGroupTitle: string;
+  @property({type: 'string'})
+  rulesGroupId: string;
+  @property({type: 'string'})
+  subGroupTitle: string;
+  @property({})
+  subGroup?: BuildingGroupDetailsDTO;
+
+  constructor(data?: Partial<BuildingProjectConditionResultDTO>) {
+    super(data);
+  }
+
+  static fromModel(data: AnyObject): BuildingProjectConditionResultDTO {
+    return new BuildingProjectConditionResultDTO({
+      group: data.group,
+      groupId: data.groupId,
+      rulesGroupId: data.rulesGroupId,
+      rulesGroupTitle: data.rulesGroupTitle,
+      subGroupTitle: data.subGroupTitle,
+      subGroup: BuildingGroupDetailsDTO.fromModel(data.subGroup),
+    });
+  }
+}

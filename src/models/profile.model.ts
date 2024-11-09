@@ -19,6 +19,7 @@ export class Profile extends BaseProfile {
     super(data);
   }
 }
+export type Profiles = Profile[];
 
 export interface ProfileRelations {}
 export type ProfileWithRelations = Profile & ProfileRelations;

@@ -12,9 +12,12 @@ import {
   ModifyStamp,
   Office,
   BuildingProjectRelations,
+  EnumStatus,
 } from '../models';
 import {OfficeRepository} from './office.repository';
 import {AddNewJobRequestDTO, JobCandiateResultDTO} from '../dto';
+import {AnyObject} from 'loopback-datasource-juggler';
+import {ObjectId} from 'bson';
 
 export class BuildingProjectRepository extends DefaultCrudRepository<
   BuildingProject,
@@ -72,5 +75,177 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
     const project = await this.findById(projectId);
     project.addNewJob(userId, data.job_id, data.invoice_id);
     await this.update(project);
+  }
+
+  async getProjectByStaffListInfo(
+    projectId: string,
+    projectStatus: EnumStatus[],
+  ): Promise<AnyObject> {
+    const aggregate = [
+      {$match: {_id: new ObjectId(projectId)}},
+      {$unwind: '$staff'},
+      {$match: {'staff.status': {$in: projectStatus}}},
+
+      // Lookup over profiles
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'staff.user_id',
+          foreignField: 'user_id',
+          as: 'staff.profile',
+        },
+      },
+      // Lookup over basedata
+      {
+        $lookup: {
+          from: 'basedata',
+          localField: 'staff.field_id',
+          foreignField: '_id',
+          as: 'staff.field',
+        },
+      },
+      {
+        $set: {
+          'staff.field': {$first: '$staff.field.value'},
+          'staff.profile': {$first: '$staff.profile'},
+        },
+      },
+
+      // Group
+      {
+        $group: {
+          _id: '$_id',
+          staff: {$push: '$staff'},
+          other_fields: {$first: '$$ROOT'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$other_fields', {id: '$_id', staff: '$staff'}],
+          },
+        },
+      },
+    ];
+
+    const pointer = await this.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    return pointer.next();
+  }
+
+  async getAttachmentsList(projectId: string): Promise<AnyObject[]> {
+    const aggregate: AnyObject[] = [
+      {$match: {_id: new ObjectId(projectId)}},
+      {$unwind: '$attachments'},
+      {$match: {'attachments.status': 6}},
+
+      {
+        $unwind: {
+          path: '$attachments.signes',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {$match: {'attachments.signes.status': {$ne: 7}}},
+
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'attachments.signes.user_id',
+          foreignField: 'user_id',
+          as: 'attachments.signes.profile',
+        },
+      },
+      {
+        $set: {
+          'attachments.signes.profile': {$first: '$attachments.signes.profile'},
+        },
+      },
+      //  { $match: { "attachments.signes.profile.user_id": { $exists: true } } },
+
+      {
+        $group: {
+          _id: '$attachments.id',
+          other_fields: {$first: '$attachments'},
+          all_signes: {$push: '$attachments.signes'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$other_fields', {signes: '$all_signes'}],
+          },
+        },
+      },
+    ];
+
+    const pointer = await this.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+    );
+    return pointer.toArray();
+  }
+
+  async getProjectRawDataById(projectId: string): Promise<AnyObject> {
+    const aggregate = [
+      {$match: {_id: new ObjectId(projectId)}},
+
+      // Get profiles
+      {$unwind: {path: '$lawyers', preserveNullAndEmptyArrays: true}},
+      {$unwind: {path: '$ownership.owners', preserveNullAndEmptyArrays: true}},
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'lawyers.user_id',
+          foreignField: 'user_id',
+          as: 'lawyers.profile',
+        },
+      },
+      {
+        $lookup: {
+          from: 'profiles',
+          localField: 'ownership.owners.user_id',
+          foreignField: 'user_id',
+          as: 'ownership.owners.profile',
+        },
+      },
+      {
+        $set: {
+          'ownership.owners.profile': {$first: '$ownership.owners.profile'},
+          'lawyers.profile': {$first: '$lawyers.profile'},
+        },
+      },
+
+      {
+        $group: {
+          _id: '$_id',
+          owners: {$push: '$ownership.owners'},
+          lawyers: {$push: '$lawyers'},
+          other_fields: {$first: '$$ROOT'},
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$other_fields',
+              {ownership: '$ownership', lawyers: '$lawyers', owners: '$owners'},
+            ],
+          },
+        },
+      },
+      {$set: {'ownership.owners': '$owners', id: '$_id'}},
+      {$unset: ['owners']},
+    ];
+    const pointer = await this.execute(
+      BuildingProject.modelName,
+      'aggregate',
+      aggregate,
+      {allowDiskUse: true},
+    );
+    return pointer.next();
   }
 }

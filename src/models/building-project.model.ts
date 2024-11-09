@@ -8,7 +8,11 @@ import {
   property,
 } from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
+import {EnumConditionMode} from '../dto';
+import {BlockCheckerService} from '../services';
 import {
+  EnumProgressStatus,
+  EnumProgressStatusValues,
   EnumStatus,
   EnumStatusValues,
   ModifyStamp,
@@ -26,12 +30,6 @@ export enum EnumBuildingProjectTechSpecItems {
   LABORATORY_POLYSTYRENE = 'LABORATORY_POLYSTYRENE',
   LABORATORY_ELECTRICITY = 'LABORATORY_ELECTRICITY',
 }
-
-export enum EnumProgressStatus {
-  OFFICE_DATA_ENTRY = 0,
-  OFFICE_DATA_CONFIRMED = 1,
-}
-export const EnumProgressStatusValues = Object.values(EnumProgressStatus);
 
 export enum EnumBuildingUnitDirection {
   NORTH = 0,
@@ -82,6 +80,8 @@ export class BuildingProjectStaffResponse extends Model {
 
 @model()
 export class BuildingProjectStaffItem extends TimestampModelWithId {
+  @property({type: 'object', required: false})
+  meta?: Record<string, number | string>;
   @property({type: 'string', required: true})
   user_id: string;
   @property({type: 'string', required: true})
@@ -108,13 +108,14 @@ export class BuildingProjectStaffItem extends TimestampModelWithId {
     if (this.response?.status) {
       throw new HttpErrors.UnprocessableEntity('Response already registered');
     }
+    const now = new ModifyStamp({by: userId});
     this.status = status;
     this.response = new BuildingProjectStaffResponse({
-      responsed: new ModifyStamp({by: userId}),
+      responsed: now,
       description,
       status,
     });
-    this.updated = new ModifyStamp({by: userId});
+    this.updated = now;
   }
 }
 export type BuildingProjectStaffItems = BuildingProjectStaffItem[];
@@ -777,6 +778,35 @@ export class BuildingProjectTechSpec extends TimestampModelWithId {
 }
 export type BuildingProjectTechSpecs = BuildingProjectTechSpec[];
 
+@model()
+export class BuildingProjectGroupDetail extends TimestampModelWithId {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: EnumStatusValues},
+  })
+  status: EnumStatus;
+  @property({type: 'string', required: true})
+  group_id: string;
+  @property({type: 'string', required: true})
+  rules_group_id: string;
+  @property({type: 'string', required: true})
+  sub_group_id: string;
+  @property({type: 'string', required: true})
+  condition_id: string;
+
+  constructor(data?: Partial<BuildingProjectGroupDetail>) {
+    super(data);
+    this.status = this.status ?? EnumStatus.ACTIVE;
+  }
+
+  markAsRemoved(userId: string): void {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: userId});
+  }
+}
+export type BuildingProjectGroupDetails = BuildingProjectGroupDetail[];
+
 @model({
   name: 'building_projects',
   settings: {
@@ -799,6 +829,10 @@ export class BuildingProject extends Entity {
   status: EnumStatus;
   @property({type: 'string'})
   unique_key?: string;
+
+  @property.array(BuildingProjectGroupDetail, {required: true})
+  building_groups: BuildingProjectGroupDetails;
+
   @property({required: true, jsonSchema: {enum: EnumProgressStatusValues}})
   progress_status: EnumProgressStatus;
   @property.array(ProgressStatusItem)
@@ -869,6 +903,9 @@ export class BuildingProject extends Entity {
     this.technical_specifications = this.technical_specifications?.map(
       ts => new BuildingProjectTechSpec(ts),
     );
+    this.building_groups =
+      this.building_groups?.map(grp => new BuildingProjectGroupDetail(grp)) ??
+      [];
   }
 
   static generateUniqueKey = (nId: string, formNo: string) =>
@@ -890,6 +927,54 @@ export class BuildingProject extends Entity {
         x => x.status === EnumStatus.ACTIVE,
       ) ?? []
     );
+  }
+
+  get activeBuildingGroupCondition(): BuildingProjectGroupDetail | undefined {
+    return this.building_groups?.find(bg => bg.status === EnumStatus.ACTIVE);
+  }
+
+  addBuildingGroup(userId: string, newGroup: BuildingProjectGroupDetail): void {
+    const now = new ModifyStamp({by: userId});
+
+    // Get last active building group
+    const lastActiveBG = this.building_groups?.find(
+      bg => bg.status === EnumStatus.ACTIVE,
+    );
+    if (
+      lastActiveBG?.condition_id.toString() ===
+        newGroup.condition_id.toString() &&
+      lastActiveBG.group_id.toString() === newGroup.group_id.toString() &&
+      lastActiveBG.sub_group_id.toString() ===
+        newGroup.sub_group_id.toString() &&
+      lastActiveBG.rules_group_id.toString() ===
+        newGroup.rules_group_id.toString()
+    ) {
+      return;
+    }
+
+    lastActiveBG?.markAsRemoved(userId);
+    this.building_groups.push(
+      new BuildingProjectGroupDetail({
+        ...newGroup,
+        updated: now,
+        created: now,
+        status: EnumStatus.ACTIVE,
+      }),
+    );
+  }
+
+  removeBuildingGroup(userId: string, groupId: string): void {
+    const bg = this.building_groups.find(
+      bGroup =>
+        bGroup.id?.toString() === groupId &&
+        bGroup.status === EnumStatus.ACTIVE,
+    );
+    if (!bg) {
+      throw new HttpErrors.NotFound(
+        `Building group detial not found, id: ${groupId}`,
+      );
+    }
+    bg.markAsRemoved(userId);
   }
 
   signRelatedFiles(
@@ -937,7 +1022,27 @@ export class BuildingProject extends Entity {
       );
     }
     staffItem.markAsRemoved(userId);
+    this.removeStaffSign(userId, staffItem);
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  removeStaffSign(userId: string, staff: BuildingProjectStaffItem): void {
+    const staffUserId = staff.user_id.toString();
+    const now = new ModifyStamp({by: userId});
+    this.attachments
+      .filter(a => a.status !== EnumStatus.DEACTIVE)
+      .forEach(a => {
+        a.signes
+          .filter(
+            s =>
+              s.status !== EnumStatus.DEACTIVE &&
+              s.user_id.toString() === staffUserId,
+          )
+          .forEach(s => {
+            s.updated = now;
+            s.status = EnumStatus.DEACTIVE;
+          });
+      });
   }
 
   addInvoice(userId: string, newInvoice: BuildingProjectInvoice): void {
@@ -1069,17 +1174,54 @@ export class BuildingProject extends Entity {
     file.markAsRemoved(userId);
   }
 
-  commitState(userId: string, newState: EnumProgressStatus): void {
-    const commitSequence = {
-      [EnumProgressStatus.OFFICE_DATA_ENTRY]: [],
-      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: [
-        EnumProgressStatus.OFFICE_DATA_ENTRY,
-      ],
-    };
-    const prevState: EnumProgressStatus[] = commitSequence[newState] ?? [];
-    if (!prevState.includes(this.progress_status)) {
+  get checkAllStaffIsAccpeted(): boolean {
+    return this.staff?.every(s => s.status !== EnumStatus.PENDING) ?? true;
+  }
+
+  get allStaffFields(): string[] {
+    return (
+      this.staff
+        ?.filter(s =>
+          [EnumStatus.ACCEPTED, EnumStatus.PENDING].includes(s.status),
+        )
+        .map(s => s.field_id) ?? []
+    );
+  }
+
+  get userCanModifyProject(): boolean {
+    return [
+      EnumProgressStatus.OFFICE_DATA_ENTRY,
+      EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+    ].includes(this.progress_status);
+  }
+
+  commitState(
+    userId: string,
+    newState: EnumProgressStatus,
+    meta: {blockChecker?: BlockCheckerService} = {},
+  ): void {
+    const commitCheckFunc = {
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]: () => true,
+      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: () => {
+        return (
+          this.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY &&
+          this.checkAllStaffIsAccpeted &&
+          meta.blockChecker?.analyze(
+            this,
+            EnumConditionMode.CHECK_ENGINEERS,
+            this.allStaffFields,
+          )
+        );
+      },
+      [EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED]: () => false,
+      [EnumProgressStatus.CONTROL_QUEUE_CONFIRMED]: () => false,
+      undefined: () => false,
+    }[this.progress_status];
+
+    if (!commitCheckFunc()) {
       throw new HttpErrors.UnprocessableEntity('Commit not acceptable');
     }
+
     const now = new ModifyStamp({by: userId});
     this.progress_status = newState;
     this.progress_status_history = [
@@ -1248,6 +1390,10 @@ export class BuildingProject extends Entity {
     }
     attachment.setResponse(userId, status, comment);
     this.updated = new ModifyStamp({by: userId});
+  }
+
+  getDelegateOwner(): BuildingProjectOwner | undefined {
+    return this.ownership.owners.find(x => x.is_delegate);
   }
 }
 
