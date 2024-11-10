@@ -96,10 +96,12 @@ export enum EnumOpeartion {
   UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY = 207,
 
   UPDATE_OFFICE_SELECT_DESIGNERS = 300,
-  UPDATE_OFFICE_SELECT_SUPERVISORS = 301,
+  UPDATE_SET_STAFF_RESPONSE = 301,
 
-  DESIGNERS_SIGN_FILE = 401,
-  DESIGNERS_UNSIGN_FILE = 402,
+  UPDATE_OFFICE_SELECT_SUPERVISORS = 401,
+
+  DESIGNERS_SIGN_FILE = 501,
+  DESIGNERS_UNSIGN_FILE = 502,
 }
 
 export const ProjectManagementSteps = {
@@ -820,6 +822,10 @@ export class ProjectManagementService {
     validateUser: boolean,
   ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId);
+    this.checkOperationValidity(
+      EnumOpeartion.UPDATE_SET_STAFF_RESPONSE,
+      project,
+    );
     const staff = project.setStaffResponse(
       userId,
       staffId,
@@ -2033,6 +2039,9 @@ https://apps.qeng.ir/dashboard`,
         [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_ELECTRICITY]:
           project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
         [EnumOpeartion.UPDATE_TECH_SPEC_LABORATORY_POLYSTYRENE]:
+          project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+
+        [EnumOpeartion.UPDATE_SET_STAFF_RESPONSE]:
           project.progress_status === EnumProgressStatus.OFFICE_DATA_CONFIRMED,
 
         [EnumOpeartion.UPDATE_OFFICE_SELECT_DESIGNERS]:
