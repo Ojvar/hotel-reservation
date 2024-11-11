@@ -51,6 +51,8 @@ export class BuildingProjectAttachmentSing extends TimestampModelWithId {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
+  @property({type: 'string', required: false})
+  description?: string;
 
   constructor(data?: Partial<BuildingProjectAttachmentSing>) {
     super(data);
@@ -149,10 +151,15 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
     return this.signes?.some(s => s.status === EnumStatus.ACTIVE);
   }
 
-  signByUser(operatorId: string, userId: string): void {
+  signByUserByResponse(
+    operatorId: string,
+    userId: string,
+    status: EnumStatus.ACCEPTED | EnumStatus.REJECTED,
+    description?: string,
+  ): void {
     const signs = this.signes ?? [];
     const oldSign = signs.find(
-      s => s.user_id === userId && s.status === EnumStatus.ACTIVE,
+      s => s.user_id === userId && s.status === EnumStatus.ACCEPTED,
     );
     if (oldSign) {
       throw new HttpErrors.UnprocessableEntity(
@@ -166,7 +173,8 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
         user_id: userId,
         created: now,
         updated: now,
-        status: EnumStatus.ACTIVE,
+        status,
+        description,
       }),
     ];
     this.updated = now;
@@ -175,7 +183,7 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
   removeUserSign(userId: string, signId: string): void {
     const signs = this.signes ?? [];
     const oldSign = signs.find(
-      s => s.id?.toString() === signId && s.status === EnumStatus.ACTIVE,
+      s => s.id?.toString() === signId && s.status !== EnumStatus.DEACTIVE,
     );
     if (!oldSign) {
       throw new HttpErrors.UnprocessableEntity(
@@ -981,6 +989,8 @@ export class BuildingProject extends Entity {
     operatorId: string,
     userId: string,
     attachemntField: string,
+    status: EnumStatus.REJECTED | EnumStatus.ACCEPTED,
+    description?: string,
   ): void {
     const [attachemntFieldCategory] = attachemntField.split('_');
     this.attachments
@@ -988,7 +998,9 @@ export class BuildingProject extends Entity {
         const [fieldCategory] = a.field.split('_');
         return fieldCategory === attachemntFieldCategory;
       })
-      .forEach(a => a.signByUser(operatorId, userId));
+      .forEach(a =>
+        a.signByUserByResponse(operatorId, userId, status, description),
+      );
   }
 
   addStaff(staffItems: BuildingProjectStaffItems): void {
@@ -1032,6 +1044,9 @@ export class BuildingProject extends Entity {
     this.attachments
       .filter(a => a.status !== EnumStatus.DEACTIVE)
       .forEach(a => {
+        if (!a.signes) {
+          return;
+        }
         a.signes
           .filter(
             s =>
@@ -1263,6 +1278,8 @@ export class BuildingProject extends Entity {
     userId: string,
     files: string[],
     fileFieldMapper: Array<{id: string; field: string}>,
+    status: EnumStatus.ACCEPTED | EnumStatus.REJECTED,
+    description?: string,
   ): void {
     files.forEach(fileId => {
       const file = this.attachments.find(
@@ -1292,7 +1309,7 @@ export class BuildingProject extends Entity {
       if (!userStaff) {
         throw new HttpErrors.UnprocessableEntity('Invalid user field');
       }
-      file.signByUser(operatorId, userId);
+      file.signByUserByResponse(operatorId, userId, status, description);
     });
 
     this.updated = new ModifyStamp({by: operatorId});

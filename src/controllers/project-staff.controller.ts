@@ -16,6 +16,7 @@ import {
   BuildingProjectsDTO,
   SetBuildingProjectStaffResponseDTO,
   SignFilesRequestDTO,
+  SignRelatedFilesRequestDTO,
 } from '../dto';
 import {
   EnumRoles,
@@ -63,6 +64,28 @@ export class ProjectStaffController {
       projectId,
       [EnumStatus.ACTIVE, EnumStatus.PENDING, EnumStatus.ACCEPTED],
       {checkOfficeMembership: false, checkUserAccess: true},
+    );
+  }
+
+  @patch(`${BASE_ADDR}/{project_id}/{staff_id}/sign-related-files`, {
+    tags,
+    summary: 'Sign all related files',
+    description: 'Sign all related files, Accept/Reject related attachments',
+    responses: {204: {}},
+  })
+  async signRelatedFiles(
+    @requestBody() body: SignRelatedFilesRequestDTO,
+    @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    projectId: string,
+    @param.path.string('staff_id', {schema: {pattern: MONGO_ID_REGEX.source}})
+    staffId: string,
+  ): Promise<void> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.signDesignersRelatedFiles(
+      userId,
+      projectId,
+      staffId,
+      body,
     );
   }
 
