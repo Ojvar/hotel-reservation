@@ -570,8 +570,32 @@ export class SignFilesRequestDTO extends Model {
     required: true,
   })
   files: string[];
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: [EnumStatus.ACCEPTED, EnumStatus.REJECTED]},
+  })
+  response: EnumStatus.ACCEPTED | EnumStatus.REJECTED;
+  @property({type: 'string', required: false})
+  description?: string;
 
   constructor(data?: Partial<SignFilesRequestDTO>) {
+    super(data);
+  }
+}
+
+@model()
+export class SignRelatedFilesRequestDTO extends Model {
+  @property({
+    type: 'number',
+    required: true,
+    jsonSchema: {enum: [EnumStatus.ACCEPTED, EnumStatus.REJECTED]},
+  })
+  response: EnumStatus.ACCEPTED | EnumStatus.REJECTED;
+  @property({type: 'string', required: false})
+  description?: string;
+
+  constructor(data?: Partial<SignRelatedFilesRequestDTO>) {
     super(data);
   }
 }
@@ -583,7 +607,7 @@ export class SetBuildingProjectStaffResponseDTO extends Model {
     required: true,
     jsonSchema: {enum: [EnumStatus.ACCEPTED, EnumStatus.REJECTED]},
   })
-  status: EnumStatus;
+  status: EnumStatus.ACCEPTED | EnumStatus.REJECTED;
   @property({type: 'string', required: false})
   description?: string;
 
@@ -1326,6 +1350,8 @@ export class BuildingProjectAttachmentSingDTO extends Model {
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
+  @property({type: 'string', required: false})
+  description?: string;
   @property({})
   profile?: Profile;
 
@@ -1341,10 +1367,10 @@ export class BuildingProjectAttachmentSingDTO extends Model {
       created_at: data.created.at,
       updated_at: data.updated.at,
       status: data.status,
+      description: data.description,
       user_id: data.user_id,
       profile: data.profile
         ? new Profile({
-            user_id: data.profile.user_id,
             n_in: data.profile.n_in,
             first_name: data.profile.first_name,
             last_name: data.profile.last_name,

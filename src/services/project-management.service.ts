@@ -33,6 +33,7 @@ import {
   NewProjectStaffRequestDTO,
   SetBuildingProjectStaffResponseDTO,
   SignFilesRequestDTO,
+  SignRelatedFilesRequestDTO,
   SmsMessage,
   UpdateInvoiceRequestDTO,
   ValidateFormNumberResultDTO,
@@ -114,12 +115,11 @@ export enum EnumRegisterProjectType {
   REG_DESIGNER = 2,
 }
 
-export type CheckOfficeAccessOptions = {
-  checkOfficeMembership: boolean;
-};
+export type CheckOfficeAccessOptions = {checkOfficeMembership: boolean};
 export type CheckProjectDetailsOptions = CheckOfficeAccessOptions & {
   checkUserAccess: boolean;
 };
+export type SignRelatedFilesOptions = {checkUserAccess: boolean};
 
 type FieldMapper = {
   id: string;
@@ -677,6 +677,55 @@ export class ProjectManagementService {
       .flatMap(x => x);
   }
 
+  async signDesignersRelatedFiles(
+    userId: string,
+    projectId: string,
+    staffId: string,
+    data: SignRelatedFilesRequestDTO,
+  ): Promise<void> {
+    return this.signStaffRelatedFiles(
+      userId,
+      projectId,
+      staffId,
+      data,
+      EnumOpeartion.DESIGNERS_SIGN_FILE,
+    );
+  }
+
+  private async signStaffRelatedFiles(
+    userId: string,
+    projectId: string,
+    staffId: string,
+    data: SignRelatedFilesRequestDTO,
+    operationMode: EnumOpeartion,
+  ): Promise<void> {
+    const project = await this.findActiveProjectOrFail(projectId);
+    this.checkOperationValidity(operationMode, project);
+
+    // Check staff
+    const staff = project.staff?.find(
+      s =>
+        s.id?.toString() === staffId &&
+        s.status === EnumStatus.ACCEPTED &&
+        s.user_id === userId,
+    );
+    if (!staff) {
+      throw new HttpErrors.NotFound(`Invalid staff data, staff-id: ${staffId}`);
+    }
+
+    // Sign related attachments
+    const staffField = await this.getStaffField(staff.field_id);
+    project.signRelatedFiles(
+      userId,
+      staff.user_id,
+      staffField.key,
+      data.response,
+      data.description,
+    );
+
+    await this.buildingProjectRepo.update(project);
+  }
+
   async signFile(
     operatorId: string,
     userId: string,
@@ -686,7 +735,14 @@ export class ProjectManagementService {
     const project = await this.buildingProjectRepo.findById(projectId);
     this.checkOperationValidity(EnumOpeartion.DESIGNERS_SIGN_FILE, project);
     const mapper = await this.createFilesFieldMapper();
-    project.signAttachments(operatorId, userId, data.files, mapper);
+    project.signAttachments(
+      operatorId,
+      userId,
+      data.files,
+      mapper,
+      data.response,
+      data.description,
+    );
     await this.buildingProjectRepo.update(project);
   }
 
@@ -835,8 +891,14 @@ export class ProjectManagementService {
     );
 
     // Sign related attachments
-    const staffField = await this.basedataRepo.findById(staff.field_id);
-    project.signRelatedFiles(userId, staff.user_id, staffField.key);
+    const staffField = await this.getStaffField(staff.field_id);
+    project.signRelatedFiles(
+      userId,
+      staff.user_id,
+      staffField.key,
+      data.status,
+      data.description,
+    );
     await this.buildingProjectRepo.update(project);
 
     // Send RMQ Message
@@ -2061,7 +2123,10 @@ https://apps.qeng.ir/dashboard`,
     return result;
   }
 
-  async sendMessageToStaffs(projectId: string, message: string): Promise<void> {
+  private async sendMessageToStaffs(
+    projectId: string,
+    message: string,
+  ): Promise<void> {
     const project = await this.buildingProjectRepo.findById(projectId, {
       include: ['office'],
     });
@@ -2103,5 +2168,9 @@ https://apps.qeng.ir/dashboard`,
         );
       }
     }
+  }
+
+  private getStaffField(fieldId: string): Promise<BaseData> {
+    return this.basedataRepo.findById(fieldId);
   }
 }
