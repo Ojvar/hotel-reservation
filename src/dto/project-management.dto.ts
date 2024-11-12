@@ -1371,7 +1371,6 @@ export class BuildingProjectAttachmentSingDTO extends Model {
       user_id: data.user_id,
       profile: data.profile
         ? new Profile({
-            user_id: data.profile.user_id,
             n_in: data.profile.n_in,
             first_name: data.profile.first_name,
             last_name: data.profile.last_name,

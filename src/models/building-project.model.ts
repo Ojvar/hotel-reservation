@@ -161,6 +161,10 @@ export class BuildingProjectAttachmentItem extends TimestampModelWithId {
     const oldSign = signs.find(
       s => s.user_id === userId && s.status === EnumStatus.ACCEPTED,
     );
+    // Already signed
+    if (oldSign?.status === status) {
+      return;
+    }
     if (oldSign) {
       throw new HttpErrors.UnprocessableEntity(
         `User already signed the attachment, id: ${this.id}, userId: ${userId}`,
@@ -996,7 +1000,10 @@ export class BuildingProject extends Entity {
     this.attachments
       .filter(a => {
         const [fieldCategory] = a.field.split('_');
-        return fieldCategory === attachemntFieldCategory;
+        return (
+          fieldCategory === attachemntFieldCategory &&
+          a.status !== EnumStatus.DEACTIVE
+        );
       })
       .forEach(a =>
         a.signByUserByResponse(operatorId, userId, status, description),
