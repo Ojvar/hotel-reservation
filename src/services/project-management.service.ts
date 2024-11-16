@@ -1094,7 +1094,7 @@ https://apps.qeng.ir/dashboard`,
         access_url: info?.access_url,
         access_token: info?.access_token,
         signs: x.signes
-          .filter((y: AnyObject) => !!y.id)
+          .filter((y: AnyObject) => !!y.id && y.status !== EnumStatus.DEACTIVE)
           .map(
             (s: BuildingProjectAttachmentSing & {profile?: Profile}) =>
               new BuildingProjectAttachmentSingDTO({

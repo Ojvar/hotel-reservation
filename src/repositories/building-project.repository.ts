@@ -148,7 +148,7 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
           preserveNullAndEmptyArrays: true,
         },
       },
-      {$match: {'attachments.signes.status': {$ne: 7}}},
+      //{$match: {'attachments.signes.status': {$ne: 7}}},
 
       {
         $lookup: {
