@@ -79,12 +79,12 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
 
   async getProjectByStaffListInfo(
     projectId: string,
-    projectStatus: EnumStatus[],
+    staffStatus: EnumStatus[],
   ): Promise<AnyObject> {
     const aggregate = [
       {$match: {_id: new ObjectId(projectId)}},
       {$unwind: '$staff'},
-      {$match: {'staff.status': {$in: projectStatus}}},
+      {$match: {'staff.status': {$in: staffStatus}}},
 
       // Lookup over profiles
       {
@@ -127,7 +127,6 @@ export class BuildingProjectRepository extends DefaultCrudRepository<
         },
       },
     ];
-
     const pointer = await this.execute(
       BuildingProject.modelName,
       'aggregate',

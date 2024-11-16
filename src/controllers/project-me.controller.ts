@@ -31,6 +31,40 @@ export class ProjectMeController {
 
   @get(`${BASE_ADDR}`, {
     tags,
+    summary: "Get user's accepted projects list",
+    description: "Get user's accepted projects list",
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async geAcceptedtProjectsList(
+    @param.filter(BuildingProjectFilter)
+    filter: Filter<BuildingProjectFilter> = {},
+  ): Promise<BuildingProjectsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    filter = {
+      limit: 100,
+      skip: 0,
+      ...filter,
+      where: {...filter.where, user_id: userId},
+    };
+    return this.projectManagementService.getAcceptedProjectsList(filter, {
+      checkUserAccess: true,
+      checkOfficeMembership: false,
+    });
+  }
+
+  @get(`${BASE_ADDR}/all`, {
+    tags,
     summary: "Get user's projects list",
     description: "Get user's projects list",
     responses: {

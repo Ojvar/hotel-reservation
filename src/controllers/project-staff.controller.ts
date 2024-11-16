@@ -62,7 +62,7 @@ export class ProjectStaffController {
     return this.projectManagementService.getProjectStaffList(
       userId,
       projectId,
-      [EnumStatus.ACTIVE, EnumStatus.PENDING, EnumStatus.ACCEPTED],
+      [EnumStatus.PENDING, EnumStatus.ACCEPTED],
       {checkOfficeMembership: false, checkUserAccess: true},
     );
   }

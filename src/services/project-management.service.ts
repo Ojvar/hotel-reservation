@@ -1431,10 +1431,23 @@ https://apps.qeng.ir/dashboard`,
     return BuildingProjectDTO.fromModel(newProject);
   }
 
-  async getProjectsList(
+  async getAcceptedProjectsList(
     filter: Filter<BuildingProjectFilter> = {},
     options: Partial<CheckProjectDetailsOptions> = {},
   ): Promise<BuildingProjectsDTO> {
+    return this.getProjectsList(filter, options, {
+      staffStatus: [EnumStatus.ACCEPTED],
+    });
+  }
+
+  async getProjectsList(
+    filter: Filter<BuildingProjectFilter> = {},
+    options: Partial<CheckProjectDetailsOptions> = {},
+    extraData?: {
+      staffStatus: EnumStatus[];
+    },
+  ): Promise<BuildingProjectsDTO> {
+    extraData = {staffStatus: this.ALLOWED_STAFF_STATUS, ...extraData};
     options = {checkOfficeMembership: false, checkUserAccess: true, ...options};
 
     const {user_id = ''} = (filter.where ?? {}) as AnyObject;
@@ -1445,7 +1458,7 @@ https://apps.qeng.ir/dashboard`,
           ? {
               staff: {
                 $elemMatch: {
-                  status: {$in: this.ALLOWED_STAFF_STATUS},
+                  status: {$in: extraData.staffStatus},
                   user_id,
                 },
               },
