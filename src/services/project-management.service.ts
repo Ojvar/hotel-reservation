@@ -911,15 +911,18 @@ export class ProjectManagementService {
   async commitState(
     userId: string,
     projectId: string,
-    state: EnumProgressStatus,
+    //state: EnumProgressStatus,
   ): Promise<void> {
     const [project] = await this.checkProjectUserAccessLevel(
       userId,
       projectId,
       {removeRelations: true},
     );
-    project.commitState(userId, state, {
+    // Get attachments field mapper
+    const mapper = await this.createFilesFieldMapper();
+    project.commitState(userId, {
       blockChecker: this.blockCheckerService,
+      fieldMapper: mapper,
     });
     project.updated = new ModifyStamp({by: userId});
     await this.buildingProjectRepo.update(project);
@@ -2143,6 +2146,12 @@ https://apps.qeng.ir/dashboard`,
     const project = await this.buildingProjectRepo.findById(projectId, {
       include: ['office'],
     });
+
+    // Exception steps
+    if (project.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY) {
+      return;
+    }
+
     let targets =
       project?.staff
         ?.filter(staff =>

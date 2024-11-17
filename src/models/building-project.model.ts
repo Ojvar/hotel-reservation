@@ -1217,17 +1217,50 @@ export class BuildingProject extends Entity {
     ].includes(this.progress_status);
   }
 
+  attachmentsAreSigned(
+    fieldMapper: {id: string; field: string}[] = [],
+  ): boolean {
+    return this.attachments.every(attachment => {
+      const attachmentFieldId =
+        fieldMapper.find(fm => fm.field === attachment.field)?.id ?? '';
+      const allStaffs =
+        this.staff?.filter(
+          s =>
+            s.field_id.toString() === attachmentFieldId.toString() &&
+            s.status !== EnumStatus.DEACTIVE,
+        ) ?? [];
+      if (allStaffs.length === 0) {
+        return true;
+      }
+      const staffs =
+        allStaffs
+          ?.filter(s => s.status === EnumStatus.ACCEPTED)
+          .map(s => s.user_id) ?? [];
+      return attachment.signes.every(
+        sign =>
+          sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
+      );
+    });
+  }
+
   commitState(
     userId: string,
-    newState: EnumProgressStatus,
-    meta: {blockChecker?: BlockCheckerService} = {},
+    //newState: EnumProgressStatus,
+    meta: {
+      blockChecker?: BlockCheckerService;
+      fieldMapper?: {id: string; field: string}[];
+    } = {},
   ): void {
     const commitCheckFunc = {
-      [EnumProgressStatus.OFFICE_DATA_ENTRY]: () => true,
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]: () =>
+        this.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
       [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: () => {
+        const allAttachmentsAreSigned = this.attachmentsAreSigned(
+          meta.fieldMapper,
+        );
         return (
-          this.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY &&
           this.checkAllStaffIsAccpeted &&
+          allAttachmentsAreSigned &&
           meta.blockChecker?.analyze(
             this,
             EnumConditionMode.CHECK_ENGINEERS,
@@ -1244,14 +1277,29 @@ export class BuildingProject extends Entity {
       throw new HttpErrors.UnprocessableEntity('Commit not acceptable');
     }
 
+    const nextProgress = {
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]:
+        EnumProgressStatus.OFFICE_DATA_CONFIRMED,
+      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]:
+        EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED,
+      [EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED]:
+        EnumProgressStatus.CONTROL_QUEUE_CONFIRMED,
+      [EnumProgressStatus.CONTROL_QUEUE_CONFIRMED]:
+        EnumProgressStatus.CONTROL_QUEUE_CONFIRMED,
+    }[this.progress_status];
+
+    if (!nextProgress) {
+      throw new HttpErrors.UnprocessableEntity('Invalid next progress value');
+    }
+
     const now = new ModifyStamp({by: userId});
-    this.progress_status = newState;
+    this.progress_status = nextProgress;
     this.progress_status_history = [
       ...this.progress_status_history,
       new ProgressStatusItem({
         created: now,
         updated: now,
-        progress_status: newState,
+        progress_status: nextProgress,
       }),
     ];
   }

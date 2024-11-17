@@ -42,12 +42,7 @@ import {
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {
-  EnumProgressStatus,
-  EnumProgressStatusValues,
-  EnumStatus,
-  MONGO_ID_REGEX,
-} from '../models';
+import {EnumStatus, MONGO_ID_REGEX} from '../models';
 import {
   ProjectManagementService,
   RegistrationOrg,
@@ -249,6 +244,7 @@ export class ProjectOperatorsController {
     responses: {204: {}},
   })
   async saveAttachments(
+    @param.path.string('office_id') _officeId: string,
     @param.path.string('project_id') projectId: string,
     @param.header.string('file-token') fileToken = '',
     @requestBody() body: ProjectCommitAttachmentRequestDTO,
@@ -380,22 +376,19 @@ export class ProjectOperatorsController {
     );
   }
 
-  @patch(`${BASE_ADDR}/{project_id}/state/commit/{state}`, {
+  @patch(`${BASE_ADDR}/{project_id}/state/commit`, {
     tags,
     summary: 'Commit project state',
     description: 'Commit project state',
     responses: {204: {}},
   })
   async commitProjectState(
+    @param.path.string('office_id') _officeId: string,
     @param.path.string('project_id', {schema: {pattern: MONGO_ID_REGEX.source}})
     projectId: string,
-    @param.path.number('state', {
-      schema: {enum: EnumProgressStatusValues},
-    })
-    state: EnumProgressStatus,
   ): Promise<void> {
     const {sub: userId} = await this.keycloakSecurity.getUserInfo();
-    await this.projectManagementService.commitState(userId, projectId, state);
+    await this.projectManagementService.commitState(userId, projectId);
   }
 
   @patch(`${BASE_ADDR}/{project_id}/staff/{staff_id}/response`, {
