@@ -57,6 +57,7 @@ import {
   BuildingProjectGroupDetail,
   BuildingProjectLawyer,
   BuildingProjectTechSpec,
+  BuildingProjectWithRelations,
   EnumBuildingProjectTechSpecItems,
   EnumOfficeMemberRole,
   EnumProgressStatus,
@@ -913,19 +914,24 @@ export class ProjectManagementService {
     projectId: string,
     //state: EnumProgressStatus,
   ): Promise<void> {
-    const [project] = await this.checkProjectUserAccessLevel(
-      userId,
-      projectId,
-      {removeRelations: true},
-    );
+    const [project] =
+      await this.checkProjectUserAccessLevel<BuildingProjectWithRelations>(
+        userId,
+        projectId,
+        {removeRelations: false},
+      );
     // Get attachments field mapper
     const mapper = await this.createFilesFieldMapper();
     project.commitState(userId, {
       blockChecker: this.blockCheckerService,
       fieldMapper: mapper,
     });
+
     project.updated = new ModifyStamp({by: userId});
-    await this.buildingProjectRepo.update(project);
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {office, ...updatedProject} = project;
+    //delete project.office;
+    await this.buildingProjectRepo.update(new BuildingProject(updatedProject));
 
     // Send RMQ Message
     await this.buildingProjectRmqAgentService.publishProjectUpdates(project);
@@ -1914,7 +1920,7 @@ https://apps.qeng.ir/dashboard`,
     return office;
   }
 
-  private async checkProjectUserAccessLevel(
+  private async checkProjectUserAccessLevel<T = BuildingProject>(
     userId: string,
     projectId: string,
     options: Partial<
@@ -1925,7 +1931,7 @@ https://apps.qeng.ir/dashboard`,
         allowedOfficeStatus: EnumStatus[];
       }
     > = {},
-  ): Promise<[BuildingProject, Partial<CheckProjectDetailsOptions>]> {
+  ): Promise<[T, Partial<CheckProjectDetailsOptions>]> {
     // Create a clone
     options = {
       removeRelations: true,
@@ -1964,9 +1970,9 @@ https://apps.qeng.ir/dashboard`,
     if (options.removeRelations) {
       /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
       const {office, ...newProject} = project;
-      return [new BuildingProject(newProject), options];
+      return [new BuildingProject(newProject) as T, options];
     }
-    return [project, options];
+    return [project as T, options];
   }
 
   // TODO: read from base-data-service/building-groups/get-tree

@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
+import {BuildingProjectStaffItemDTO, RmqStaffAcceptDTO} from '../dto';
+import {RMQ_EXCHANGES} from '../helpers';
 import {RabbitmqBindings, RabbitmqProducer} from '../loopback-rabbitmq/src';
 import {
   BuildingProject,
   BuildingProjectTechSpecs,
+  BuildingProjectWithRelations,
   EnumProgressStatus,
 } from '../models';
-import {RMQ_EXCHANGES} from '../helpers';
-import {BuildingProjectStaffItemDTO, RmqStaffAcceptDTO} from '../dto';
 
 export enum EnumBuildingProjectRmqMessageType {
   OPERATOR_CONFORM = 'project_confirmed',
@@ -70,9 +71,12 @@ export class BuildingProjectRmqAgentService {
     );
   }
 
-  publishProjectUpdates(project: BuildingProject): Promise<void> {
+  publishProjectUpdates(project: BuildingProjectWithRelations): Promise<void> {
     switch (project.progress_status) {
-      case EnumProgressStatus.OFFICE_DATA_CONFIRMED:
+      // REMOVE SEND DATA IN FIRST COMMIT
+      // case EnumProgressStatus.OFFICE_DATA_CONFIRMED:
+      //   return this.sendBuildingProjectStateConfirmed(project);
+      case EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED:
         return this.sendBuildingProjectStateConfirmed(project);
       default:
         return Promise.resolve();
@@ -80,7 +84,7 @@ export class BuildingProjectRmqAgentService {
   }
 
   private sendBuildingProjectStateConfirmed(
-    project: BuildingProject,
+    project: BuildingProjectWithRelations,
   ): Promise<void> {
     const data = {
       type: EnumBuildingProjectRmqMessageType.OPERATOR_CONFORM,

@@ -1,13 +1,17 @@
 import {inject, intercept} from '@loopback/context';
-import {ProjectManagementService} from '../services';
+import {get, getModelSchemaRef, param} from '@loopback/rest';
+import {
+  BuildingProjectAttachmentDTO,
+  BuildingProjectAttachmentsDTO,
+  BuildingProjectDTO,
+} from '../dto';
 import {
   EnumRoles,
   KeycloakSecurity,
   KeycloakSecurityProvider,
   protect,
 } from '../lib-keycloak/src';
-import {get, param} from '@loopback/rest';
-import {BuildingProjectDTO} from '../dto';
+import {ProjectManagementService} from '../services';
 
 const BASE_ADDR = '/projects/services';
 const tags = ['Projects.Services'];
@@ -38,5 +42,32 @@ export class ProjectViewerController {
       projectId,
       {checkOfficeMembership: false, checkUserAccess: false},
     );
+  }
+
+  @get(`${BASE_ADDR}/{project_id}/files`, {
+    tags,
+    summary: 'Get projects uploaded files',
+    description: 'Get projects uploaded files',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(BuildingProjectAttachmentDTO),
+            },
+          },
+        },
+      },
+    },
+  })
+  async getUploadedFiles(
+    @param.path.string('project_id') projectId: string,
+  ): Promise<BuildingProjectAttachmentsDTO> {
+    const {sub: userId} = await this.keycloakSecurity.getUserInfo();
+    return this.projectManagementService.getFilesList(userId, projectId, {
+      checkOfficeMembership: false,
+      checkUserAccess: false,
+    });
   }
 }
