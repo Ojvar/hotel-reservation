@@ -1220,39 +1220,43 @@ export class BuildingProject extends Entity {
   attachmentsAreSigned(
     fieldMapper: {id: string; field: string}[] = [],
   ): boolean {
-    return this.attachments.every(attachment => {
-      const attachmentFieldId =
-        fieldMapper.find(fm => fm.field === attachment.field)?.id ?? '';
+    return this.attachments
+      .filter(a => a.status !== EnumStatus.DEACTIVE)
+      .every(attachment => {
+        const attachmentFieldId =
+          fieldMapper.find(fm => fm.field === attachment.field)?.id ?? '';
 
-      const allStaffs =
-        this.staff?.filter(
-          s =>
-            s.field_id.toString() === attachmentFieldId.toString() &&
-            s.status !== EnumStatus.DEACTIVE,
-        ) ?? [];
-      console.debug(JSON.stringify(attachment, null, 1));
-      console.debug(JSON.stringify(allStaffs, null, 1));
+        const allStaffs =
+          this.staff?.filter(
+            s =>
+              s.field_id.toString() === attachmentFieldId.toString() &&
+              s.status !== EnumStatus.DEACTIVE,
+          ) ?? [];
+        console.debug(JSON.stringify(attachment, null, 1));
+        console.debug(JSON.stringify(allStaffs, null, 1));
 
-      if (allStaffs.length === 0) {
-        return true;
-      }
-      const staffs =
-        allStaffs
-          ?.filter(s => s.status === EnumStatus.ACCEPTED)
-          .map(s => s.user_id) ?? [];
+        if (allStaffs.length === 0) {
+          return true;
+        }
+        const staffs =
+          allStaffs
+            ?.filter(s => s.status === EnumStatus.ACCEPTED)
+            .map(s => s.user_id) ?? [];
 
-      console.debug(JSON.stringify(staffs, null, 1));
+        console.debug(JSON.stringify(staffs, null, 1));
 
-      const x = attachment.signes?.every(
-        sign =>
-          sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
-      );
-      console.debug({x});
-      return attachment.signes?.every(
-        sign =>
-          sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
-      );
-    });
+        const x = attachment.signes?.every(
+          sign =>
+            sign.status === EnumStatus.ACCEPTED &&
+            staffs.includes(sign.user_id),
+        );
+        console.debug({x});
+        return attachment.signes?.every(
+          sign =>
+            sign.status === EnumStatus.ACCEPTED &&
+            staffs.includes(sign.user_id),
+        );
+      });
   }
 
   async commitState(
