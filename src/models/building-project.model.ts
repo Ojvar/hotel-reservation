@@ -1230,6 +1230,8 @@ export class BuildingProject extends Entity {
             s.field_id.toString() === attachmentFieldId.toString() &&
             s.status !== EnumStatus.DEACTIVE,
         ) ?? [];
+      console.debug(JSON.stringify(attachment, null, 1));
+      console.debug(JSON.stringify(allStaffs, null, 1));
 
       if (allStaffs.length === 0) {
         return true;
@@ -1238,6 +1240,14 @@ export class BuildingProject extends Entity {
         allStaffs
           ?.filter(s => s.status === EnumStatus.ACCEPTED)
           .map(s => s.user_id) ?? [];
+
+      console.debug(JSON.stringify(staffs, null, 1));
+
+      const x = attachment.signes?.every(
+        sign =>
+          sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
+      );
+      console.debug({x});
       return attachment.signes?.every(
         sign =>
           sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
@@ -1265,7 +1275,7 @@ export class BuildingProject extends Entity {
           EnumConditionMode.CHECK_ENGINEERS,
           this.allStaffFields,
         );
-        console.debug({ allStaffPassed});
+        console.debug({allStaffPassed});
 
         return (
           this.checkAllStaffIsAccpeted &&
