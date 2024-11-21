@@ -922,7 +922,7 @@ export class ProjectManagementService {
       );
     // Get attachments field mapper
     const mapper = await this.createFilesFieldMapper();
-    project.commitState(userId, {
+    await project.commitState(userId, {
       blockChecker: this.blockCheckerService,
       fieldMapper: mapper,
     });

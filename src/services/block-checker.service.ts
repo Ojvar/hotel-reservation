@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {BindingKey, BindingScope, injectable} from '@loopback/core';
 import {AnyObject, repository} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 import {
   BlockCheckResult,
   ConditionBlock,
@@ -21,7 +22,6 @@ import {
   BuildingGroupConditionRepository,
   ProfileRepository,
 } from '../repositories';
-import {HttpErrors} from '@loopback/rest';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class BlockCheckerService {
@@ -42,6 +42,13 @@ export class BlockCheckerService {
     now = new Date(),
   ): UserLicenseItem | undefined {
     const {licenses} = {licenses: [], ...engineer.meta};
+    // const x = licenses.filter(
+    //   (l: AnyObject) =>
+    //     l.status === 6 &&
+    //     l.license_type === licenseType &&
+    //     licenseLevels.includes(l.license_level) &&
+    //     new Date(l.license_exp) >= now,
+    // );
     return licenses
       .filter(
         (l: AnyObject) =>
@@ -111,6 +118,7 @@ export class BlockCheckerService {
       this.block.data as ConditionBlock,
       this.filteredEngineers,
     );
+
     if (
       this.mode === EnumConditionMode.CHECK_ENGINEERS &&
       result.selectedEngineers.length !== this.engineers.length
@@ -239,11 +247,13 @@ export class BlockCheckerService {
         requiredEngineers.levels,
       ),
     );
+
     const passed =
       this.mode === EnumConditionMode.MODIFY_ENGINEERS
         ? selectedEngineers.length > 0 &&
           selectedEngineers.length <= requiredEngineers.count
         : selectedEngineers.length === requiredEngineers.count;
+
     return new BlockCheckResult({passed, selectedEngineers});
   }
 
@@ -263,6 +273,7 @@ export class BlockCheckerService {
       engineerItem,
       'refLicenseLevel',
     );
+
     const levels = this.getRequiredLevels(levelProps, value);
 
     return {type: engineerItem.id, levels, count};

@@ -1220,60 +1220,68 @@ export class BuildingProject extends Entity {
   attachmentsAreSigned(
     fieldMapper: {id: string; field: string}[] = [],
   ): boolean {
-    return this.attachments.every(attachment => {
-      const attachmentFieldId =
-        fieldMapper.find(fm => fm.field === attachment.field)?.id ?? '';
-      const allStaffs =
-        this.staff?.filter(
-          s =>
-            s.field_id.toString() === attachmentFieldId.toString() &&
-            s.status !== EnumStatus.DEACTIVE,
-        ) ?? [];
-      if (allStaffs.length === 0) {
-        return true;
-      }
-      const staffs =
-        allStaffs
-          ?.filter(s => s.status === EnumStatus.ACCEPTED)
-          .map(s => s.user_id) ?? [];
-      return attachment.signes.every(
-        sign =>
-          sign.status === EnumStatus.ACCEPTED && staffs.includes(sign.user_id),
-      );
-    });
+    return this.attachments
+      .filter(a => a.status !== EnumStatus.DEACTIVE)
+      .every(attachment => {
+        const attachmentFieldId =
+          fieldMapper.find(fm => fm.field === attachment.field)?.id ?? '';
+
+        const allStaffs =
+          this.staff?.filter(
+            s =>
+              s.field_id.toString() === attachmentFieldId.toString() &&
+              s.status !== EnumStatus.DEACTIVE,
+          ) ?? [];
+
+        if (allStaffs.length === 0) {
+          return true;
+        }
+        const staffs =
+          allStaffs
+            ?.filter(s => s.status === EnumStatus.ACCEPTED)
+            .map(s => s.user_id) ?? [];
+        return attachment.signes?.every(
+          sign =>
+            sign.status === EnumStatus.ACCEPTED &&
+            staffs.includes(sign.user_id),
+        );
+      });
   }
 
-  commitState(
+  async commitState(
     userId: string,
     //newState: EnumProgressStatus,
     meta: {
       blockChecker?: BlockCheckerService;
       fieldMapper?: {id: string; field: string}[];
     } = {},
-  ): void {
+  ): Promise<void> {
     const commitCheckFunc = {
-      [EnumProgressStatus.OFFICE_DATA_ENTRY]: () =>
+      [EnumProgressStatus.OFFICE_DATA_ENTRY]: async () =>
         this.progress_status === EnumProgressStatus.OFFICE_DATA_ENTRY,
-      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: () => {
+      [EnumProgressStatus.OFFICE_DATA_CONFIRMED]: async () => {
         const allAttachmentsAreSigned = this.attachmentsAreSigned(
           meta.fieldMapper,
         );
+        const allStaffPassed = await meta.blockChecker?.analyze(
+          this,
+          EnumConditionMode.CHECK_ENGINEERS,
+          this.allStaffFields,
+        );
+
         return (
           this.checkAllStaffIsAccpeted &&
           allAttachmentsAreSigned &&
-          meta.blockChecker?.analyze(
-            this,
-            EnumConditionMode.CHECK_ENGINEERS,
-            this.allStaffFields,
-          )
+          allStaffPassed?.passed
         );
       },
-      [EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED]: () => false,
-      [EnumProgressStatus.CONTROL_QUEUE_CONFIRMED]: () => false,
-      undefined: () => false,
+      [EnumProgressStatus.OFFICE_DESIGNERS_LIST_CONFIRMED]: async () => false,
+      [EnumProgressStatus.CONTROL_QUEUE_CONFIRMED]: async () => false,
+      undefined: async () => false,
     }[this.progress_status];
 
-    if (!commitCheckFunc()) {
+    const commitResult = await commitCheckFunc();
+    if (!commitResult) {
       throw new HttpErrors.UnprocessableEntity('Commit not acceptable');
     }
 
