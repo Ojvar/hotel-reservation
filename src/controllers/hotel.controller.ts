@@ -1,5 +1,6 @@
 import {AnyObject, Filter} from '@loopback/repository';
 import {get, param} from '@loopback/rest';
+import { HotelFilter } from '../dto';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
