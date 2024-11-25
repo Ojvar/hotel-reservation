@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {Entity, model, property} from '@loopback/repository';
 import {CalendarDayItem, CalendarDayItems} from './common.model';
 

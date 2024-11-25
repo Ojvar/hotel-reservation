@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
@@ -44,7 +45,6 @@ export class HotelCalendar extends Entity {
     default: {},
   })
   meta?: object;
-
 
   constructor(data?: Partial<HotelCalendar>) {
     super(data);

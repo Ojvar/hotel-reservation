@@ -8,9 +8,7 @@ export class HotelRepository extends DefaultCrudRepository<
   typeof Hotel.prototype.id,
   HotelRelations
 > {
-  constructor(
-    @inject('datasources.Qeng') dataSource: QengDataSource,
-  ) {
+  constructor(@inject('datasources.Qeng') dataSource: QengDataSource) {
     super(Hotel, dataSource);
   }
 }
