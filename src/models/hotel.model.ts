@@ -1,7 +1,8 @@
 import {Entity, Model, model, property} from '@loopback/repository';
-import {EnumStatus, EnumStatusValues} from './common.model';
+import {EnumStatus, EnumStatusValues, ModifyStamp} from './common.model';
 
 export type HotelContact = Record<string, string>;
+export type HotelMeta = Record<string, string | number>;
 
 @model()
 export class GeoPoint extends Model {
@@ -19,31 +20,28 @@ export class GeoPoint extends Model {
 export class Hotel extends Entity {
   @property({type: 'string', id: true, generated: true})
   id?: string;
-
+  @property({required: true})
+  created: ModifyStamp;
+  @property({required: true})
+  updated: ModifyStamp;
   @property({type: 'string', required: true})
   name: string;
-
   @property({type: 'object', itemType: 'string', default: {}})
   contact?: HotelContact;
-
   @property({
     type: 'number',
     required: true,
     jsonSchema: {enum: EnumStatusValues},
   })
   status: EnumStatus;
-
   @property({type: 'string', required: true})
   zone: string;
-
   @property({required: false})
   location?: GeoPoint;
-
   @property({type: 'string'})
   description?: string;
-
   @property({type: 'object', default: {}})
-  meta?: Record<string, string | number>;
+  meta?: HotelMeta;
 
   constructor(data?: Partial<Hotel>) {
     super(data);

@@ -1,3 +1,4 @@
+import {Constructor} from '@loopback/context';
 import {Model, model, property} from '@loopback/repository';
 
 export enum EnumStatus {
@@ -18,3 +19,26 @@ export class CalendarDayItem extends Model {
   }
 }
 export type CalendarDayItems = CalendarDayItem[];
+
+@model()
+export class ModifyStamp extends Model {
+  at: Date;
+  by: string;
+
+  constructor(data?: Partial<ModifyStamp>) {
+    super(data);
+  }
+}
+
+@model()
+export class TimestampModelWithId extends Model {
+  @property({required: true})
+  created: ModifyStamp;
+
+  @property({required: true})
+  updated: ModifyStamp;
+
+  constructor(data?: Partial<TimestampModelWithId>) {
+    super(data);
+  }
+}
