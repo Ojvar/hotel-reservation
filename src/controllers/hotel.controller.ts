@@ -1,12 +1,24 @@
-import {AnyObject, Filter} from '@loopback/repository';
-import {get, param} from '@loopback/rest';
-import {HotelFilter} from '../dto';
+import {Filter} from '@loopback/repository';
+import {
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  post,
+  requestBody,
+} from '@loopback/rest';
+import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
+import {inject} from '@loopback/context';
+import {HotelService} from '../services';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
 
 export class HotelController {
-  constructor() {}
+  constructor(
+    @inject(HotelService.BINDING_KEY) private hotelService: HotelService,
+  ) {}
 
   @get(`${BASE_ADDR}`, {
     tags,
@@ -16,15 +28,78 @@ export class HotelController {
       200: {
         content: {
           'application/json': {
-            schema: {},
+            schema: {type: 'array', items: getModelSchemaRef(HotelDTO)},
           },
         },
       },
     },
   })
-  async getHotelList(
+  getHotelList(
     @param.filter(HotelFilter) filter: Filter<HotelFilter> = {},
-  ): Promise<AnyObject[]> {
-    return [];
+  ): Promise<HotelsDTO> {
+    return this.hotelService.getHotelsList(filter);
+  }
+
+  @get(`${BASE_ADDR}/{hote_id}`, {
+    tags,
+    summary: 'Get hotel detail',
+    description: 'Get hotel detail',
+    responses: {
+      200: {
+        content: {'application/json': {schema: getModelSchemaRef(HotelDTO)}},
+      },
+    },
+  })
+  getHotelDetail(
+    @param.path.string('hote_id') hotelId: string,
+  ): Promise<HotelDTO> {
+    return this.hotelService.getHotelById(hotelId);
+  }
+
+  @post(`${BASE_ADDR}`, {
+    tags,
+    summary: 'Create a new hotel',
+    description: 'Create a new hotel',
+    responses: {
+      200: {
+        content: {'application/json': {schema: getModelSchemaRef(HotelDTO)}},
+      },
+    },
+  })
+  createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
+    const operatorId = '';
+    return this.hotelService.newHotel(operatorId, new NewHotelDTO(body));
+  }
+
+  @patch(`${BASE_ADDR}/{hotel_id}`, {
+    tags,
+    summary: 'Edit a hotel',
+    description: 'Edit a hotel',
+    responses: {
+      200: {
+        content: {'application/json': {schema: getModelSchemaRef(HotelDTO)}},
+      },
+    },
+  })
+  updateHotel(
+    @requestBody() body: NewHotelDTO,
+    @param.path.string('hote_id') hotelId: string,
+  ): Promise<HotelDTO> {
+    const operatorId = '';
+    return this.hotelService.updateHotel(
+      operatorId,
+      hotelId,
+      new NewHotelDTO(body),
+    );
+  }
+  @del(`${BASE_ADDR}/{hotel_id}`, {
+    tags,
+    summary: 'Delete a hotel',
+    description: 'Delete a hotel',
+    responses: {204: {}},
+  })
+  removeHotel(@param.path.string('hote_id') hotelId: string): Promise<void> {
+    const operatorId = '';
+    return this.hotelService.removeHotel(operatorId, hotelId);
   }
 }

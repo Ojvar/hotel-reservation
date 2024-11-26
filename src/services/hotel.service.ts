@@ -1,7 +1,7 @@
 import {injectable, BindingScope, BindingKey} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
 import {HotelRepository} from '../repositories';
-import {HotelDTO, HotelFilter, HotelsDTO} from '../dto';
+import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
 import {EnumStatus} from '../models';
 import {adjustMin, adjustRange} from '../helpers';
 
@@ -28,5 +28,32 @@ export class HotelService {
 
     const result = await this.hotelRepo.find(filter as object);
     return result.map(HotelDTO.fromModel);
+  }
+
+  async getHotelById(hotelId: string): Promise<HotelDTO> {
+    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    return HotelDTO.fromModel(hotel);
+  }
+
+  async ewHotel(operatorId: string, newData: NewHotelDTO): Promise<HotelDTO> {
+    const hotel = await this.hotelRepo.create(newData.toModel(operatorId));
+    return HotelDTO.fromModel(hotel);
+  }
+
+  async updateHotel(
+    operatorId: string,
+    hotelId: string,
+    hotelData: NewHotelDTO,
+  ): Promise<HotelDTO> {
+    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    hotel.update(operatorId, hotelData.toModel(operatorId));
+    await this.hotelRepo.update(hotel);
+    return HotelDTO.fromModel(hotel);
+  }
+
+  async removeHotel(operatorId: string, hotelId: string): Promise<void> {
+    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    hotel.markAsRemoved(operatorId);
+    await this.hotelRepo.update(hotel);
   }
 }

@@ -46,6 +46,24 @@ export class Hotel extends Entity {
   constructor(data?: Partial<Hotel>) {
     super(data);
   }
+
+  update(operatorId: string, newData: Hotel): void {
+    const now = new ModifyStamp({by: operatorId});
+    this.updated = now;
+
+    this.name = newData.name;
+    this.zone = newData.zone;
+    this.meta = newData.meta;
+    this.contact = newData.contact;
+    this.location = newData.location;
+    this.description = newData.description;
+  }
+
+  markAsRemoved(operatorId: string): void {
+    const now = new ModifyStamp({by: operatorId});
+    this.updated = now;
+    this.status = EnumStatus.DEACTIVE;
+  }
 }
 
 export interface HotelRelations {}

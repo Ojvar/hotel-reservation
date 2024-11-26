@@ -1,4 +1,3 @@
-import {Constructor} from '@loopback/context';
 import {Model, model, property} from '@loopback/repository';
 
 export enum EnumStatus {
@@ -22,11 +21,14 @@ export type CalendarDayItems = CalendarDayItem[];
 
 @model()
 export class ModifyStamp extends Model {
+  @property({type: 'date', required: true})
   at: Date;
+  @property({type: 'string', required: true})
   by: string;
 
   constructor(data?: Partial<ModifyStamp>) {
     super(data);
+    this.at = this.at ?? new Date();
   }
 }
 

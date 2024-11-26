@@ -5,4 +5,3 @@ export const adjustRange = (value = 100, min = 0, max = 100) =>
   Math.max(min, Math.min(value, max));
 
 export const adjustMin = (value: number = 0, min = 0) => Math.max(min, value);
-

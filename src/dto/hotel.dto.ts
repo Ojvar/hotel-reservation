@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {Model, model, property} from '@loopback/repository';
-import {EnumStatus, EnumStatusValues, GeoPoint, Hotel} from '../models';
+import {
+  EnumStatus,
+  EnumStatusValues,
+  GeoPoint,
+  Hotel,
+  ModifyStamp,
+} from '../models';
 
 @model()
 export class HotelFilter extends Model {
@@ -35,6 +42,40 @@ export class GeoPointDTO extends Model {
 }
 
 @model()
+export class NewHotelDTO extends Model {
+  @property({type: 'string', required: true})
+  name: string;
+  @property({type: 'object', itemType: 'string', default: {}})
+  contact?: HotelContact;
+  @property({type: 'string', required: true})
+  zone: string;
+  @property({required: false})
+  location?: GeoPointDTO;
+  @property({type: 'string'})
+  description?: string;
+  @property({type: 'object', default: {}})
+  meta?: HotelMeta;
+
+  constructor(data?: Partial<HotelFilter>) {
+    super(data);
+  }
+
+  toModel(opeartorId: string): Hotel {
+    const now = new ModifyStamp({by: opeartorId});
+    return new Hotel({
+      created: now,
+      updated: now,
+      name: this.name,
+      contact: this.contact ?? {},
+      zone: this.zone,
+      location: this.location,
+      description: this.description,
+      meta: this.meta ?? {},
+    });
+  }
+}
+
+@model()
 export class HotelDTO extends Model {
   @property({type: 'string', require: true})
   id?: string;
@@ -61,8 +102,17 @@ export class HotelDTO extends Model {
   @property({type: 'object', default: {}})
   meta?: HotelMeta;
 
-  constructor(data?: Partial<HotelFilter>) {
+  constructor(data?: Partial<HotelDTO>) {
     super(data);
+  }
+
+  toModel(opeartorId: string): Hotel {
+    const now = new ModifyStamp({by: opeartorId});
+    return new Hotel({
+      created: now,
+      updated: now,
+      name: this.name,
+    });
   }
 
   static fromModel(data: Hotel): HotelDTO {
