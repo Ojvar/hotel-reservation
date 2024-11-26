@@ -92,6 +92,7 @@ export class HotelController {
       new NewHotelDTO(body),
     );
   }
+
   @del(`${BASE_ADDR}/{hotel_id}`, {
     tags,
     summary: 'Delete a hotel',

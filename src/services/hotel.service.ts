@@ -31,7 +31,7 @@ export class HotelService {
   }
 
   async getHotelById(hotelId: string): Promise<HotelDTO> {
-    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    const hotel = await this.hotelRepo.findById(hotelId);
     return HotelDTO.fromModel(hotel);
   }
 
@@ -45,14 +45,14 @@ export class HotelService {
     hotelId: string,
     hotelData: NewHotelDTO,
   ): Promise<HotelDTO> {
-    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    const hotel = await this.hotelRepo.findById(hotelId);
     hotel.update(operatorId, hotelData.toModel(operatorId));
     await this.hotelRepo.update(hotel);
     return HotelDTO.fromModel(hotel);
   }
 
   async removeHotel(operatorId: string, hotelId: string): Promise<void> {
-    const hotel = await this.hotelRepo.findHotelByIdOrFail(hotelId);
+    const hotel = await this.hotelRepo.findById(hotelId);
     hotel.markAsRemoved(operatorId);
     await this.hotelRepo.update(hotel);
   }

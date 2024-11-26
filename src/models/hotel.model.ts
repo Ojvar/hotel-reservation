@@ -16,7 +16,10 @@ export class GeoPoint extends Model {
   }
 }
 
-@model()
+@model({
+  name: 'hotels',
+  settings: {indexes: [{key: 'zone'}]},
+})
 export class Hotel extends Entity {
   @property({type: 'string', id: true, generated: true})
   id?: string;

@@ -63,6 +63,7 @@ export class NewHotelDTO extends Model {
   toModel(opeartorId: string): Hotel {
     const now = new ModifyStamp({by: opeartorId});
     return new Hotel({
+      status: EnumStatus.ACTIVE,
       created: now,
       updated: now,
       name: this.name,
@@ -109,6 +110,7 @@ export class HotelDTO extends Model {
   toModel(opeartorId: string): Hotel {
     const now = new ModifyStamp({by: opeartorId});
     return new Hotel({
+      status: EnumStatus.ACTIVE,
       created: now,
       updated: now,
       name: this.name,
