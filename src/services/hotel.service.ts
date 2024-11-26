@@ -35,7 +35,7 @@ export class HotelService {
     return HotelDTO.fromModel(hotel);
   }
 
-  async ewHotel(operatorId: string, newData: NewHotelDTO): Promise<HotelDTO> {
+  async newHotel(operatorId: string, newData: NewHotelDTO): Promise<HotelDTO> {
     const hotel = await this.hotelRepo.create(newData.toModel(operatorId));
     return HotelDTO.fromModel(hotel);
   }
