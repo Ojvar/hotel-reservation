@@ -5,7 +5,13 @@ import {
   BelongsToAccessor,
 } from '@loopback/repository';
 import {QengDataSource} from '../datasources';
-import {Reservation, ReservationRelations, Hotel, Discount} from '../models';
+import {
+  Reservation,
+  ReservationRelations,
+  Hotel,
+  Discount,
+  EnumStatus,
+} from '../models';
 import {HotelRepository} from './hotel.repository';
 import {DiscountRepository} from './discount.repository';
 
@@ -42,5 +48,15 @@ export class ReservationRepository extends DefaultCrudRepository<
       hotelRepositoryGetter,
     );
     this.registerInclusionResolver('hotel', this.hotel.inclusionResolver);
+  }
+
+  async findConflicts(hotelId: string, days: Date[]): Promise<Reservation[]> {
+    return this.find({
+      where: {
+        status: EnumStatus.ACTIVE,
+        hotel_id: hotelId,
+        'days.date': {inq: days},
+      } as object,
+    });
   }
 }

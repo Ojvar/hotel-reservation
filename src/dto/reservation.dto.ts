@@ -1,8 +1,10 @@
 import {Model, model, property} from '@loopback/repository';
 import {
   CalendarDayItem,
+  CalendarDayItems,
   EnumStatus,
   EnumStatusValues,
+  ModifyStamp,
   Reservation,
   ReservationWithRelations,
 } from '../models';
@@ -89,3 +91,54 @@ export class ReservationDTO extends Model {
   }
 }
 export type ReservationsDTO = ReservationDTO[];
+
+@model()
+export class ReservationFilter extends Model {
+  @property({type: 'string'})
+  id: string;
+  @property({type: 'string'})
+  hotel_id: string;
+  @property({type: 'string'})
+  status: string;
+  @property({type: 'string'})
+  transaction_id: string;
+  @property({type: 'string'})
+  days: CalendarDayItems;
+
+  constructor(data?: Partial<ReservationFilter>) {
+    super(data);
+  }
+}
+
+@model()
+export class NewReservationDTO extends Model {
+  @property({type: 'string', required: true})
+  hotel_id: string;
+  @property({type: 'string', required: false})
+  user_id?: string;
+  @property.array(CalendarDayItemDTO, {required: true})
+  days: CalendarDayItems;
+  @property({type: 'string', required: false})
+  discount_id?: string;
+
+  constructor(data?: Partial<NewReservationDTO>) {
+    super(data);
+  }
+
+  toModel(operatorId: string): Reservation {
+    const now = new ModifyStamp({by: operatorId});
+    return new Reservation({
+      created: now,
+      updated: now,
+      days: this.days.map(
+        day =>
+          new CalendarDayItemDTO({date: new Date(day.date), value: +day.value}),
+      ),
+      user_id: this.user_id,
+      hotel_id: this.hotel_id,
+      status: EnumStatus.ACTIVE,
+      paied: 0,
+      total: 0,
+    });
+  }
+}

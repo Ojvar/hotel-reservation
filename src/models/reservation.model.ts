@@ -46,6 +46,11 @@ export class Reservation extends Entity {
   constructor(data?: Partial<Reservation>) {
     super(data);
   }
+
+  markAsRemoved(operatorId: string): void {
+    this.status = EnumStatus.DEACTIVE;
+    this.updated = new ModifyStamp({by: operatorId});
+  }
 }
 
 export interface ReservationRelations {

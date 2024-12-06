@@ -86,6 +86,7 @@ export function getApplicationConfig(
       password: process.env.QENG_DB_PASSWORD,
       database: process.env.QENG_DB_DATABASE,
     },
+    reservationServiceConfig: {targetWalletId: process.env.TARGET_EWALLET_ID},
   };
 }
 

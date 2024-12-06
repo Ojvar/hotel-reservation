@@ -9,6 +9,7 @@ import {
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {QengDataSource, QengDataSourceConfig} from './datasources';
+import {ReservationService, ReservationServiceConfig} from './services';
 //import * as sentry from '@sentry/node';
 
 export {ApplicationConfig};
@@ -19,6 +20,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   //  allowedList: string;
   //  rejectedList: string;
   //};
+  reservationServiceConfig: ReservationServiceConfig;
   qengDataSourceConfig: QengDataSourceConfig;
 };
 
@@ -75,9 +77,11 @@ export class ProjectsServiceApplication extends BootMixin(
     //this.component(KeycloakComponent);
     //this.sequence(KeycloakSequence);
 
-    // Datasources
     this.bind(QengDataSource.CONFIG_BINDING_KEY).to(
       options.qengDataSourceConfig,
+    );
+    this.bind(ReservationService.CONFIG_BINDING_KEY).to(
+      options.reservationServiceConfig,
     );
   }
 }
