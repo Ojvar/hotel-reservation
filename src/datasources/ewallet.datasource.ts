@@ -75,7 +75,6 @@ export class EwalletDataSource
     @inject(EwalletDataSource.CONFIG_BINDING_KEY, {optional: true})
     dsConfig: EwalletDataSourceConfig = {baseURL: ''},
   ) {
-    console.debug(getConfig(dsConfig));
     super(getConfig(dsConfig));
   }
 }
