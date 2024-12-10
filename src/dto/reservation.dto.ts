@@ -115,14 +115,15 @@ export class ReservationFilter extends Model {
 export class NewReservationDTO extends Model {
   @property({type: 'string', required: true})
   hotel_id: string;
-  @property({type: 'string', required: false})
-  user_id?: string;
   @property.array(CalendarDayItemDTO, {required: true})
   days: CalendarDayItems;
   @property({type: 'string', required: false})
   discount_id?: string;
   @property({type: 'number', required: true})
   year: number;
+
+  //@property({type: 'string', required: false})
+  user_id: string;
 
   constructor(data?: Partial<NewReservationDTO>) {
     super(data);

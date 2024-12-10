@@ -15,6 +15,7 @@ import {
 } from '../models';
 import {HotelRepository} from './hotel.repository';
 import {DiscountRepository} from './discount.repository';
+import {ObjectId} from 'bson';
 
 export class ReservationRepository extends DefaultCrudRepository<
   Reservation,
@@ -51,13 +52,66 @@ export class ReservationRepository extends DefaultCrudRepository<
     this.registerInclusionResolver('hotel', this.hotel.inclusionResolver);
   }
 
-  async findConflicts(hotelId: string, days: Date[]): Promise<Reservation[]> {
-    return this.find({
+  async findConflicts(
+    userId: string,
+    hotel: Hotel,
+    days: Date[],
+  ): Promise<Reservation[]> {
+    const reservedResult = await this.find({
       where: {
         status: EnumStatus.ACTIVE,
-        hotel_id: hotelId,
+        hotel_id: hotel.id?.toString(),
         'days.date': {inq: days},
       } as object,
     });
+
+    if (reservedResult.length > 0) {
+      return reservedResult;
+    }
+
+    // Check for zone reservation restriction
+    function formatDate(date: Date) {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      return `${year}-${month}`;
+    }
+    const reservationDates = Array.from(new Set(days.map(formatDate)));
+
+    const aggregate = [
+      {$match: {user_id: new ObjectId(userId), status: EnumStatus.ACTIVE}},
+      {
+        $set: {
+          days: {
+            $map: {
+              input: '$days',
+              as: 'day',
+              in: {
+                date: '$$day.date',
+                price: '$$day.price',
+                formattedDate: {
+                  $dateToString: {format: '%Y-%m', date: '$$day.date'},
+                },
+              },
+            },
+          },
+        },
+      },
+      {$match: {'days.formattedDate': {$in: reservationDates}}},
+      {
+        $lookup: {
+          from: 'hotels',
+          localField: 'hotel_id',
+          foreignField: '_id',
+          as: 'hotel',
+        },
+      },
+      {$match: {'hotel.zone': hotel.zone}},
+    ];
+    const pointer = await this.execute(
+      Reservation.modelName,
+      'aggregate',
+      aggregate,
+    );
+    return (await pointer.toArray()) ?? [];
   }
 }

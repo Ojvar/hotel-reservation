@@ -1,6 +1,10 @@
 import {injectable, BindingScope, BindingKey, inject} from '@loopback/core';
 import {Filter, IsolationLevel, repository} from '@loopback/repository';
-import {HotelCalendarRepository, ReservationRepository} from '../repositories';
+import {
+  HotelCalendarRepository,
+  HotelRepository,
+  ReservationRepository,
+} from '../repositories';
 import {
   NewReservationDTO,
   ReservationDTO,
@@ -37,6 +41,8 @@ export class ReservationService {
     private reservationRepo: ReservationRepository,
     @repository(HotelCalendarRepository)
     private hotelCalendarRepo: HotelCalendarRepository,
+    @repository(HotelRepository)
+    private hotelRepo: HotelRepository,
   ) {}
 
   async getReservations(
@@ -64,7 +70,7 @@ export class ReservationService {
     operatorId: string,
     data: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    await this.checkConflicts(data);
+    await this.checkConflicts(data.user_id, data.hotel_id, data.days);
 
     const transaction = await this.reservationRepo.dataSource.beginTransaction(
       IsolationLevel.READ_COMMITTED,
@@ -103,10 +109,16 @@ export class ReservationService {
     await this.reservationRepo.update(reservation);
   }
 
-  private async checkConflicts(data: NewReservationDTO): Promise<void> {
+  private async checkConflicts(
+    userId: string,
+    hotelId: string,
+    days: CalendarDayItems,
+  ): Promise<void> {
+    const hotel = await this.hotelRepo.findById(hotelId);
     const oldReservations = await this.reservationRepo.findConflicts(
-      data.hotel_id,
-      data.days.map(day => day.date),
+      userId,
+      hotel,
+      days.map(day => day.date),
     );
     if (oldReservations.length) {
       throw new HttpErrors.UnprocessableEntity(
