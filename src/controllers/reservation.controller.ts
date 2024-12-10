@@ -1,4 +1,11 @@
-import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
+import {
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  post,
+  requestBody,
+} from '@loopback/rest';
 import {ReservationService} from '../services';
 import {
   NewReservationDTO,
@@ -8,6 +15,7 @@ import {
 } from '../dto';
 import {Filter} from '@loopback/repository';
 import {inject} from '@loopback/context';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 
 const BASE_ADDR = '/reservations/';
 const tags = ['Reservations'];
@@ -16,6 +24,8 @@ export class ReservationController {
   constructor(
     @inject(ReservationService.BINDING_KEY)
     private reservationService: ReservationService,
+    @inject(KeycloakSecurityProvider.BINDING_KEY)
+    private keycloakSecurity: KeycloakSecurity,
   ) {}
 
   @get(`${BASE_ADDR}`, {
@@ -50,14 +60,27 @@ export class ReservationController {
       },
     },
   })
-  registerReservations(
+  async registerReservations(
     @requestBody() body: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     body.user_id = operatorId;
     return this.reservationService.newReservations(
       operatorId,
       new NewReservationDTO(body),
     );
+  }
+
+  @del(`${BASE_ADDR}/{reservation_id}`, {
+    tags,
+    summary: 'Remove reservation',
+    description: 'Remove reservation',
+    responses: {204: {}},
+  })
+  async removeReservation(
+    @param.path.string('reservation_id') reservationId: string,
+  ): Promise<void> {
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    return this.reservationService.removeReservation(operatorId, reservationId);
   }
 }

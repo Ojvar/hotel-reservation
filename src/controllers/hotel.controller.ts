@@ -11,6 +11,7 @@ import {
 import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
 import {inject} from '@loopback/context';
 import {HotelService} from '../services';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
@@ -18,6 +19,8 @@ const tags = ['Hotel'];
 export class HotelController {
   constructor(
     @inject(HotelService.BINDING_KEY) private hotelService: HotelService,
+    @inject(KeycloakSecurityProvider.BINDING_KEY)
+    private keycloakSecurity: KeycloakSecurity,
   ) {}
 
   @get(`${BASE_ADDR}`, {
@@ -66,8 +69,8 @@ export class HotelController {
       },
     },
   })
-  createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
-    const operatorId = '';
+  async createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.newHotel(operatorId, new NewHotelDTO(body));
   }
 
@@ -81,11 +84,11 @@ export class HotelController {
       },
     },
   })
-  updateHotel(
+  async updateHotel(
     @requestBody() body: NewHotelDTO,
     @param.path.string('hote_id') hotelId: string,
   ): Promise<HotelDTO> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.updateHotel(
       operatorId,
       hotelId,
@@ -99,8 +102,10 @@ export class HotelController {
     description: 'Delete a hotel',
     responses: {204: {}},
   })
-  removeHotel(@param.path.string('hote_id') hotelId: string): Promise<void> {
-    const operatorId = '';
+  async removeHotel(
+    @param.path.string('hote_id') hotelId: string,
+  ): Promise<void> {
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.removeHotel(operatorId, hotelId);
   }
 }

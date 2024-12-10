@@ -16,6 +16,7 @@ import {
 import {inject} from '@loopback/context';
 import {DiscountService} from '../services';
 import {Filter} from '@loopback/repository';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 
 const BASE_ADDR = '/discounts/';
 const tags = ['Discounts'];
@@ -24,6 +25,8 @@ export class DiscountController {
   constructor(
     @inject(DiscountService.BINDING_KEY)
     private discountService: DiscountService,
+    @inject(KeycloakSecurityProvider.BINDING_KEY)
+    private keycloakSecurity: KeycloakSecurity,
   ) {}
 
   @get(`${BASE_ADDR}`, {
@@ -84,10 +87,10 @@ export class DiscountController {
     description: 'Remove discount by id',
     responses: {204: {}},
   })
-  removeDiscount(
+  async removeDiscount(
     @param.path.string('discount_id') discountId: string,
   ): Promise<void> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.discountService.removeDiscount(operatorId, discountId);
   }
 
@@ -101,8 +104,10 @@ export class DiscountController {
       },
     },
   })
-  createDiscount(@requestBody() body: NewDiscountDTO): Promise<DiscountDTO> {
-    const operatorId = '';
+  async createDiscount(
+    @requestBody() body: NewDiscountDTO,
+  ): Promise<DiscountDTO> {
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.discountService.createDiscount(
       operatorId,
       new NewDiscountDTO(body),
@@ -119,11 +124,11 @@ export class DiscountController {
       },
     },
   })
-  editDiscount(
+  async editDiscount(
     @requestBody() body: NewDiscountDTO,
     @param.path.string('discount_id') discountId: string,
   ): Promise<DiscountDTO> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.discountService.editDiscount(
       operatorId,
       discountId,

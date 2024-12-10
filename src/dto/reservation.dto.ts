@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {Model, model, property} from '@loopback/repository';
 import {
   CalendarDayItem,
@@ -120,6 +121,8 @@ export class NewReservationDTO extends Model {
   days: CalendarDayItems;
   @property({type: 'string', required: false})
   discount_id?: string;
+  @property({type: 'number', required: true})
+  year: number;
 
   constructor(data?: Partial<NewReservationDTO>) {
     super(data);

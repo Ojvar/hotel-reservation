@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {inject, Getter} from '@loopback/core';
 import {
   DefaultCrudRepository,

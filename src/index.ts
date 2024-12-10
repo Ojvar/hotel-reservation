@@ -74,10 +74,10 @@ export function getApplicationConfig(
     //    process.env.SENTRY_PROFILES_SAMPLE_RATE ?? '0.3',
     //  ),
     //},
-    //keycloak: {
-    //  allowedList: process.env.KEYCLOAK_ALLOWED_LIST,
-    //  rejectedList: process.env.KEYCLOAK_REJECTED_LIST,
-    //},
+    keycloak: {
+      allowedList: process.env.KEYCLOAK_ALLOWED_LIST,
+      rejectedList: process.env.KEYCLOAK_REJECTED_LIST,
+    },
     qengDataSourceConfig: {
       user: process.env.QENG_DB_USER,
       url: process.env.QENG_DB_URL,
@@ -86,7 +86,10 @@ export function getApplicationConfig(
       password: process.env.QENG_DB_PASSWORD,
       database: process.env.QENG_DB_DATABASE,
     },
-    reservationServiceConfig: {targetWalletId: process.env.TARGET_EWALLET_ID},
+    reservationServiceConfig: {
+      targetWalletId: process.env.TARGET_EWALLET_USER_ID,
+    },
+    ewalletDataSourceConfig: {baseURL: process.env.EWALLET_DS_BASE_URL},
   };
 }
 

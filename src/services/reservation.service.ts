@@ -1,6 +1,6 @@
 import {injectable, BindingScope, BindingKey, inject} from '@loopback/core';
 import {Filter, IsolationLevel, repository} from '@loopback/repository';
-import {ReservationRepository} from '../repositories';
+import {HotelCalendarRepository, ReservationRepository} from '../repositories';
 import {
   NewReservationDTO,
   ReservationDTO,
@@ -9,6 +9,9 @@ import {
 } from '../dto';
 import {adjustMin, adjustRange} from '../helpers';
 import {HttpErrors} from '@loopback/rest';
+import {Ewallet, EwalletProvider, TransferResult} from './ewallet.service';
+import {CalendarDayItems, HotelCalendar, Reservation} from '../models';
+import {KeycloakAgentService} from '../lib-keycloak/src';
 
 export type ReservationServiceConfig = {
   targetWalletId: string;
@@ -27,8 +30,13 @@ export class ReservationService {
   constructor(
     @inject(ReservationService.CONFIG_BINDING_KEY)
     private configs: ReservationServiceConfig,
+    @inject(EwalletProvider.BINDING_KEY) private ewallet: Ewallet,
+    @inject(KeycloakAgentService.BINDING_KEY)
+    private keycloakAgentService: KeycloakAgentService,
     @repository(ReservationRepository)
     private reservationRepo: ReservationRepository,
+    @repository(HotelCalendarRepository)
+    private hotelCalendarRepo: HotelCalendarRepository,
   ) {}
 
   async getReservations(
@@ -56,40 +64,32 @@ export class ReservationService {
     operatorId: string,
     data: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    const oldReservations = await this.reservationRepo.findConflicts(
-      data.hotel_id,
-      data.days.map(day => day.date),
-    );
-    if (oldReservations.length) {
-      throw new HttpErrors.UnprocessableEntity(
-        'The reservation dates are unavailable',
-      );
-    }
+    await this.checkConflicts(data);
 
-    // Start Transaction
     const transaction = await this.reservationRepo.dataSource.beginTransaction(
       IsolationLevel.READ_COMMITTED,
     );
-
     try {
+      const hotelCalendar = await this.getHotelCalendar(
+        data.hotel_id,
+        data.year,
+      );
+      const total = await this.calcReservationAmount(hotelCalendar, data.days);
+
+      // TODO: Fetch discount record from database
+      const discount = 0;
+
+      const paied = total - discount;
       const reservation = await this.reservationRepo.create(
-        data.toModel(operatorId),
+        {...data.toModel(operatorId), total, paied},
         {transaction},
       );
 
-      /// TODO: WITHDRAW FROM E-WALLET, AND MOVE IT TO QENG-WALLET
-      console.warn(
-        `Move from user ewallet to target ewallet, id -> ${this.configs.targetWalletId}`,
-      );
-
-      // Commit Transaction
+      await this.transferMoney(reservation);
       await transaction.commit();
-
       return ReservationDTO.fromModel(reservation);
     } catch (err) {
       await transaction.rollback();
-
-      // Rollback Transaction
       throw new HttpErrors.UnprocessableEntity('Reservation failed!');
     }
   }
@@ -101,5 +101,54 @@ export class ReservationService {
     const reservation = await this.reservationRepo.findById(reservationId);
     reservation.markAsRemoved(operatorId);
     await this.reservationRepo.update(reservation);
+  }
+
+  private async checkConflicts(data: NewReservationDTO): Promise<void> {
+    const oldReservations = await this.reservationRepo.findConflicts(
+      data.hotel_id,
+      data.days.map(day => day.date),
+    );
+    if (oldReservations.length) {
+      throw new HttpErrors.UnprocessableEntity(
+        'The reservation dates are unavailable',
+      );
+    }
+  }
+
+  private getHotelCalendar(
+    hotelId: string,
+    year: number,
+  ): Promise<HotelCalendar> {
+    return this.hotelCalendarRepo.findByHotelIdAndYearOrFail(hotelId, year);
+  }
+
+  private async calcReservationAmount(
+    hotelCalendar: HotelCalendar,
+    days: CalendarDayItems,
+  ): Promise<number> {
+    const daysAsNumber = days.map(day => +new Date(day.date));
+    return (
+      hotelCalendar.days
+        ?.filter(day => daysAsNumber.includes(+new Date(day.day)))
+        .reduce((total, day) => total + day.price, 0) ?? -1
+    );
+  }
+
+  private async transferMoney(
+    reservation: Reservation,
+  ): Promise<TransferResult> {
+    const sourceEWalletUserId = reservation.user_id;
+    const targetEWalletUserId = this.configs.targetWalletId;
+
+    const {access_token: token} =
+      await this.keycloakAgentService.getAdminToken();
+    return this.ewallet.transfer(
+      token,
+      sourceEWalletUserId,
+      targetEWalletUserId,
+      reservation.total,
+      '',
+      {tags: ['RESERVATION']},
+    );
   }
 }

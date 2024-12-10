@@ -16,6 +16,7 @@ import {
   NewHotelCalendarDTO,
 } from '../dto';
 import {Filter} from '@loopback/repository';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
 
 const BASE_ADDR = '/hotels/calendars/';
 const tags = ['Hotel.Calendars'];
@@ -24,6 +25,8 @@ export class HotelCalendarController {
   constructor(
     @inject(HotelCalendarService.BINDING_KEY)
     private hotelCalendarService: HotelCalendarService,
+    @inject(KeycloakSecurityProvider.BINDING_KEY)
+    private keycloakSecurity: KeycloakSecurity,
   ) {}
 
   @get(`${BASE_ADDR}`, {
@@ -95,10 +98,10 @@ export class HotelCalendarController {
       },
     },
   })
-  createNewHotelCalendar(
+  async createNewHotelCalendar(
     @requestBody() body: NewHotelCalendarDTO,
   ): Promise<HotelCalendarDTO> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelCalendarService.newHotelCalendar(
       operatorId,
       new NewHotelCalendarDTO(body),
@@ -117,11 +120,11 @@ export class HotelCalendarController {
       },
     },
   })
-  editHotelCalendar(
+  async editHotelCalendar(
     @requestBody() body: NewHotelCalendarDTO,
     @param.path.string('hotel_calendar_id') hotelCalendarId: string,
   ): Promise<HotelCalendarDTO> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelCalendarService.editHotelCalendar(
       operatorId,
       hotelCalendarId,
@@ -135,10 +138,10 @@ export class HotelCalendarController {
     description: 'Remove calendar of the hotel',
     responses: {204: {}},
   })
-  removeHotelCalendar(
+  async removeHotelCalendar(
     @param.path.string('hotel_calendar_id') hotelCalendarId: string,
   ): Promise<void> {
-    const operatorId = '';
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelCalendarService.removeHotelCalendar(
       operatorId,
       hotelCalendarId,

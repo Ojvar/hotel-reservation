@@ -19,9 +19,10 @@ declare namespace NodeJS {
     QENG_DB_PASSWORD: string;
     QENG_DB_DATABASE: string;
 
-    TARGET_EWALLET_ID: string;
-
     KEYCLOAK_ALLOWED_LIST: string;
     KEYCLOAK_REJECTED_LIST: string;
+
+    TARGET_EWALLET_USER_ID: string;
+    EWALLET_DS_BASE_URL: string;
   }
 }
