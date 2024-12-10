@@ -35,7 +35,7 @@ const getConfig = ({baseURL}: AnyObject & EwalletDataSourceConfig): object => {
           body: {
             source_user_id: '{sourceEWalletUserId}',
             target_user_id: '{targetEWalletUserId}',
-            amount: '{ammount}',
+            amount: '{amount}',
             description: '{description}',
             meta: '{meta}',
           },
@@ -75,6 +75,7 @@ export class EwalletDataSource
     @inject(EwalletDataSource.CONFIG_BINDING_KEY, {optional: true})
     dsConfig: EwalletDataSourceConfig = {baseURL: ''},
   ) {
+    console.debug(getConfig(dsConfig));
     super(getConfig(dsConfig));
   }
 }
