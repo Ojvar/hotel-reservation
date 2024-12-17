@@ -71,11 +71,14 @@ export class ReservationRepository extends DefaultCrudRepository<
 
     // Check for zone reservation restriction
     function formatDate(date: Date) {
+      date = new Date(date);
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       return `${year}-${month}`;
     }
     const reservationDates = Array.from(new Set(days.map(formatDate)));
+
+    console.debug({hotel, days, userId});
 
     const aggregate = [
       {$match: {user_id: new ObjectId(userId), status: EnumStatus.ACTIVE}},

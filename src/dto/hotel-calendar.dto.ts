@@ -28,7 +28,7 @@ export type HotelCalendarMeta = Record<string, string | number>;
 
 @model()
 export class NewHotelCalendarDayDTO extends Model {
-  @property({type: 'string', format: 'date', required: true})
+  @property({type: 'date', required: true})
   day: Date;
   @property({type: 'number', required: true})
   price: number;

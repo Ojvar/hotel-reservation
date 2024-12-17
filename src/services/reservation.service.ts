@@ -14,7 +14,7 @@ import {
 import {adjustMin, adjustRange} from '../helpers';
 import {HttpErrors} from '@loopback/rest';
 import {Ewallet, EwalletProvider, TransferResult} from './ewallet.service';
-import {CalendarDayItems, HotelCalendar, Reservation} from '../models';
+import {HotelCalendar, Reservation} from '../models';
 import {KeycloakAgentService} from '../lib-keycloak/src';
 
 export type ReservationServiceConfig = {
@@ -70,6 +70,7 @@ export class ReservationService {
     operatorId: string,
     data: NewReservationDTO,
   ): Promise<ReservationDTO> {
+    console.debug(operatorId, data);
     await this.checkConflicts(data.user_id, data.hotel_id, data.days);
 
     const transaction = await this.reservationRepo.dataSource.beginTransaction(
@@ -112,13 +113,13 @@ export class ReservationService {
   private async checkConflicts(
     userId: string,
     hotelId: string,
-    days: CalendarDayItems,
+    days: Date[],
   ): Promise<void> {
     const hotel = await this.hotelRepo.findById(hotelId);
     const oldReservations = await this.reservationRepo.findConflicts(
       userId,
       hotel,
-      days.map(day => day.date),
+      days,
     );
     if (oldReservations.length) {
       throw new HttpErrors.UnprocessableEntity(
@@ -136,9 +137,9 @@ export class ReservationService {
 
   private async calcReservationAmount(
     hotelCalendar: HotelCalendar,
-    days: CalendarDayItems,
+    days: Date[],
   ): Promise<number> {
-    const daysAsNumber = days.map(day => +new Date(day.date));
+    const daysAsNumber = days.map(date => +new Date(date));
     return (
       hotelCalendar.days
         ?.filter(day => daysAsNumber.includes(+new Date(day.day)))

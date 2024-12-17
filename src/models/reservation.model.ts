@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {Entity, model, property, belongsTo} from '@loopback/repository';
-import {
-  CalendarDayItem,
-  CalendarDayItems,
-  EnumStatus,
-  EnumStatusValues,
-  ModifyStamp,
-} from './common.model';
+import {EnumStatus, EnumStatusValues, ModifyStamp} from './common.model';
 import {Hotel} from './hotel.model';
 import {Discount} from './discount.model';
 
@@ -29,19 +23,24 @@ export class Reservation extends Entity {
   status: EnumStatus;
   @property({type: 'string', required: true})
   user_id: string;
-  @property.array(CalendarDayItem, {required: true})
-  days: CalendarDayItems;
+  @property.array(Date, {required: true})
+  days: Date[];
   @property({type: 'number', required: true})
   total: number;
   @property({type: 'number'})
   paied?: number;
   @property({type: 'string', required: false})
   transaction_id?: string;
+  @property({type: 'number', required: true})
+  passengers_count: number;
 
   @belongsTo(() => Hotel, {name: 'hotel'}, {required: true})
   hotel_id: string;
   @belongsTo(() => Discount, {name: 'discount'}, {required: false})
   discount_id?: string;
+
+  @property({required: false})
+  confirmed?: ModifyStamp;
 
   constructor(data?: Partial<Reservation>) {
     super(data);

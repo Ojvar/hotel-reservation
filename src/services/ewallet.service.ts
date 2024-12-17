@@ -23,7 +23,7 @@ export interface Ewallet {
 }
 
 export class EwalletProvider implements Provider<Ewallet> {
-  static readonly BINDING_KEY = BindingKey.create<Ewallet>(`services.EWallet`);
+  static readonly BINDING_KEY = BindingKey.create<Ewallet>(`services.Ewallet`);
 
   constructor(
     @inject(EwalletDataSource.BINDING_KEY)

@@ -48,8 +48,8 @@ export class ReservationDTO extends Model {
   status: EnumStatus;
   @property({type: 'string', required: true})
   user_id: string;
-  @property.array(CalendarDayItemDTO, {required: true})
-  days: CalendarDayItemsDTO;
+  @property.array(Date, {required: true})
+  days: Date[];
   @property({type: 'number', required: true})
   total: number;
   @property({type: 'number'})
@@ -78,7 +78,7 @@ export class ReservationDTO extends Model {
       updated_at: data.updated.at,
       status: data.status,
       user_id: data.user_id,
-      days: data.days.map(CalendarDayItemDTO.fromModel),
+      days: data.days,
       total: data.total,
       paied: data.paied,
       transaction_id: data.transaction_id,
@@ -115,12 +115,14 @@ export class ReservationFilter extends Model {
 export class NewReservationDTO extends Model {
   @property({type: 'string', required: true})
   hotel_id: string;
-  @property.array(CalendarDayItemDTO, {required: true})
-  days: CalendarDayItems;
+  @property.array(Date, {required: true})
+  days: Date[];
   @property({type: 'string', required: false})
   discount_id?: string;
   @property({type: 'number', required: true})
   year: number;
+  @property({type: 'number', required: true})
+  passengers_count: number;
 
   //@property({type: 'string', required: false})
   user_id: string;
@@ -134,10 +136,8 @@ export class NewReservationDTO extends Model {
     return new Reservation({
       created: now,
       updated: now,
-      days: this.days.map(
-        day =>
-          new CalendarDayItemDTO({date: new Date(day.date), value: +day.value}),
-      ),
+      days: this.days.map(date => new Date(date)),
+      passengers_count: +this.passengers_count,
       user_id: this.user_id,
       hotel_id: this.hotel_id,
       status: EnumStatus.ACTIVE,
