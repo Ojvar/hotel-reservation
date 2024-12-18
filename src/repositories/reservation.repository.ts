@@ -59,9 +59,9 @@ export class ReservationRepository extends DefaultCrudRepository<
   ): Promise<Reservation[]> {
     const reservedResult = await this.find({
       where: {
-        status: EnumStatus.ACTIVE,
+        status: EnumStatus.ACCEPTED,
         hotel_id: hotel.id?.toString(),
-        'days.date': {inq: days},
+        days: {inq: days},
       } as object,
     });
 
@@ -77,29 +77,20 @@ export class ReservationRepository extends DefaultCrudRepository<
       return `${year}-${month}`;
     }
     const reservationDates = Array.from(new Set(days.map(formatDate)));
-
-    console.debug({hotel, days, userId});
-
     const aggregate = [
-      {$match: {user_id: new ObjectId(userId), status: EnumStatus.ACTIVE}},
+      {$match: {user_id: new ObjectId(userId), status: EnumStatus.ACCEPTED}},
       {
         $set: {
           days: {
             $map: {
               input: '$days',
               as: 'day',
-              in: {
-                date: '$$day.date',
-                price: '$$day.price',
-                formattedDate: {
-                  $dateToString: {format: '%Y-%m', date: '$$day.date'},
-                },
-              },
+              in: {$dateToString: {format: '%Y-%m', date: '$$day'}},
             },
           },
         },
       },
-      {$match: {'days.formattedDate': {$in: reservationDates}}},
+      {$match: {days: {$in: reservationDates}}},
       {
         $lookup: {
           from: 'hotels',

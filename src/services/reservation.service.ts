@@ -70,7 +70,6 @@ export class ReservationService {
     operatorId: string,
     data: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    console.debug(operatorId, data);
     await this.checkConflicts(data.user_id, data.hotel_id, data.days);
 
     const transaction = await this.reservationRepo.dataSource.beginTransaction(
@@ -95,8 +94,6 @@ export class ReservationService {
       if (process.env.NO_MONEY_TRANSFER !== 'false') {
         await this.transferMoney(reservation);
       }
-
-      console.debug(reservation);
 
       await transaction.commit();
       return ReservationDTO.fromModel(reservation);
