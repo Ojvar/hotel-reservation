@@ -50,6 +50,16 @@ export class Reservation extends Entity {
     this.status = EnumStatus.DEACTIVE;
     this.updated = new ModifyStamp({by: operatorId});
   }
+
+  confirm(operatorId: string): void {
+    this.status = EnumStatus.ACCEPTED;
+    this.updated = new ModifyStamp({by: operatorId});
+  }
+
+  reject(operatorId: string): void {
+    this.status = EnumStatus.REJECTED;
+    this.updated = new ModifyStamp({by: operatorId});
+  }
 }
 
 export interface ReservationRelations {

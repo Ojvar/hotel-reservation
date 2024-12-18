@@ -26,7 +26,7 @@ export class ReservationController {
     private reservationService: ReservationService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
-  ) { }
+  ) {}
 
   @get(`${BASE_ADDR}`, {
     tags,
@@ -63,7 +63,9 @@ export class ReservationController {
   async registerReservations(
     @requestBody() body: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    const {sub: operatorId} = {sub: "676193da5fc74dacf315a62b"} || await this.keycloakSecurity.getUserInfo();
+    const {sub: operatorId} =
+      {sub: '676193da5fc74dacf315a62b'} ||
+      (await this.keycloakSecurity.getUserInfo());
     body.user_id = operatorId;
     return this.reservationService.newReservations(
       operatorId,
@@ -80,7 +82,9 @@ export class ReservationController {
   async removeReservation(
     @param.path.string('reservation_id') reservationId: string,
   ): Promise<void> {
-    const {sub: operatorId} = {sub: "676193da5fc74dacf315a62b"} || await this.keycloakSecurity.getUserInfo();
+    const {sub: operatorId} =
+      {sub: '676193da5fc74dacf315a62b'} ||
+      (await this.keycloakSecurity.getUserInfo());
     return this.reservationService.removeReservation(operatorId, reservationId);
   }
 }

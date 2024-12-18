@@ -1,10 +1,15 @@
 import {Entity, Model, model, property} from '@loopback/repository';
-import {EnumStatus, EnumStatusValues, ModifyStamp} from './common.model';
+import {
+  EnumStatus,
+  EnumStatusValues,
+  ModifyStamp,
+  REMOVE_ID_SETTING,
+} from './common.model';
 
 export type HotelContact = Record<string, string>;
 export type HotelMeta = Record<string, string | number>;
 
-@model()
+@model({...REMOVE_ID_SETTING})
 export class GeoPoint extends Model {
   @property({type: 'number', required: true})
   long: number;

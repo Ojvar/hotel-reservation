@@ -92,11 +92,17 @@ export class ReservationService {
         {transaction},
       );
 
-      await this.transferMoney(reservation);
+      if (process.env.NO_MONEY_TRANSFER !== 'false') {
+        await this.transferMoney(reservation);
+      }
+
+      console.debug(reservation);
+
       await transaction.commit();
       return ReservationDTO.fromModel(reservation);
     } catch (err) {
       await transaction.rollback();
+      console.error(err);
       throw new HttpErrors.UnprocessableEntity('Reservation failed!');
     }
   }

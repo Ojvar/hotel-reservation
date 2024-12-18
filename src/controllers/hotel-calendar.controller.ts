@@ -27,7 +27,7 @@ export class HotelCalendarController {
     private hotelCalendarService: HotelCalendarService,
     @inject(KeycloakSecurityProvider.BINDING_KEY)
     private keycloakSecurity: KeycloakSecurity,
-  ) { }
+  ) {}
 
   @get(`${BASE_ADDR}`, {
     tags,
@@ -102,7 +102,8 @@ export class HotelCalendarController {
     @requestBody() body: NewHotelCalendarDTO,
   ): Promise<HotelCalendarDTO> {
     const {sub: operatorId} =
-      {sub: '67619b386a7ec7f983d5f4f7'} || (await this.keycloakSecurity.getUserInfo());
+      {sub: '67619b386a7ec7f983d5f4f7'} ||
+      (await this.keycloakSecurity.getUserInfo());
     return this.hotelCalendarService.newHotelCalendar(
       operatorId,
       new NewHotelCalendarDTO(body),
@@ -125,7 +126,9 @@ export class HotelCalendarController {
     @requestBody() body: NewHotelCalendarDTO,
     @param.path.string('hotel_calendar_id') hotelCalendarId: string,
   ): Promise<HotelCalendarDTO> {
-    const {sub: operatorId} = {sub: "676193da5fc74dacf315a62b"} || await this.keycloakSecurity.getUserInfo();
+    const {sub: operatorId} =
+      {sub: '676193da5fc74dacf315a62b'} ||
+      (await this.keycloakSecurity.getUserInfo());
     return this.hotelCalendarService.editHotelCalendar(
       operatorId,
       hotelCalendarId,
@@ -142,7 +145,9 @@ export class HotelCalendarController {
   async removeHotelCalendar(
     @param.path.string('hotel_calendar_id') hotelCalendarId: string,
   ): Promise<void> {
-    const {sub: operatorId} = {sub: "676193da5fc74dacf315a62b"} || await this.keycloakSecurity.getUserInfo();
+    const {sub: operatorId} =
+      {sub: '676193da5fc74dacf315a62b'} ||
+      (await this.keycloakSecurity.getUserInfo());
     return this.hotelCalendarService.removeHotelCalendar(
       operatorId,
       hotelCalendarId,
