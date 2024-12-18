@@ -1,7 +1,9 @@
 import {inject} from '@loopback/context';
 import {ReservationManagementService} from '../services';
-import {param, patch} from '@loopback/rest';
+import {get, getModelSchemaRef, param, patch} from '@loopback/rest';
 import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
+import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/reservation-management/';
 const tags = ['Reservation.Management'];
@@ -48,5 +50,25 @@ export class ReservationManagementController {
       operatorId,
       reservationId,
     );
+  }
+
+  @get(`${BASE_ADDR}`, {
+    tags,
+    summary: 'Get reservations list',
+    description: 'Get reservations list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {type: 'array', items: getModelSchemaRef(ReservationDTO)},
+          },
+        },
+      },
+    },
+  })
+  reservationsList(
+    @param.filter(ReservationFilter) filter: Filter<ReservationFilter> = {},
+  ): Promise<ReservationsDTO> {
+    return this.reservationManagementService.reservationsList(filter);
   }
 }
