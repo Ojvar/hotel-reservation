@@ -3,6 +3,7 @@ import {Entity, model, property, belongsTo} from '@loopback/repository';
 import {EnumStatus, EnumStatusValues, ModifyStamp} from './common.model';
 import {Hotel} from './hotel.model';
 import {Discount} from './discount.model';
+import {HttpErrors} from '@loopback/rest';
 
 @model({
   name: 'reservations',
@@ -52,11 +53,19 @@ export class Reservation extends Entity {
   }
 
   confirm(operatorId: string): void {
+    if (this.status !== EnumStatus.ACTIVE) {
+      throw new HttpErrors.UnprocessableEntity('Invalid state');
+    }
+    const now = new ModifyStamp({by: operatorId});
     this.status = EnumStatus.ACCEPTED;
-    this.updated = new ModifyStamp({by: operatorId});
+    this.confirmed = now;
+    this.updated = now;
   }
 
   reject(operatorId: string): void {
+    if (this.status !== EnumStatus.ACTIVE) {
+      throw new HttpErrors.UnprocessableEntity('Invalid state');
+    }
     this.status = EnumStatus.REJECTED;
     this.updated = new ModifyStamp({by: operatorId});
   }
