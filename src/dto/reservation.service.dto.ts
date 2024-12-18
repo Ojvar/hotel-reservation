@@ -9,8 +9,8 @@ import {
   Reservation,
   ReservationWithRelations,
 } from '../models';
-import {HotelDTO} from './hotel.dto';
-import {DiscountDTO} from './discount.dto';
+import {HotelDTO} from './hotel.service.dto';
+import {DiscountDTO} from './discount.service.dto';
 
 @model()
 export class CalendarDayItemDTO extends Model {

@@ -8,7 +8,7 @@ import {
   HotelCalendarWithRelations,
   ModifyStamp,
 } from '../models';
-import {HotelDTO} from './hotel.dto';
+import {HotelDTO} from './hotel.service.dto';
 
 @model()
 export class HotelCalendarFilter extends Model {
