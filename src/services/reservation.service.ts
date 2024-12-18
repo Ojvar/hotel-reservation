@@ -140,14 +140,18 @@ export class ReservationService {
 
   private async calcReservationAmount(
     hotelCalendar: HotelCalendar,
-    days: Date[],
+    selectedDays: Date[],
   ): Promise<number> {
-    const daysAsNumber = days.map(date => +new Date(date));
-    return (
-      hotelCalendar.days
-        ?.filter(day => daysAsNumber.includes(+new Date(day.day)))
-        .reduce((total, day) => total + day.price, 0) ?? -1
+    const daysAsNumber = selectedDays.map(date => +new Date(date));
+    const days = hotelCalendar.days?.filter(day =>
+      daysAsNumber.includes(+new Date(day.day)),
     );
+    if (days?.length !== selectedDays.length) {
+      throw new HttpErrors.UnprocessableEntity(
+        'Days information are not defined',
+      );
+    }
+    return days.reduce((total, day) => total + day.price, 0) ?? -1;
   }
 
   private async transferMoney(
