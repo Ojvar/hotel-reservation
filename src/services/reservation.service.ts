@@ -137,6 +137,8 @@ export class ReservationService {
     days: Date[],
   ): Promise<void> {
     const hotel = await this.hotelRepo.findById(hotelId);
+
+    // Find reservation conflicts
     const oldReservations = await this.reservationRepo.findConflicts(
       userId,
       hotel,
@@ -147,6 +149,23 @@ export class ReservationService {
         'The reservation dates are unavailable',
       );
     }
+
+    // Check maximum reservation date length
+    // TODO: READ FROM DB
+    const maxZoneReserveLength = 3;
+    const maxDays = this.getMaxRepeationsOfDates(days);
+    if (maxDays > maxZoneReserveLength) {
+      throw new HttpErrors.UnprocessableEntity('Invaliad reservation length');
+    }
+  }
+
+  private getMaxRepeationsOfDates(days: Date[]): number {
+    const datesByMonth = days.reduce<Record<string, number>>((res, day) => {
+      const month = new Date(day).getMonth();
+      console.debug({month, day});
+      return {...res, [month]: (res[month] ?? 0) + 1};
+    }, {});
+    return Object.values(datesByMonth).sort().at(-1) ?? 0;
   }
 
   private getHotelCalendar(
