@@ -70,9 +70,7 @@ export class HotelController {
     },
   })
   async createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
-    const {sub: operatorId} =
-      {sub: '676193da5fc74dacf315a62b'} ||
-      (await this.keycloakSecurity.getUserInfo());
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.newHotel(operatorId, new NewHotelDTO(body));
   }
 
@@ -90,9 +88,7 @@ export class HotelController {
     @requestBody() body: NewHotelDTO,
     @param.path.string('hote_id') hotelId: string,
   ): Promise<HotelDTO> {
-    const {sub: operatorId} =
-      {sub: '676193da5fc74dacf315a62b'} ||
-      (await this.keycloakSecurity.getUserInfo());
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.updateHotel(
       operatorId,
       hotelId,
@@ -109,9 +105,7 @@ export class HotelController {
   async removeHotel(
     @param.path.string('hote_id') hotelId: string,
   ): Promise<void> {
-    const {sub: operatorId} =
-      {sub: '676193da5fc74dacf315a62b'} ||
-      (await this.keycloakSecurity.getUserInfo());
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.hotelService.removeHotel(operatorId, hotelId);
   }
 }

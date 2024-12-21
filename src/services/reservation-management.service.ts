@@ -1,9 +1,9 @@
-import {injectable, BindingScope, BindingKey} from '@loopback/core';
+import {BindingKey, BindingScope, injectable} from '@loopback/core';
 import {Filter, repository} from '@loopback/repository';
-import {ReservationRepository} from '../repositories';
 import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
 import {adjustMin, adjustRange} from '../helpers';
-import {EnumStatus, Reservation} from '../models';
+import {Reservation} from '../models';
+import {ReservationRepository} from '../repositories';
 
 @injectable({scope: BindingScope.APPLICATION})
 export class ReservationManagementService {

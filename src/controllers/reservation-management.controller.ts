@@ -1,9 +1,9 @@
 import {inject} from '@loopback/context';
-import {ReservationManagementService} from '../services';
-import {get, getModelSchemaRef, param, patch} from '@loopback/rest';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
-import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
 import {Filter} from '@loopback/repository';
+import {get, getModelSchemaRef, param, patch} from '@loopback/rest';
+import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
+import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {ReservationManagementService} from '../services';
 
 const BASE_ADDR = '/reservation-management/';
 const tags = ['Reservation.Management'];
@@ -25,9 +25,7 @@ export class ReservationManagementController {
   async acceptReservation(
     @param.path.string('reservation_id') reservationId: string,
   ): Promise<void> {
-    const {sub: operatorId} =
-      {sub: '676193da5fc74dacf315a62b'} ||
-      (await this.keycloakSecurity.getUserInfo());
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.reservationManagementService.confirmReservation(
       operatorId,
       reservationId,
@@ -43,9 +41,7 @@ export class ReservationManagementController {
   async rejectReservation(
     @param.path.string('reservation_id') reservationId: string,
   ): Promise<void> {
-    const {sub: operatorId} =
-      {sub: '676193da5fc74dacf315a62b'} ||
-      (await this.keycloakSecurity.getUserInfo());
+    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
     return this.reservationManagementService.rejectReservation(
       operatorId,
       reservationId,
