@@ -1,13 +1,19 @@
-import {inject} from '@loopback/context';
+import {inject, intercept} from '@loopback/context';
 import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param, patch} from '@loopback/rest';
 import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {
+  EnumRoles,
+  KeycloakSecurity,
+  KeycloakSecurityProvider,
+  protect,
+} from '../lib-keycloak/src';
 import {ReservationManagementService} from '../services';
 
 const BASE_ADDR = '/reservation-management/';
 const tags = ['Reservation.Management'];
 
+@intercept(protect(EnumRoles.RESERVATION_MANAGER))
 export class ReservationManagementController {
   constructor(
     @inject(KeycloakSecurityProvider.BINDING_KEY)

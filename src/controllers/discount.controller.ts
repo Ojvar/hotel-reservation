@@ -1,4 +1,4 @@
-import {inject} from '@loopback/context';
+import {inject, intercept} from '@loopback/context';
 import {Filter} from '@loopback/repository';
 import {
   del,
@@ -15,12 +15,18 @@ import {
   DiscountsDTO,
   NewDiscountDTO,
 } from '../dto';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {
+  EnumRoles,
+  KeycloakSecurity,
+  KeycloakSecurityProvider,
+  protect,
+} from '../lib-keycloak/src';
 import {DiscountService} from '../services';
 
 const BASE_ADDR = '/discounts/';
 const tags = ['Discounts'];
 
+@intercept(protect(EnumRoles.RESERVATION_MANAGER))
 export class DiscountController {
   constructor(
     @inject(DiscountService.BINDING_KEY)

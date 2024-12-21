@@ -1,4 +1,4 @@
-import {inject} from '@loopback/context';
+import {inject, intercept} from '@loopback/context';
 import {Filter} from '@loopback/repository';
 import {
   del,
@@ -10,12 +10,18 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
-import {KeycloakSecurity, KeycloakSecurityProvider} from '../lib-keycloak/src';
+import {
+  EnumRoles,
+  KeycloakSecurity,
+  KeycloakSecurityProvider,
+  protect,
+} from '../lib-keycloak/src';
 import {HotelService} from '../services';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
 
+@intercept(protect(EnumRoles.RESERVATION_MANAGER))
 export class HotelController {
   constructor(
     @inject(HotelService.BINDING_KEY) private hotelService: HotelService,
