@@ -15,7 +15,6 @@ import {
 } from '../models';
 import {HotelRepository} from './hotel.repository';
 import {DiscountRepository} from './discount.repository';
-import {ObjectId} from 'bson';
 
 export class ReservationRepository extends DefaultCrudRepository<
   Reservation,
@@ -78,7 +77,7 @@ export class ReservationRepository extends DefaultCrudRepository<
     }
     const reservationDates = Array.from(new Set(days.map(formatDate)));
     const aggregate = [
-      {$match: {user_id: new ObjectId(userId), status: EnumStatus.ACCEPTED}},
+      {$match: {user_id: userId, status: EnumStatus.ACCEPTED}},
       {
         $set: {
           days: {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {injectable, BindingScope, BindingKey, inject} from '@loopback/core';
 import {Filter, IsolationLevel, repository} from '@loopback/repository';
 import {
@@ -51,6 +52,23 @@ export class ReservationService {
     const reservations = await this.reservationRepo.find({
       ...filter,
       where: {...filter.where} as object,
+      limit: adjustRange(filter.limit),
+      skip: adjustMin(filter.skip),
+      offset: adjustMin(filter.offset),
+      fields: undefined,
+      include: undefined,
+    });
+
+    return reservations.map(ReservationDTO.fromModel);
+  }
+
+  async getReservationsByUserId(
+    userId: string,
+    filter: Filter<ReservationFilter> = {},
+  ): Promise<ReservationsDTO> {
+    const reservations = await this.reservationRepo.find({
+      ...filter,
+      where: {...filter.where, user_id: userId} as object,
       limit: adjustRange(filter.limit),
       skip: adjustMin(filter.skip),
       offset: adjustMin(filter.offset),

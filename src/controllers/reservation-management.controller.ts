@@ -2,13 +2,8 @@ import {inject, intercept} from '@loopback/context';
 import {Filter} from '@loopback/repository';
 import {get, getModelSchemaRef, param, patch} from '@loopback/rest';
 import {ReservationDTO, ReservationFilter, ReservationsDTO} from '../dto';
-import {
-  EnumRoles,
-  KeycloakSecurity,
-  KeycloakSecurityProvider,
-  protect,
-} from '../lib-keycloak/src';
-import {ReservationManagementService} from '../services';
+import {EnumRoles, protect} from '../lib-keycloak/src';
+import {AuthService, ReservationManagementService} from '../services';
 
 const BASE_ADDR = '/reservation-management/';
 const tags = ['Reservation.Management'];
@@ -16,8 +11,7 @@ const tags = ['Reservation.Management'];
 @intercept(protect(EnumRoles.RESERVATION_MANAGER))
 export class ReservationManagementController {
   constructor(
-    @inject(KeycloakSecurityProvider.BINDING_KEY)
-    private keycloakSecurity: KeycloakSecurity,
+    @inject(AuthService.BINDING_KEY) private authService: AuthService,
     @inject(ReservationManagementService.BINDING_KEY)
     private reservationManagementService: ReservationManagementService,
   ) {}
@@ -31,7 +25,7 @@ export class ReservationManagementController {
   async acceptReservation(
     @param.path.string('reservation_id') reservationId: string,
   ): Promise<void> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     return this.reservationManagementService.confirmReservation(
       operatorId,
       reservationId,
@@ -47,7 +41,7 @@ export class ReservationManagementController {
   async rejectReservation(
     @param.path.string('reservation_id') reservationId: string,
   ): Promise<void> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     return this.reservationManagementService.rejectReservation(
       operatorId,
       reservationId,
