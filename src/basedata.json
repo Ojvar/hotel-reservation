@@ -1,0 +1,388 @@
+{
+  "addressOwnership": {
+    "0": "666ea7e75f61d6a003210f16",
+    "1": "644656a6bb6603c0684a3037",
+    "2": "64466ff0bb6603064b4a3038",
+    "3": "64466ffcbb660345a14a3039",
+    "4": "6446701ebb66035f4c4a303b",
+    "5": "6446701ebb6603bd1a4a303a"
+  },
+  "building_usages": [
+    {
+      "id": "64467146bb66035a254a303c",
+      "field": "Useage_Maskooni"
+    },
+    {
+      "id": "6446714dbb660376324a303d",
+      "field": "Useage_Edari"
+    },
+    {
+      "id": "644671cabb6603529d4a303e",
+      "field": "Useage_Tejari"
+    },
+    {
+      "id": "644671d8bb660309f64a303f",
+      "field": "Useage_Sanati"
+    },
+    {
+      "id": "6446720fbb6603d7ac4a3043",
+      "field": "Useage_Damdari"
+    },
+    {
+      "id": "6446721bbb660321ac4a3044",
+      "field": "Useage_Golkhane"
+    },
+    {
+      "id": "64467229bb66036c114a3045",
+      "field": "Useage_Morghdari"
+    },
+    {
+      "id": "6446723ebb6603eb304a3046",
+      "field": "Useage_TasisatShahri"
+    },
+    {
+      "id": "644671ecbb660371df4a3040",
+      "field": "Useage_Behdashti"
+    },
+    {
+      "id": "644671f8bb660375904a3041",
+      "field": "Useage_Amoozeshi"
+    },
+    {
+      "id": "64467203bb6603b8834a3042",
+      "field": "Useage_Khadamati"
+    },
+    {
+      "id": "6446724fbb660351ae4a3047",
+      "field": "Useage_OtherTypeName"
+    },
+    {
+      "id": "6446724fbb660351ae4a3047",
+      "field": "Useage_Other"
+    },
+    {
+      "id": "6446724fbb660351ae4a3047",
+      "field": "Useage_Other_Id"
+    }
+  ],
+  "placeBuildingTypes": {
+    "0": "666ecca80582e925c3210f16",
+    "1": "6446726ebb66036b504a3048",
+    "2": "64467279bb660363ae4a3049",
+    "3": "6446727fbb66031a9a4a304a",
+    "4": "64467292bb660337794a304b"
+  },
+  "building_type": {
+    "0": "644672ddbb66038a2a4a304c",
+    "1": "6450cfe0bb66037cb84a309c",
+    "2": "666eea480582e925c3210f17",
+    "3": "6450cfe0bb6603aabe4a309d",
+    "4": "6450d01ebb66038d7f4a309e"
+  },
+  "building_priority": {
+    "0": "666eebb10582e925c3210f18",
+    "1": "666eebb10582e925c3210f19",
+    "2": "666eebb10582e925c3210f1a",
+    "3": "666eebb10582e925c3210f1b"
+  },
+  "foundations": [
+    {
+      "id": "64467305bb6603f5de4a304d",
+      "field": "FundationMonfared"
+    },
+    {
+      "id": "6446730ebb660369534a304e",
+      "field": "FundationNavari"
+    },
+    {
+      "id": "64467318bb6603626e4a304f",
+      "field": "FundationGostarde"
+    },
+    {
+      "id": "64467323bb6603e8e54a3050",
+      "field": "FundationDeep"
+    },
+    {
+      "id": "64467332bb660370ff4a3051",
+      "field": "FundationSemiDeep"
+    },
+    {
+      "id": "64467341bb66035e9c4a3052",
+      "field": "FundationParticular"
+    }
+  ],
+  "roof_types": [
+    {
+      "id": "64467399bb660331b14a3053",
+      "field": "RoofTirche"
+    },
+    {
+      "id": "644673b0bb660372084a3054",
+      "field": "RoofSlab"
+    },
+    {
+      "id": "644673b8bb66037f4f4a3055",
+      "field": "RoofMorakab"
+    },
+    {
+      "id": "644673cbbb660395434a3056",
+      "field": "RoofReadyMade"
+    },
+    {
+      "id": "644673e0bb6603772a4a3058",
+      "field": "RoofChromite"
+    },
+    {
+      "id": "644673d8bb66036aaf4a3057",
+      "field": "RoofComposite"
+    },
+    {
+      "id": "644673eabb660327324a3059",
+      "field": "RoofSteelDeck"
+    },
+    {
+      "id": "644673f7bb660335434a305a",
+      "field": "RoofOther"
+    }
+  ],
+  "floor_access_types": [
+    {
+      "id": "6446742abb66033fa24a305b",
+      "field": "FloorAccessStair"
+    },
+    {
+      "id": "64467432bb66030b864a305c",
+      "field": "HasLift"
+    },
+    {
+      "id": "6446743abb66036e014a305d",
+      "field": "FloorAccessEscalator"
+    },
+    {
+      "id": "64467442bb6603f60f4a305e",
+      "field": "FloorAccessEsc"
+    }
+  ],
+  "facade_type": [
+    {
+      "id": "6446747cbb660314bf4a3060",
+      "field": "FacadeBrick"
+    },
+    {
+      "id": "64467488bb6603236e4a3061",
+      "field": "FacadeStone"
+    },
+    {
+      "id": "64467491bb66035d0a4a3062",
+      "field": "FacadeConcrete"
+    },
+    {
+      "id": "64467499bb660327984a3063",
+      "field": "FacadeGlass"
+    },
+    {
+      "id": "644674a1bb660381654a3064",
+      "field": "FacadeAluminium"
+    }
+  ],
+  "roof_coat_types": [
+    {
+      "id": "644674dabb66034ed84a3066",
+      "field": "RoofCoatTar"
+    },
+    {
+      "id": "644674e4bb66033a084a3067",
+      "field": "RoofCoatIsogam"
+    },
+    {
+      "id": "644674f8bb6603819f4a3068",
+      "field": "RoofCoatMosaic"
+    },
+    {
+      "id": "64467505bb660373684a3069",
+      "field": "RoofCoatAsphalt"
+    },
+    {
+      "id": "6446751bbb660306e94a306a",
+      "field": "RoofCoatSteel"
+    },
+    {
+      "id": "6446753cbb660377a04a306b",
+      "field": "RoofCoatPottery"
+    },
+    {
+      "id": "6446754dbb6603f0594a306c",
+      "field": "RoofCoatGalvanized"
+    },
+    {
+      "id": "6446755abb66035f004a306d",
+      "field": "RoofCoatConcrete"
+    },
+    {
+      "id": "64467565bb66035a874a306e",
+      "field": "RoofOther"
+    }
+  ],
+  "window_types": [
+    {
+      "id": "644675aabb6603a5cd4a3072",
+      "field": "WinSteel"
+    },
+    {
+      "id": "64467589bb660334334a306f",
+      "field": "WinAluminium"
+    },
+    {
+      "id": "64467596bb66032e834a3070",
+      "field": "WinPVC"
+    },
+    {
+      "id": "6446759ebb66032af44a3071",
+      "field": "RoofMorakab"
+    },
+    {
+      "id": "644675b3bb660337724a3073",
+      "field": "WinWood"
+    }
+  ],
+  "heating_types": [
+    {
+      "id": "644788e0bb660300f74a3074",
+      "field": "HeatingCentral"
+    },
+    {
+      "id": "644788ebbb66036b674a3075",
+      "field": "HeatingPackage"
+    },
+    {
+      "id": "644788f3bb660379114a3076",
+      "field": "HeatingChimney"
+    },
+    {
+      "id": "644788fbbb66036e804a3077",
+      "field": "HeatingFireplace"
+    },
+    {
+      "id": "64478903bb66034baf4a3078",
+      "field": "HeatingOthere"
+    }
+  ],
+  "cooling_types": [
+    {
+      "id": "64478915bb66037b6f4a3079",
+      "field": "CoolingCentral"
+    },
+    {
+      "id": "64478922bb660306024a307a",
+      "field": "CoolingPackage"
+    },
+    {
+      "id": "6447892cbb660374354a307b",
+      "field": "CoolingWCooler"
+    },
+    {
+      "id": "6447893abb660330dd4a307c",
+      "field": "CoolingAC"
+    }
+  ],
+  "sewate_types": [
+    {
+      "id": "64478955bb660385bd4a307d",
+      "field": "SewageSeptic"
+    },
+    {
+      "id": "64478964bb6603f9ab4a307e",
+      "field": "SewageSewer"
+    },
+    {
+      "id": "6447896bbb660317c04a307f",
+      "field": "SewageChahjazbi"
+    },
+    {
+      "id": "64478972bb660373d04a3080",
+      "field": "SewageOther"
+    }
+  ],
+  "eath_connection_types": [
+    {
+      "id": "64478983bb6603c48d4a3081",
+      "field": "OthersCentralAnthena"
+    },
+    {
+      "id": "6447898fbb660310944a3082",
+      "field": "OthersFireAlarm"
+    }
+  ],
+  "quota_types": {
+    "0": "666feb210582e925c3210f1c",
+    "1": "6450d090bb660351884a309f",
+    "2": "666fea931c4178fe3a210f16",
+    "3": "666fea931c4178fe3a210f17",
+    "4": "666fea931c4178fe3a210f18",
+    "5": "666fea931c4178fe3a210f19",
+    "6": "666fea931c4178fe3a210f1a",
+    "7": "666fea931c4178fe3a210f1b",
+    "8": "645606335342b27c16457d7e"
+  },
+  "states": {
+    "1": "5fdc97fec95a812ac1052043"
+  },
+
+  "cities": {
+    "48": "655c7fca1e21312b5ee3933f",
+    "49": "669cbd7dd7bcf47fd4b66e53",
+    "50": "655c800483ca8cd86f2ce4ed",
+    "52": "662df060d1fcf29a7ba1eb3e",
+    "53": "655c7fea83ca8ca3582ce4ec",
+    "54": "6677ae1091567d71c38d3b98",
+    "55": "65744ae7d9fca00be9cb668c",
+    "56": "669cbe60d7bcf449d1b66e54",
+    "57": "655c804183ca8c33ce2ce4ef",
+    "58": "669cb20b0d83423709cf440c",
+    "59": "669cb1e90d834234a0cf440b",
+    "60": "655c802083ca8ce3512ce4ee",
+    "61": "669cc647d7bcf409f6b66e56",
+    "62": "669cc7870d8342a20fcf440e",
+    "63": "669cc76dd7bcf413e1b66e58",
+    "64": "669ca3490d8342aa8bcf440a",
+    "65": "66b8a9846bb64d06e9040b6e",
+    "66": "60d994251ac33a6f8480b066",
+    "67": "669cae03d7bcf4afa6b66e50",
+    "68": "669cb22cd7bcf4e3cdb66e51",
+    "69": "669ca0050d83427e0dcf4409",
+    "70": "669cc7c70d834271fbcf440f",
+    "71": "669cc710d7bcf49c2db66e57",
+    "72": "669cc8a70d8342e196cf4411",
+    "73": "66b8a4b9d895c0ae4d3499e6",
+    "75": "66b8a6efd895c0511b3499ea",
+    "76": "66b8a7e06bb64ddcd2040b6d",
+    "77": "66b8a7c06bb64d7cc5040b6c",
+    "78": "66b8a7436bb64d843d040b6b",
+    "79": "66b8a790d895c05c6e3499eb",
+    "80": "669cb2b2d7bcf4a719b66e52",
+    "81": "66b87a57d895c072693499df",
+    "82": "66b8a51ed895c0771f3499e7",
+    "83": "66b87965d895c0e91d3499de",
+    "84": "66b8a628d895c07f553499e8",
+    "86": "66b8a6a4d895c0e0a43499e9",
+    "87": "66b87eb56bb64d2ce5040b6a",
+    "88": "66b879306bb64d4e87040b66",
+    "89": "66b878e16bb64db83d040b65",
+    "90": "66b87dc5d895c0557f3499e4",
+    "91": "66b87d17d895c04be03499e3",
+    "92": "66b878856bb64d7833040b64",
+    "93": "66b87caa6bb64d574a040b69",
+    "94": "66b878286bb64d007c040b63",
+    "95": "66b877536bb64d1ed9040b62",
+    "96": "66b87c67d895c092b03499e2",
+    "97": "66b876c6d895c023033499dd",
+    "99": "66b8764ed895c0ad5b3499dc",
+    "100": "66b87583d895c01cd53499db",
+    "156": "66b872f7d895c0d23d3499da",
+    "157": "6676e4e991567d71c38d3b5b",
+    "159": "66b872156bb64d4a4c040b61",
+    "160": "66b88015d895c067673499e5",
+    "164": "66b87bd3d895c0f53d3499e0",
+    "165": "66b87b3d6bb64d3eeb040b68"
+  }
+}

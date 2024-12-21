@@ -3,4 +3,5 @@ dist/
 coverage/
 .eslintrc.js
 src/lib-*
+src/loopback-rabbitmq
 

@@ -1,10 +1,11 @@
+import {getApplicationConfig} from '.';
 import {ProjectsServiceApplication} from './application';
 
 export async function migrate(args: string[]) {
   const existingSchema = args.includes('--rebuild') ? 'drop' : 'alter';
   console.log('Migrating schemas (%s existing schema)', existingSchema);
 
-  const app = new ProjectsServiceApplication();
+  const app = new ProjectsServiceApplication(getApplicationConfig());
   await app.boot();
   await app.migrateSchema({existingSchema});
 

@@ -10,6 +10,7 @@ declare namespace NodeJS {
 
     SENTRY_DSN: string;
     SENTRY_SAMPLE_RATE: string;
+    SENTRY_PROFILES_SAMPLE_RATE: string;
 
     QENG_DB_URL: string;
     QENG_DB_HOST: string;
@@ -18,15 +19,10 @@ declare namespace NodeJS {
     QENG_DB_PASSWORD: string;
     QENG_DB_DATABASE: string;
 
-    SQL_DB_USER: string;
-    SQL_DB_PASSWORD: string;
-    SQL_DB_DOMAIN: string;
-    SQL_DB_INTERGRATED_SECURITY: string;
-    SQL_DB_DATABASE: string;
-    SQL_DB_HOST: string;
-    SQL_DB_PORT: string;
-
     KEYCLOAK_ALLOWED_LIST: string;
     KEYCLOAK_REJECTED_LIST: string;
+
+    TARGET_EWALLET_USER_ID: string;
+    EWALLET_DS_BASE_URL: string;
   }
 }

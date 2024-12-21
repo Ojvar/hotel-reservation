@@ -1,6 +1,3 @@
 [submodule "src/lib-keycloak"]
 	path = src/lib-keycloak
-	url = git@gitlab.qeng.ir:qeng/libraries/lib-keycloak.git
-[submodule "src/lib-sentry"]
-	path = src/lib-sentry
-	url = git@gitlab.qeng.ir:qeng/libraries/lib-sentry.git
+	url = https://gitlab.qeng.ir/qeng/libraries/lib-keycloak.git
