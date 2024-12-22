@@ -20,6 +20,7 @@ const config = {
 
 const getConfig = ({baseURL}: AnyObject & EwalletDataSourceConfig): object => {
   baseURL = baseURL.replace(/\/$/g, '');
+  console.debug({baseURL, x: `${baseURL}/ewallets/transfer`});
   return {
     ...config,
     baseURL,
@@ -27,7 +28,8 @@ const getConfig = ({baseURL}: AnyObject & EwalletDataSourceConfig): object => {
     operations: [
       {
         template: {
-          method: 'POST',
+          method: 'PATCH',
+          url: `${baseURL}/ewallets/transfer`,
           headers: {
             'content-type': 'application/json',
             authorization: 'Bearer {token}',

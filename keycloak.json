@@ -3,10 +3,11 @@
   "auth-server-url": "https://knode5.qeng.ir:8443/",
   "ssl-required": "external",
   "resource": "reservation-service",
+  "verify-token-audience": true,
   "credentials": {
     "secret": "Ni4ArN8xBmefe35tk3QO0tp1pe6AlbSB"
   },
+  "use-resource-role-mappings": true,
   "confidential-port": 0,
-  "verify-token-audience": false,
-  "use-resource-role-mappings": true
+  "verify-token-audience": false
 }
