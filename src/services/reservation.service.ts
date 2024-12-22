@@ -2,6 +2,7 @@
 import {injectable, BindingScope, BindingKey, inject} from '@loopback/core';
 import {Filter, IsolationLevel, repository} from '@loopback/repository';
 import {
+  BaseDataRepository,
   HotelCalendarRepository,
   HotelRepository,
   ReservationRepository,
@@ -32,7 +33,10 @@ export class ReservationService {
       `services.config.${ReservationService.name}`,
     );
 
+  static readonly RESERVE_ZONE = 'RESERVE_ZONE';
+
   constructor(
+    @repository(BaseDataRepository) private basedataRepo: BaseDataRepository,
     @inject(ReservationService.CONFIG_BINDING_KEY)
     private configs: ReservationServiceConfig,
     @inject(EwalletProvider.BINDING_KEY) private ewallet: Ewallet,
@@ -151,10 +155,12 @@ export class ReservationService {
     }
 
     // Check maximum reservation date length
-    // TODO: READ FROM DB
-    const maxZoneReserveLength = 3;
+    const basedata = await this.basedataRepo.findByCategory(
+      ReservationService.RESERVE_ZONE,
+    );
+    const {max_days: maxZoneReserveLength = 0} = basedata.meta ?? {max_days: 0};
     const maxDays = this.getMaxRepeationsOfDates(days);
-    if (maxDays > maxZoneReserveLength) {
+    if (maxDays > +maxZoneReserveLength) {
       throw new HttpErrors.UnprocessableEntity('Invaliad reservation length');
     }
   }

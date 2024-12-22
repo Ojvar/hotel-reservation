@@ -58,7 +58,7 @@ export class ReservationRepository extends DefaultCrudRepository<
   ): Promise<Reservation[]> {
     const reservedResult = await this.find({
       where: {
-        status: EnumStatus.ACCEPTED,
+        status: {inq: [EnumStatus.ACCEPTED, EnumStatus.ACTIVE]},
         hotel_id: hotel.id?.toString(),
         days: {inq: days},
       } as object,
@@ -77,7 +77,12 @@ export class ReservationRepository extends DefaultCrudRepository<
     }
     const reservationDates = Array.from(new Set(days.map(formatDate)));
     const aggregate = [
-      {$match: {user_id: userId, status: EnumStatus.ACCEPTED}},
+      {
+        $match: {
+          user_id: userId,
+          status: {$in: [EnumStatus.ACCEPTED, EnumStatus.ACTIVE]},
+        },
+      },
       {
         $set: {
           days: {
