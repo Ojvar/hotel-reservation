@@ -10,25 +10,19 @@ import {
   requestBody,
 } from '@loopback/rest';
 import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
-import {
-  EnumRoles,
-  KeycloakSecurity,
-  KeycloakSecurityProvider,
-  protect,
-} from '../lib-keycloak/src';
-import {HotelService} from '../services';
+import {EnumRoles, protect} from '../lib-keycloak/src';
+import {AuthService, HotelService} from '../services';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
 
-@intercept(protect(EnumRoles.RESERVATION_MANAGER))
 export class HotelController {
   constructor(
     @inject(HotelService.BINDING_KEY) private hotelService: HotelService,
-    @inject(KeycloakSecurityProvider.BINDING_KEY)
-    private keycloakSecurity: KeycloakSecurity,
+    @inject(AuthService.BINDING_KEY) private authService: AuthService,
   ) {}
 
+  @intercept(protect(EnumRoles.NO_BODY))
   @get(`${BASE_ADDR}`, {
     tags,
     summary: 'Get hotels list',
@@ -49,6 +43,7 @@ export class HotelController {
     return this.hotelService.getHotelsList(filter);
   }
 
+  @intercept(protect(EnumRoles.NO_BODY))
   @get(`${BASE_ADDR}/{hote_id}`, {
     tags,
     summary: 'Get hotel detail',
@@ -65,6 +60,7 @@ export class HotelController {
     return this.hotelService.getHotelById(hotelId);
   }
 
+  @intercept(protect(EnumRoles.RESERVATION_MANAGER))
   @post(`${BASE_ADDR}`, {
     tags,
     summary: 'Create a new hotel',
@@ -76,10 +72,11 @@ export class HotelController {
     },
   })
   async createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     return this.hotelService.newHotel(operatorId, new NewHotelDTO(body));
   }
 
+  @intercept(protect(EnumRoles.RESERVATION_MANAGER))
   @patch(`${BASE_ADDR}/{hotel_id}`, {
     tags,
     summary: 'Edit a hotel',
@@ -94,7 +91,7 @@ export class HotelController {
     @requestBody() body: NewHotelDTO,
     @param.path.string('hote_id') hotelId: string,
   ): Promise<HotelDTO> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     return this.hotelService.updateHotel(
       operatorId,
       hotelId,
@@ -102,6 +99,7 @@ export class HotelController {
     );
   }
 
+  @intercept(protect(EnumRoles.RESERVATION_MANAGER))
   @del(`${BASE_ADDR}/{hotel_id}`, {
     tags,
     summary: 'Delete a hotel',
@@ -111,7 +109,7 @@ export class HotelController {
   async removeHotel(
     @param.path.string('hote_id') hotelId: string,
   ): Promise<void> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     return this.hotelService.removeHotel(operatorId, hotelId);
   }
 }

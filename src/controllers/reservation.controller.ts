@@ -1,13 +1,14 @@
 import {inject, intercept} from '@loopback/context';
-import {getModelSchemaRef, post, requestBody} from '@loopback/rest';
-import {NewReservationDTO, ReservationDTO} from '../dto';
+import {get, getModelSchemaRef, param, post, requestBody} from '@loopback/rest';
 import {
-  EnumRoles,
-  KeycloakSecurity,
-  KeycloakSecurityProvider,
-  protect,
-} from '../lib-keycloak/src';
-import {ReservationService} from '../services';
+  NewReservationDTO,
+  ReservationDTO,
+  ReservationFilter,
+  ReservationsDTO,
+} from '../dto';
+import {EnumRoles, protect} from '../lib-keycloak/src';
+import {AuthService, ReservationService} from '../services';
+import {Filter} from '@loopback/repository';
 
 const BASE_ADDR = '/reservations/';
 const tags = ['Reservations'];
@@ -17,8 +18,7 @@ export class ReservationController {
   constructor(
     @inject(ReservationService.BINDING_KEY)
     private reservationService: ReservationService,
-    @inject(KeycloakSecurityProvider.BINDING_KEY)
-    private keycloakSecurity: KeycloakSecurity,
+    @inject(AuthService.BINDING_KEY) private authService: AuthService,
   ) {}
 
   @post(`${BASE_ADDR}`, {
@@ -36,7 +36,7 @@ export class ReservationController {
   async registerReservations(
     @requestBody() body: NewReservationDTO,
   ): Promise<ReservationDTO> {
-    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
+    const operatorId = await this.authService.getUsername();
     body.user_id = operatorId;
     return this.reservationService.newReservations(
       operatorId,
@@ -44,37 +44,24 @@ export class ReservationController {
     );
   }
 
-  //  @get(`${BASE_ADDR}`, {
-  //    tags,
-  //    summary: 'Get reservations list',
-  //    description: 'Get reservations list',
-  //    responses: {
-  //      200: {
-  //        content: {
-  //          'application/json': {
-  //            schema: {type: 'array', items: getModelSchemaRef(ReservationDTO)},
-  //          },
-  //        },
-  //      },
-  //    },
-  //  })
-  //  getReservations(
-  //    @param.filter(ReservationFilter) filter: Filter<ReservationFilter> = {},
-  //  ): Promise<ReservationsDTO> {
-  //    return this.reservationService.getReservations(filter);
-  //  }
-  //
-  //
-  //  @del(`${BASE_ADDR}/{reservation_id}`, {
-  //    tags,
-  //    summary: 'Remove reservation',
-  //    description: 'Remove reservation',
-  //    responses: {204: {}},
-  //  })
-  //  async removeReservation(
-  //    @param.path.string('reservation_id') reservationId: string,
-  //  ): Promise<void> {
-  //    const {sub: operatorId} = await this.keycloakSecurity.getUserInfo();
-  //    return this.reservationService.removeReservation(operatorId, reservationId);
-  //  }
+  @get(`${BASE_ADDR}`, {
+    tags,
+    summary: 'Get reservations list',
+    description: 'Get reservations list',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {type: 'array', items: getModelSchemaRef(ReservationDTO)},
+          },
+        },
+      },
+    },
+  })
+  async getReservations(
+    @param.filter(ReservationFilter) filter: Filter<ReservationFilter> = {},
+  ): Promise<ReservationsDTO> {
+    const operatorId = await this.authService.getUsername();
+    return this.reservationService.getReservationsByUserId(operatorId, filter);
+  }
 }

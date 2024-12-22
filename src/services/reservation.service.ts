@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import {injectable, BindingScope, BindingKey, inject} from '@loopback/core';
 import {Filter, IsolationLevel, repository} from '@loopback/repository';
 import {
@@ -51,6 +52,23 @@ export class ReservationService {
     const reservations = await this.reservationRepo.find({
       ...filter,
       where: {...filter.where} as object,
+      limit: adjustRange(filter.limit),
+      skip: adjustMin(filter.skip),
+      offset: adjustMin(filter.offset),
+      fields: undefined,
+      include: undefined,
+    });
+
+    return reservations.map(ReservationDTO.fromModel);
+  }
+
+  async getReservationsByUserId(
+    userId: string,
+    filter: Filter<ReservationFilter> = {},
+  ): Promise<ReservationsDTO> {
+    const reservations = await this.reservationRepo.find({
+      ...filter,
+      where: {...filter.where, user_id: userId} as object,
       limit: adjustRange(filter.limit),
       skip: adjustMin(filter.skip),
       offset: adjustMin(filter.offset),
@@ -119,6 +137,8 @@ export class ReservationService {
     days: Date[],
   ): Promise<void> {
     const hotel = await this.hotelRepo.findById(hotelId);
+
+    // Find reservation conflicts
     const oldReservations = await this.reservationRepo.findConflicts(
       userId,
       hotel,
@@ -129,6 +149,23 @@ export class ReservationService {
         'The reservation dates are unavailable',
       );
     }
+
+    // Check maximum reservation date length
+    // TODO: READ FROM DB
+    const maxZoneReserveLength = 3;
+    const maxDays = this.getMaxRepeationsOfDates(days);
+    if (maxDays > maxZoneReserveLength) {
+      throw new HttpErrors.UnprocessableEntity('Invaliad reservation length');
+    }
+  }
+
+  private getMaxRepeationsOfDates(days: Date[]): number {
+    const datesByMonth = days.reduce<Record<string, number>>((res, day) => {
+      const month = new Date(day).getMonth();
+      console.debug({month, day});
+      return {...res, [month]: (res[month] ?? 0) + 1};
+    }, {});
+    return Object.values(datesByMonth).sort().at(-1) ?? 0;
   }
 
   private getHotelCalendar(
