@@ -162,7 +162,6 @@ export class ReservationService {
   private getMaxRepeationsOfDates(days: Date[]): number {
     const datesByMonth = days.reduce<Record<string, number>>((res, day) => {
       const month = new Date(day).getMonth();
-      console.debug({month, day});
       return {...res, [month]: (res[month] ?? 0) + 1};
     }, {});
     return Object.values(datesByMonth).sort().at(-1) ?? 0;
