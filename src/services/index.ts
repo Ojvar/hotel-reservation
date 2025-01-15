@@ -5,3 +5,4 @@ export * from './reservation.service';
 export * from './ewallet.service';
 export * from './reservation-management.service';
 export * from './auth.service';
+export * from './file-agent.service';
