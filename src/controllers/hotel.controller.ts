@@ -12,6 +12,7 @@ import {
 import {HotelDTO, HotelFilter, HotelsDTO, NewHotelDTO} from '../dto';
 import {EnumRoles, protect} from '../lib-keycloak/src';
 import {AuthService, HotelService} from '../services';
+import {FileTokenResponse} from '../lib-file-service/src';
 
 const BASE_ADDR = '/hotels';
 const tags = ['Hotel'];
@@ -21,6 +22,24 @@ export class HotelController {
     @inject(HotelService.BINDING_KEY) private hotelService: HotelService,
     @inject(AuthService.BINDING_KEY) private authService: AuthService,
   ) {}
+
+  @get(`${BASE_ADDR}/file-token`, {
+    tags,
+    summary: 'Get file-upload token',
+    description: 'Generate an file-upload token',
+    responses: {
+      200: {
+        description: 'Get an upload file token',
+        content: {
+          'application/json': {schema: getModelSchemaRef(FileTokenResponse)},
+        },
+      },
+    },
+  })
+  async getFileToken(): Promise<FileTokenResponse> {
+    const operatorId = await this.authService.getUsername();
+    return this.hotelService.getFileToken(operatorId);
+  }
 
   @intercept(protect(EnumRoles.NO_BODY))
   @get(`${BASE_ADDR}`, {
@@ -71,9 +90,16 @@ export class HotelController {
       },
     },
   })
-  async createNewHotel(@requestBody() body: NewHotelDTO): Promise<HotelDTO> {
+  async createNewHotel(
+    @requestBody() body: NewHotelDTO,
+    @param.header.string('file-token') fileToken: string = '',
+  ): Promise<HotelDTO> {
     const operatorId = await this.authService.getUsername();
-    return this.hotelService.newHotel(operatorId, new NewHotelDTO(body));
+    return this.hotelService.newHotel(
+      operatorId,
+      new NewHotelDTO(body),
+      fileToken,
+    );
   }
 
   @intercept(protect(EnumRoles.RESERVATION_MANAGER))
@@ -89,6 +115,7 @@ export class HotelController {
   })
   async updateHotel(
     @requestBody() body: NewHotelDTO,
+    @param.header.string('file-token') fileToken: string = '',
     @param.path.string('hote_id') hotelId: string,
   ): Promise<HotelDTO> {
     const operatorId = await this.authService.getUsername();
@@ -96,6 +123,7 @@ export class HotelController {
       operatorId,
       hotelId,
       new NewHotelDTO(body),
+      fileToken,
     );
   }
 

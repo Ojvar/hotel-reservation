@@ -25,6 +25,11 @@ import {
   KeycloakSequence,
 } from './lib-keycloak/src';
 import KeycloakJson from './keycloak.json';
+import {
+  FileServiceComponent,
+  FileServiceDataSource,
+  FileServiceDataSourceConfig,
+} from './lib-file-service/src';
 //import * as sentry from '@sentry/node';
 
 export {ApplicationConfig};
@@ -38,6 +43,7 @@ export type ProjectsServiceApplicationConfig = ApplicationConfig & {
   reservationServiceConfig: ReservationServiceConfig;
   qengDataSourceConfig: QengDataSourceConfig;
   ewalletDataSourceConfig: EwalletDataSourceConfig;
+  fileServiceDataSourceConfig: FileServiceDataSourceConfig;
 };
 
 export class ProjectsServiceApplication extends BootMixin(
@@ -101,6 +107,12 @@ export class ProjectsServiceApplication extends BootMixin(
     );
     this.bind(EwalletDataSource.CONFIG_BINDING_KEY).to(
       options.ewalletDataSourceConfig,
+    );
+
+    // FileService
+    this.component(FileServiceComponent);
+    this.bind(FileServiceDataSource.CONFIG_BINDING_KEY).to(
+      options.fileServiceDataSourceConfig,
     );
   }
 }

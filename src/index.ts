@@ -90,6 +90,9 @@ export function getApplicationConfig(
       targetWalletId: process.env.TARGET_EWALLET_USER_ID,
     },
     ewalletDataSourceConfig: {baseURL: process.env.EWALLET_DS_BASE_URL},
+    fileServiceDataSourceConfig: {
+      baseURL: process.env.FILE_SERVICE_URL,
+    },
   };
 }
 

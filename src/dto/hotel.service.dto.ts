@@ -7,6 +7,7 @@ import {
   Hotel,
   ModifyStamp,
 } from '../models';
+import {AttachmentItems} from '../services';
 
 @model()
 export class HotelFilter extends Model {
@@ -56,6 +57,8 @@ export class NewHotelDTO extends Model {
   @property({type: 'object', default: {}})
   meta?: HotelMeta;
 
+  attachments: AttachmentItems;
+
   constructor(data?: Partial<HotelFilter>) {
     super(data);
   }
@@ -72,6 +75,7 @@ export class NewHotelDTO extends Model {
       location: this.location,
       description: this.description,
       meta: this.meta ?? {},
+      attachments: this.attachments ?? {},
     });
   }
 }

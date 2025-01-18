@@ -5,6 +5,7 @@ import {
   ModifyStamp,
   REMOVE_ID_SETTING,
 } from './common.model';
+import { AttachmentItems } from '../services';
 
 export type HotelContact = Record<string, string>;
 export type HotelMeta = Record<string, string | number>;
@@ -50,6 +51,9 @@ export class Hotel extends Entity {
   description?: string;
   @property({type: 'object', default: {}})
   meta?: HotelMeta;
+
+  @property({type: 'object', itemType: 'string'})
+  attachments: AttachmentItems;
 
   constructor(data?: Partial<Hotel>) {
     super(data);

@@ -20,7 +20,6 @@ const config = {
 
 const getConfig = ({baseURL}: AnyObject & EwalletDataSourceConfig): object => {
   baseURL = baseURL.replace(/\/$/g, '');
-  console.debug({baseURL, x: `${baseURL}/ewallets/transfer`});
   return {
     ...config,
     baseURL,

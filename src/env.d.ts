@@ -24,5 +24,6 @@ declare namespace NodeJS {
 
     TARGET_EWALLET_USER_ID: string;
     EWALLET_DS_BASE_URL: string;
+    FILE_SERVICE_URL: string;
   }
 }

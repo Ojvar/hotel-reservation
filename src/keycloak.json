@@ -9,5 +9,4 @@
   },
   "use-resource-role-mappings": true,
   "confidential-port": 0,
-  "verify-token-audience": false
 }
